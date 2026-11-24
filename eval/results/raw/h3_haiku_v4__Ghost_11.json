@@ -1,0 +1,379 @@
+{
+ "id": "Ghost#11",
+ "repo": "Ghost",
+ "num": 11,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T07:25:27.202Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "var used instead of const",
+   "description": "The rule requires that all variable declarations use let or const instead of var, but var was used to declare the newValues variable",
+   "file_path": "apps/shade/src/components/ui/filters.tsx",
+   "start_line": 1123,
+   "end_line": 1133,
+   "problematic_code_snippet": "                                            onSelect={() => {\n                                                if (isMultiSelect) {\n                                                    var newValues = [...effectiveValues, option.value] as T[];\n                                                    if (field.maxSelections && newValues.length > field.maxSelections) {\n                                                        return; // Don't exceed max selections\n                                                    }\n                                                    if (field.onValueChange) {\n                                                        field.onValueChange(newValues);\n                                                    } else {\n                                                        onChange(newValues);\n                                                    }",
+   "rule_name": "Code Must Use let or const Instead of var"
+  },
+  {
+   "title": "Race condition: search input cleared synchronously causes visual glitch",
+   "description": "The handleClose function was modified to clear the search input synchronously using setSearchInput('') instead of the debounced setTimeout(() => setSearchInput(''), 200). This creates a race condition where the search input is cleared while the popover closing animation is still running, causing a visible flash where the filtered results disappear before the popover closes. The original implementation used a 200ms delay to allow the popover animation to complete before clearing the search state, preventing visual artifacts. This bug affects user experience by showing jarring UI state changes during the transition.",
+   "file_path": "apps/shade/src/components/ui/filters.tsx",
+   "start_line": 1049,
+   "end_line": 1053,
+   "problematic_code_snippet": "    const handleClose = () => {\n        setOpen(false);\n        setSearchInput('');\n        onClose?.();\n    };"
+  },
+  {
+   "title": "Missing handleClose call in single-select mode prevents search input cleanup",
+   "description": "In the unselected options section for single-select mode, the code calls setOpen(false) but fails to call handleClose(), unlike the multiselect path which properly calls handleClose() when autoCloseOnSelect is enabled. This means when a user selects a single option, the popover closes but the search input state is never cleared, causing the next time the popover opens to show stale search results and filtered options from the previous interaction. The handleClose() function is responsible for clearing the search input and triggering the onClose callback, both of which are now skipped in single-select scenarios.",
+   "file_path": "apps/shade/src/components/ui/filters.tsx",
+   "start_line": 1275,
+   "end_line": 1278,
+   "problematic_code_snippet": "                                                } else {\n                                                    onChange([option.value] as T[]);\n                                                    setOpen(false);\n                                                }"
+  },
+  {
+   "title": "Memory leak: temporary selected values not cleared on filter popover close",
+   "description": "The onClose handler in the SelectOptionsPopover component was modified to remove the setTempSelectedValues([]) cleanup call. This causes a memory leak where tempSelectedValues state persists after the popover closes. When a user opens the add filter popover, selects a field that supports options, starts selecting values, then closes the popover without confirming, those temporary values remain in state. If the user then opens a different field's options, they may see incorrect pre-selected values carried over from the previous interaction. The original PR correctly added this cleanup in line 2102 to ensure temporary state is cleared, but this bug removes it causing state pollution across different filter field selections.",
+   "file_path": "apps/shade/src/components/ui/filters.tsx",
+   "start_line": 2098,
+   "end_line": 2101,
+   "problematic_code_snippet": "                                    onClose={() => {\n                                        setAddFilterOpen(false);\n                                        setSelectedFieldKeyForOptions(null);\n                                    }}"
+  },
+  {
+   "title": "autoCloseOnSelect fails to close popover in non-inline multiselect mode",
+   "description": "The autoCloseOnSelect feature was implemented inconsistently across inline and non-inline modes. In non-inline Popover mode (line 1135-1137), when a multiselect option is selected with autoCloseOnSelect enabled, the code only calls onClose?.() without calling setOpen(false). Since SelectOptionsPopover can be instantiated without an onClose prop (line 1598), the optional chaining results in a no-op, leaving the popover open despite user selection. This breaks the intended UX where the dropdown should close immediately after selection when autoCloseOnSelect is configured. The inline mode implementation (line 1272-1273) correctly calls handleClose() which performs both operations.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "// Auto-close if configured\nif (field.autoCloseOnSelect) {\n    onClose?.();\n}\n// For multiselect, don't close the popover to allow multiple selections"
+  },
+  {
+   "title": "Double-quoted string literal used in JSX attribute",
+   "description": "Rule requires single quotes for string literals. The updated JSX uses a double-quoted string for the className attribute in the modified line.",
+   "file_path": "apps/shade/src/components/ui/filters.tsx",
+   "start_line": 943,
+   "end_line": 943,
+   "problematic_code_snippet": "<div className=\"flex items-center self-stretch border border-r-[0px] px-3 text-sm text-muted-foreground\">",
+   "rule_name": "Code Must Use Single Quotes for Strings"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "cf390118075bbc6c43ee25dd4b2dfdfafa86177b",
+ "diff_chars": 15945,
+ "diff_lines": 302,
+ "user_prompt_chars": 16664,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 202671,
+ "wall_ms": 205006,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "selectedOptionsClassName|autoCloseOnSelect|handleClose|setSelectedFieldKeyForOptions|animation-none|PenLine|FunnelPlus"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost/apps/shade/src/components/ui/filters.tsx"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost/apps/shade/src/components/ui/filters.tsx"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost/apps/stats/src/views/Stats/components/stats-filter.tsx"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "border-r-\\[0px\\]|sm: 'h-8 px-2|onClose={\\(\\) => \\{|setOpen\\(false\\);$"
+  },
+  {
+   "name": "Grep",
+   "detail": "border-r-\\[0px\\]|sm: 'h-8 px-2|setOpen\\(false\\);"
+  },
+  {
+   "name": "Grep",
+   "detail": "SelectOptionsPopover"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 13,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 10,
+ "turn_trace": {
+  "assistant_lines": 24,
+  "unique_message_ids": 10,
+  "lines_without_id": 0,
+  "tool_use_blocks": 13
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.446349296,
+ "spend_post_usd": 6.470597286,
+ "cost_settled": true,
+ "cost_wait_ms": 366,
+ "cost_usd": 0.024247990000000108,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 14,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.017150944999999997,
+ "usage": {
+  "input_tokens": 20,
+  "cache_creation_input_tokens": 31003,
+  "cache_read_input_tokens": 402057,
+  "output_tokens": 18506,
+  "output_tokens_details": {
+   "thinking_tokens": 9730
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 31003
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 20,
+   "outputTokens": 18506,
+   "cacheReadInputTokens": 402057,
+   "cacheCreationInputTokens": 31003,
+   "webSearchRequests": 0,
+   "costUSD": 0.017150944999999997,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 9730,
+   "cacheCreationEphemeral5mInputTokens": 31003,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 11,
+   "title": "Code Review Bench PR #25574 - Analytics filter refinements",
+   "author": "",
+   "baseSha": "b27cd6fa0ea2e67dccaf7a07449e9c4fff3a237a",
+   "headSha": "cf390118075bbc6c43ee25dd4b2dfdfafa86177b"
+  },
+  "summary": "This PR polishes the analytics filter UI. In the shared `@tryghost/shade` filters component it adds an `autoCloseOnSelect` field option, makes popover content width and close animation configurable, resets the search box and the selected-field state on close, and tweaks padding and borders. In the Stats app it switches the filter add button to an icon-only FunnelPlus button, changes the value count badges to plain mono text, hides selected icons on the UTM and source fields, makes the audience field a single-pick auto-close multiselect, and nudges the stats header padding.\n\nThe UI direction is reasonable, but a few changes are unsafe as written. The add button now renders with no visible text and no accessible name, the single-select path in the shared popover lost its `handleClose()` call so the new search reset never runs there, and two Tailwind classes that were meant to suppress the close animation (`!animation-none`) are not real utilities. There is also a dead ternary and a `var` left in place of `const`. None of these are catastrophic, but together they justify requesting changes.",
+  "verdict": "request_changes",
+  "verdictRationale": "The icon-only add button with empty default labels is a real accessibility and usability regression, and it is the most visible change in the PR. The removed `handleClose()` in the single-select popover path changes close behaviour for existing filter chips and leaves stale search text. The `!animation-none` classes do nothing, so the close-animation change does not do what its comment and intent say. The rest are low-risk cleanups. I could not confirm that the `FunnelPlus` icon exists in the lucide version the stats app resolves (`^0.553.0`); the local install I found is from another project, so that should be checked at build time.",
+  "architecture": {
+   "overview": "The stats analytics page renders its filter bar through the shared `Filters` component in `apps/shade/src/components/ui/filters.tsx`. `StatsFilter` in `apps/stats/src/views/Stats/components/stats-filter.tsx` builds the grouped field config (audience, post, source, and UTM fields) and passes it along with the current filters and an `onChange` handler. The shared component renders the add button and popover, and it delegates value selection to `SelectOptionsPopover` (inline when used from the add flow, popover when editing an existing chip) and `FilterValueSelector`.\n\nThis PR changes three layers. In the shared component it adds an `autoCloseOnSelect` option, makes popover width and close styling configurable, blanks the default English add-button labels, and resets search and selected-field state on close. In the stats app it restyles the add button and count badges, hides selected icons on some fields, and turns the audience field into an auto-closing multiselect. The stats header gets extra padding.",
+   "steps": [
+    "Entry point: `StatsFilter` builds `groupedFields` (audience, post, source, and UTM fields) and renders `<Filters>` with an icon and text for the add button. This is where the empty-label and icon-only change lands.",
+    "In `Filters` (shade), the add button renders `addButtonIcon` plus `addButtonText || mergedI18n.addFilter`. The PR blanks both the stats-level text and the `DEFAULT_I18N` defaults, so the button can end up with no text and no title.",
+    "Choosing a field opens `SelectOptionsPopover` in inline mode. For multiselect fields with `autoCloseOnSelect`, the selection calls `onClose`, which now also clears `selectedFieldKeyForOptions` in `Filters`.",
+    "`FilterValueSelector` (editing an existing chip) renders `SelectOptionsPopover` in popover mode. The single-select branch no longer calls `handleClose()`, so the search reset and `onClose` are skipped on that path.",
+    "Styling: `PopoverContent` widths now come from `field.className` or `popoverContentClassName` with a `w-[200px]` fallback, and close-animation overrides are added as Tailwind arbitrary classes. Some of those class names do not exist as utilities."
+   ],
+   "diagrams": [
+    {
+     "title": "Filter popover flow after this PR",
+     "kind": "flowchart",
+     "description": "How StatsFilter feeds the shared Filters component, and which popover paths handle selection and close.",
+     "mermaid": "flowchart LR\n  SF[StatsFilter<br/>stats-filter.tsx] -->|fields, filters, onChange| F[Filters<br/>shade filters.tsx]\n  F -->|add button| AB[Add button<br/>icon only after PR]\n  F -->|field chosen| SOI[SelectOptionsPopover<br/>inline]\n  SOI -->|autoCloseOnSelect| OC[onClose<br/>clears addFilterOpen and selected key]\n  F -->|edit existing chip| FVS[FilterValueSelector]\n  FVS --> SOP[SelectOptionsPopover<br/>popover mode]\n  SOP -->|single select| SO[setOpen false only<br/>handleClose removed]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Add filter button is icon-only with no accessible name",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The PR blanks the English defaults for the add button and then leaves the stats-level text in an empty ternary, so the button renders only its icon.\n\n::code{file=\"apps/stats/src/views/Stats/components/stats-filter.tsx\" lines=\"496-505\"}\n\n`addButtonText={filters.length ? '' : ''}` always evaluates to `''`. In `Filters` the button renders `{addButtonText || mergedI18n.addFilter}`, and `addFilter` is now `''` in `DEFAULT_I18N`. The `title` (`addFilterTitle`) is also `''`. The result is a `<button>` with only an SVG icon and no `aria-label`, `title`, or text, which screen readers announce as an unlabelled button. Sighted users also lose the \"Add filter\" / \"Filter\" cue that was there before.\n\n::callout{type=\"warning\"}\nThe `DEFAULT_I18N` change is global to the shared `@tryghost/shade` filters component, so any other consumer that relies on the defaults gets the same regression.\n\nIf icon-only is the goal, keep an `aria-label` / `title` on the button. Otherwise, restore the labels and drop the dead ternary.",
+    "files": [
+     "apps/stats/src/views/Stats/components/stats-filter.tsx",
+     "apps/shade/src/components/ui/filters.tsx"
+    ],
+    "fixPrompt": "In `apps/stats/src/views/Stats/components/stats-filter.tsx` (around lines 497-498), the `addButtonText={filters.length ? '' : ''}` prop is a dead ternary that blanks the add-filter button label. Combined with the empty `addFilter` and `addFilterTitle` defaults in `apps/shade/src/components/ui/filters.tsx` (around lines 105 and 122), the button has no accessible name. Restore a visible label (for example, the original 'Add filter' / 'Filter' text) or, if the button must stay icon-only, give the button an `aria-label` and `title` through the `Filters` props. Remove the dead ternary either way. Do not change other consumers' defaults silently; keep the shade defaults non-empty.",
+    "commentAnchor": {
+     "file": "apps/stats/src/views/Stats/components/stats-filter.tsx",
+     "lineStart": 497,
+     "lineEnd": 498
+    }
+   },
+   {
+    "title": "Single-select path in the popover no longer calls handleClose",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The single-select branch in the popover-mode `SelectOptionsPopover` used to call `setOpen(false); handleClose();`. The PR removes `handleClose()`, so the new search reset (`setSearchInput('')`) and the `onClose` callback no longer run on that path.\n\n::diff{file=\"apps/shade/src/components/ui/filters.tsx\" lines=\"1264-1280\"}\n\nThis path is reached from `FilterValueSelector` (line ~1598), which edits an existing chip. After picking a value, the popover closes via `setOpen(false)`, but `onOpenChange` is not called, so `searchInput` keeps its old text. Reopening the chip then shows the previous search, and the `onClose` callback is never invoked. The `handleClose` change to clear search was added in this PR specifically to prevent that, so the removal undoes part of it.\n\nThe PR description does not explain the removal, so it may be an accidental regression.",
+    "files": [
+     "apps/shade/src/components/ui/filters.tsx"
+    ],
+    "fixPrompt": "In `apps/shade/src/components/ui/filters.tsx`, the non-inline single-select `onSelect` in `SelectOptionsPopover` (around lines 1275-1278) now only calls `setOpen(false)`. Restore the `handleClose()` call so the search input is cleared and `onClose` fires, matching the removed-items path around line 1240-1243 and the multiselect auto-close path around line 1273. If the removal was intentional (for example, to avoid double-calling `onClose` from `FilterValueSelector`), add a comment explaining why and confirm that the stale search text no longer appears on reopen.",
+    "commentAnchor": {
+     "file": "apps/shade/src/components/ui/filters.tsx",
+     "lineStart": 1275,
+     "lineEnd": 1278
+    }
+   },
+   {
+    "title": "`!animation-none` is not a Tailwind utility, so the close-animation override is a no-op",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The PR adds `data-[state=closed]:!animation-none data-[state=closed]:!duration-0` to three popovers, apparently to suppress the close animation. The class `animation-none` does not exist in Tailwind 3.4 (the utility is `animate-none`), so Tailwind emits no CSS for it.\n\n::diff{file=\"apps/shade/src/components/ui/filters.tsx\" lines=\"1201-1207\"}\n\nThe base popover (`apps/shade/src/components/ui/popover.tsx`) applies `data-[state=closed]:animate-out` and `fade-out-0` / `zoom-out-95`. The `!duration-0` in this PR sets `transition-duration`, while `tailwindcss-animate` drives exit animations through `animation-duration`, so it does not cancel them either. The close animation most likely still runs on all three popovers (here, line ~1644, and the `Filters` popover around line 2081). The comment-free intent is unclear, so the fix should be verified in a browser.",
+    "files": [
+     "apps/shade/src/components/ui/filters.tsx"
+    ],
+    "fixPrompt": "In `apps/shade/src/components/ui/filters.tsx`, three `PopoverContent` class strings add `data-[state=closed]:!animation-none data-[state=closed]:!duration-0` (around lines 1204, 1644, and 2081). `animation-none` is not a Tailwind utility, so the override does nothing. The base `PopoverContent` in `apps/shade/src/components/ui/popover.tsx` uses `data-[state=closed]:animate-out` from `tailwindcss-animate`. If the goal is to suppress close animations, use `data-[state=closed]:!animate-none` (Tailwind core) and check that `tailwind-merge` keeps it. Otherwise remove the classes. Verify the result by opening and closing a filter popover in the stats app. Keep the three class strings consistent.",
+    "commentAnchor": {
+     "file": "apps/shade/src/components/ui/filters.tsx",
+     "lineStart": 1201,
+     "lineEnd": 1207
+    }
+   },
+   {
+    "title": "Filters popover width now ignores popoverContentClassName when a field sets className",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The new width logic in `Filters` replaces the old `cn('w-[200px] p-0', popoverContentClassName)` with a fallback chain.\n\n::diff{file=\"apps/shade/src/components/ui/filters.tsx\" lines=\"2078-2084\"}\n\nWith `selectedFieldForOptions?.className || popoverContentClassName || 'w-[200px]'`, any `popoverContentClassName` passed to `Filters` is dropped as soon as the selected field sets `className`. Previously both were applied. The `SelectOptionsPopover` change has the same shape (`field.className || 'w-[200px]'`), so a field `className` that contains no width now also loses the default width. The stats `post` field sets both `className: 'w-80'` and `popoverContentClassName: 'w-80'`, which masks the problem today, but any future field that sets only non-width classes in `className` loses the default width.\n\nThe fix is either to merge the two classes (`cn('p-0 ...', popoverContentClassName, field.className)` with the width default only when neither sets one) or to document the precedence.",
+    "files": [
+     "apps/shade/src/components/ui/filters.tsx",
+     "apps/stats/src/views/Stats/components/stats-filter.tsx"
+    ],
+    "fixPrompt": "In `apps/shade/src/components/ui/filters.tsx`, the `Filters` `PopoverContent` (around lines 2080-2083) and `SelectOptionsPopover` `PopoverContent` (around lines 1203-1206) choose the width with `||` chains. That drops `popoverContentClassName` whenever the selected field sets `className`, and drops the `w-[200px]` default whenever `className` has no width. Change both to merge classes with `cn` and apply the width default only when neither `className` nor `popoverContentClassName` contains a `w-` class. Keep the `p-0` and close-animation classes. The stats post field in `apps/stats/src/views/Stats/components/stats-filter.tsx` (lines 469-470) sets both to `w-80`, so it should keep rendering at 320px after the change.",
+    "commentAnchor": {
+     "file": "apps/shade/src/components/ui/filters.tsx",
+     "lineStart": 2080,
+     "lineEnd": 2083
+    }
+   },
+   {
+    "title": "`var` used in place of `const` in the multiselect inline handler",
+    "severity": "low",
+    "category": "style",
+    "body": "The inline multiselect handler was changed from `const newValues` to `var newValues`. Nothing in the diff needs function-scoped hoisting, and the rest of the file uses `const`. Lint rules such as `no-var` will flag it, and the change adds no value.\n\n::diff{file=\"apps/shade/src/components/ui/filters.tsx\" lines=\"1123-1133\"}",
+    "files": [
+     "apps/shade/src/components/ui/filters.tsx"
+    ],
+    "fixPrompt": "In `apps/shade/src/components/ui/filters.tsx` (around line 1125), the inline multiselect `onSelect` changed `const newValues` to `var newValues`. Change it back to `const`. The other occurrence in the same component (around line 1266) already uses `const`.",
+    "commentAnchor": {
+     "file": "apps/shade/src/components/ui/filters.tsx",
+     "lineStart": 1125,
+     "lineEnd": 1125
+    }
+   },
+   {
+    "title": "Audience auto-close changes the multiselect behaviour",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The audience field is now a multiselect with `autoCloseOnSelect: true`, so the popover closes after the first pick. This is a deliberate UX choice that matches the `autoCloseOnSelect` comment (\"even for multiselect types\"). It means users can no longer add several audience values in one popover session. The option is opt-in per field, so other multiselects keep their behaviour.\n\n::code{file=\"apps/stats/src/views/Stats/components/stats-filter.tsx\" lines=\"447-456\"}",
+    "files": [
+     "apps/stats/src/views/Stats/components/stats-filter.tsx",
+     "apps/shade/src/components/ui/filters.tsx"
+    ]
+   },
+   {
+    "title": "Good: onClose now clears the selected field key",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The `Filters` `onClose` handler now clears `selectedFieldKeyForOptions` as well as closing the popover. Before, closing from inside the options view could leave a stale selected field behind, so reopening the add menu showed the previous field's options. This is a small, correct fix.\n\n::code{file=\"apps/shade/src/components/ui/filters.tsx\" lines=\"2098-2101\"}",
+    "files": [
+     "apps/shade/src/components/ui/filters.tsx"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":11,\"title\":\"Code Review Bench PR #25574 - Analytics filter refinements\",\"author\":\"\",\"baseSha\":\"b27cd6fa0ea2e67dccaf7a07449e9c4fff3a237a\",\"headSha\":\"cf390118075bbc6c43ee25dd4b2dfdfafa86177b\"},\"summary\":\"This PR polishes the analytics filter UI. In the shared `@tryghost/shade` filters component it adds an `autoCloseOnSelect` field option, makes popover content width and close animation configurable, resets the search box and the selected-fie",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

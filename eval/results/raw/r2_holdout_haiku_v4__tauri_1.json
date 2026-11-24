@@ -1,0 +1,422 @@
+{
+ "id": "tauri#1",
+ "repo": "tauri",
+ "num": 1,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:36:20.257Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "Android function missing target_os guard",
+   "description": "The rule requires platform-specific APIs to use #[cfg(target_os = \"...\")] or similar conditional compilation attributes. The generate_tauri_properties function is Android-specific but lacks proper conditional compilation guards, causing it to be compiled on all platforms where it may fail.",
+   "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+   "start_line": 625,
+   "end_line": 629,
+   "problematic_code_snippet": "pub fn generate_tauri_properties(\n  config: &AndroidConfig,\n  tauri_config: &TauriConfig,\n  dev: bool,\n) -> Result<()> {\n  let app_tauri_properties_path = config.project_dir().join(\"app\").join(\"tauri.properties\");",
+   "rule_name": "Platform-Specific Code Must Use Appropriate Conditional Compilation"
+  },
+  {
+   "title": "Auto-increment version code incorrectly applied in dev mode",
+   "description": "The auto-increment version code feature is now active during development builds, which violates the design intention stated in the config schema documentation. The condition `if tauri_config.bundle.android.auto_increment_version_code && !dev` has been changed to remove the `&& !dev` check (line 635). This means dev builds will now increment and persist the version code to tauri.properties, causing version code drift during development and potentially exhausting the version code space prematurely. The feature should only increment during production builds to avoid polluting the version history with development iterations.",
+   "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+   "start_line": 635,
+   "end_line": 646,
+   "problematic_code_snippet": "    if tauri_config.bundle.android.auto_increment_version_code {\n      let last_version_code = std::fs::read_to_string(&app_tauri_properties_path)\n        .ok()\n        .and_then(|content| {\n          content\n            .lines()\n            .find(|line| line.starts_with(\"tauri.android.versionCode=\"))\n            .and_then(|line| line.split('=').nth(1))\n            .and_then(|s| s.trim().parse::<u32>().ok())\n        });\n      let new_version_code = last_version_code.map(|v| v.saturating_add(1)).unwrap_or(1);\n      app_tauri_properties.push(format!(\"tauri.android.versionCode={new_version_code}\"));"
+  },
+  {
+   "title": "Version code validation occurs before dev mode clamping causing build failures",
+   "description": "The order of operations for version code validation and dev mode clamping has been reversed, causing validation to fail for valid semver versions in development mode. Previously, the code clamped the version_code in dev mode BEFORE validation (line 652-654 originally), but now validation happens first (lines 652-661) and clamping occurs after (lines 663-665). This means that if a semver version produces a version_code greater than 2100000000, the build will fail with an error even in dev mode where it should be clamped to a valid range. For example, a version like \"3.0.0\" produces version_code 3000000000, which will now throw an error in dev builds instead of being safely clamped.",
+   "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+   "start_line": 649,
+   "end_line": 667,
+   "problematic_code_snippet": "    } else if let Ok(version) = Version::parse(version) {\n      let mut version_code = version.major * 1000000 + version.minor * 1000 + version.patch;\n\n      if version_code == 0 {\n        crate::error::bail!(\n          \"You must change the `version` in `tauri.conf.json`. The default value `0.0.0` is not allowed for Android package and must be at least `0.0.1`.\"\n        );\n      } else if version_code > 2100000000 {\n        crate::error::bail!(\n          \"Invalid version code {}. Version code must be between 1 and 2100000000. You must change the `version` in `tauri.conf.json`.\",\n          version_code\n        );\n      }\n\n      if dev {\n        version_code = version_code.clamp(1, 2100000000);\n      }"
+  },
+  {
+   "title": "File comparison logic always evaluates to not-equal due to operand order",
+   "description": "The file content comparison has a subtle logical error where the operands are reversed in the inequality check at line 677. The code reads the existing file content into variable `o` and checks `app_tauri_properties_content != o` instead of `o != app_tauri_properties_content`. While mathematically equivalent for inequality, this changes the semantic meaning in Rust's comparison evaluation and may cause unnecessary file writes. More critically, this breaks the optimization that prevents redundant writes when content hasn't changed, potentially causing unnecessary build triggers and file system churn on every build even when the properties haven't actually changed.",
+   "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+   "start_line": 676,
+   "end_line": 682,
+   "problematic_code_snippet": "    if std::fs::read_to_string(&app_tauri_properties_path)\n      .map(|o| app_tauri_properties_content != o)\n      .unwrap_or(true)\n    {\n      write(&app_tauri_properties_path, app_tauri_properties_content)\n        .context(\"failed to write tauri.properties\")?;\n    }"
+  },
+  {
+   "title": "Auto-increment version code lacks maximum value validation",
+   "description": "The auto-increment feature increments the version code using saturating_add(1) without validating against Android's maximum version code limit of 2,100,000,000. When auto-increment is enabled and the version code approaches or exceeds this limit through repeated builds, it will produce invalid version codes that violate Android platform constraints. This causes silent corruption of the version code until it eventually triggers build failures. The semver-derived path has proper validation (lines 652-661), but the auto-increment path bypasses all validation checks.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "let new_version_code = last_version_code.map(|v| v.saturating_add(1)).unwrap_or(1);\napp_tauri_properties.push(format!(\"tauri.android.versionCode={new_version_code}\"));"
+  },
+  {
+   "title": "Public function added without documentation",
+   "description": "A new public API (`pub fn generate_tauri_properties`) was introduced without any `///` documentation comments explaining purpose/params/behavior, violating the requirement that public APIs must be documented.",
+   "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+   "start_line": 624,
+   "end_line": 628,
+   "problematic_code_snippet": "pub fn generate_tauri_properties(\n  config: &AndroidConfig,\n  tauri_config: &TauriConfig,\n  dev: bool,\n) -> Result<()> {",
+   "rule_name": "Public APIs Must Include Documentation Comments"
+  },
+  {
+   "title": "Use of unwrap() on lock/as_ref in fallible path",
+   "description": "The added code uses `.unwrap()` twice (`tauri_config.lock().unwrap().as_ref().unwrap()`), which can panic and violates the rule to avoid unwrap/expect for fallible operations in favor of returning/propagating a `Result`.",
+   "file_path": "crates/tauri-cli/src/mobile/android/build.rs",
+   "start_line": 182,
+   "end_line": 187,
+   "problematic_code_snippet": "generate_tauri_properties(\n    &config,\n    tauri_config.lock().unwrap().as_ref().unwrap(),\n    false,\n  )?;",
+   "rule_name": "Functions Should Return Result Types for Fallible Operations"
+  },
+  {
+   "title": "Use of unwrap() on lock/as_ref in fallible path",
+   "description": "The added code uses `.unwrap()` twice (`tauri_config.lock().unwrap().as_ref().unwrap()`), which can panic and violates the rule to avoid unwrap/expect for fallible operations in favor of returning/propagating a `Result`.",
+   "file_path": "crates/tauri-cli/src/mobile/android/dev.rs",
+   "start_line": 273,
+   "end_line": 273,
+   "problematic_code_snippet": "generate_tauri_properties(config, tauri_config.lock().unwrap().as_ref().unwrap(), true)?;",
+   "rule_name": "Functions Should Return Result Types for Fallible Operations"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "9e67cf3e6976ed16f7908ac29deaebd34f5bedc1",
+ "diff_chars": 14000,
+ "diff_lines": 346,
+ "user_prompt_chars": 15713,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 112288,
+ "wall_ms": 114613,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "generate_gradle_files|generate_tauri_properties|tauri_config\\b.*lock|auto_increment_version_code|is_dev\\(\\)"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri-cli/src/mobile/android/build.rs"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri-cli/src/mobile/android/dev.rs"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri-cli/src/mobile/android/mod.rs"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri-cli/src/mobile/android/android_studio_script.rs"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 22,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.569764087,
+ "spend_post_usd": 0.583843212,
+ "cost_settled": true,
+ "cost_wait_ms": 345,
+ "cost_usd": 0.01407912499999997,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.018482605,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 30735,
+  "cache_read_input_tokens": 212703,
+  "output_tokens": 25025,
+  "output_tokens_details": {
+   "thinking_tokens": 13728
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 30735
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 25025,
+   "cacheReadInputTokens": 212703,
+   "cacheCreationInputTokens": 30735,
+   "webSearchRequests": 0,
+   "costUSD": 0.018482605,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 13728,
+   "cacheCreationEphemeral5mInputTokens": 30735,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 1,
+   "title": "Code Review Bench PR #14194 - feat(android): add auto_increment_version_code option for Android builds",
+   "author": "unknown",
+   "baseSha": "5d202503b0830d69bdc55f689ce1ddf6914a54c7",
+   "headSha": "9e67cf3e6976ed16f7908ac29deaebd34f5bedc1"
+  },
+  "summary": "This PR adds an opt-in `bundle.android.autoIncrementVersionCode` config flag (default `false`) and, to support it, moves the generation of `app/tauri.properties` (versionName/versionCode) out of `tauri-build`'s cargo build script and into a new shared function `generate_tauri_properties` in the CLI (`crates/tauri-cli/src/mobile/android/mod.rs`). That function is called from `tauri android build` and `tauri android dev`. The config struct, JSON schemas (both copies are byte-identical) and changefile are updated consistently.\n\nThe design is reasonable: the feature is opt-in, the schema and doc comment are in sync, and running one helper from both build and dev paths removes duplicated version logic. However, the move introduces regressions the PR does not account for. Dev-mode validation order changed so `0.0.0` now errors under `tauri android dev`. Gradle/Android Studio builds no longer refresh `tauri.properties` at all. The auto-increment path silently resets to `1` when the file is missing or unparseable, which is the default state for a fresh clone given the template `.gitignore`. No tests cover any of the new logic.",
+  "verdict": "request_changes",
+  "verdictRationale": "Three high-severity problems should be fixed before merge: (1) the dev-mode validation reorder breaks `tauri android dev` for versions that previously worked, (2) Android Studio / direct Gradle builds lose their versionName/versionCode refresh because the only writer moved into the CLI, and (3) auto-increment silently restarts at 1 when the file is absent, which can produce a non-monotonic versionCode and a rejected Play upload. The design itself is sound and the fixes are small.",
+  "architecture": {
+   "overview": "Before this PR, `tauri-build` (run from the app's cargo build script) wrote both `tauri.settings.gradle` / `tauri.build.gradle.kts` and `app/tauri.properties` whenever `TAURI_ANDROID_PROJECT_PATH` was set. Gradle's `app/build.gradle.kts` reads `tauri.properties` for `versionCode` and `versionName`. The CLI's `tauri android build|dev` commands run `ensure_init`, then cargo build, and are the only paths that run the CLI's own logic.\n\nThis PR splits that responsibility. `tauri-build` now only writes the gradle include/build files. `tauri.properties` is produced by a new CLI function, `generate_tauri_properties(config, tauri_config, dev)`, which is called from `android/build.rs` (dev=false) and `android/dev.rs` (dev=true) before `build::setup`. When `autoIncrementVersionCode` is enabled, the function reads the previous versionCode from the existing `tauri.properties` and writes last+1 on every invocation.",
+   "steps": [
+    "Entry points: `tauri android build` (`crates/tauri-cli/src/mobile/android/build.rs`) and `tauri android dev` (`dev.rs`) load the merged `tauri.conf.json` and build the `AndroidConfig`.",
+    "New shared writer: `generate_tauri_properties` in `crates/tauri-cli/src/mobile/android/mod.rs` decides versionName/versionCode (auto-increment > explicit `version_code` > semver-derived), validates the semver-derived code, and writes `app/tauri.properties` only when content changes.",
+    "Config surface: `AndroidConfig.auto_increment_version_code` in `crates/tauri-utils/src/config.rs` (default false), exported to `config.schema.json` in both the CLI and schema-generator copies.",
+    "Removed writer: `crates/tauri-build/src/mobile.rs` no longer emits `tauri.properties` or its `rerun-if-changed`, so builds started outside the CLI (Android Studio script, direct Gradle) do not refresh it.",
+    "Gradle consumer (unchanged): `templates/mobile/android/app/build.gradle.kts` reads `tauri.properties` with defaults of `1` and `1.0` if the file is missing, and `.gitignore` excludes it by default."
+   ],
+   "diagrams": [
+    {
+     "title": "Version properties flow after this PR",
+     "kind": "flowchart",
+     "description": "Shows which entry points still write app/tauri.properties and which path no longer does.",
+     "mermaid": "flowchart LR\n  A[tauri android build] --> B[generate_tauri_properties dev=false]\n  A2[tauri android dev] --> B2[generate_tauri_properties dev=true]\n  B --> C[app/tauri.properties]\n  B2 --> C\n  C --> D[app/build.gradle.kts reads versionCode and versionName]\n  E[Android Studio script / Gradle cargo build] --> F[tauri-build generate_gradle_files]\n  F --> G[tauri.settings.gradle and tauri.build.gradle.kts]\n  F -. properties write removed .-> C"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Dev-mode validation reordered: version 0.0.0 now fails `tauri android dev`",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The base code clamped the semver-derived code to `[1, 2100000000]` in dev mode *before* the `== 0` and `> 2100000000` checks, so a `0.0.0` version in dev became `1` and built fine. This PR moved the clamp *after* the checks. Under `tauri android dev`, `0.0.0` (the default many projects still have) now bails with \"You must change the `version`...\", and an oversized version errors instead of being clamped.\n\n::diff{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"652-665\"}\n\nThe dev clamp should run first so dev builds stay permissive, as they were before.\n\n::suggestion{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"652-665\"}\nif dev {\n  version_code = version_code.clamp(1, 2100000000);\n}\n\nif version_code == 0 {\n  crate::error::bail!(\n    \"You must change the `version` in `tauri.conf.json`. The default value `0.0.0` is not allowed for Android package and must be at least `0.0.1`.\"\n  );\n} else if version_code > 2100000000 {\n  crate::error::bail!(\n    \"Invalid version code {}. Version code must be between 1 and 2100000000. You must change the `version` in `tauri.conf.json`.\",\n    version_code\n  );\n}\n",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs",
+     "crates/tauri-build/src/mobile.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/mod.rs`, inside `generate_tauri_properties` (around lines 652-667), the semver-derived version code is validated (`== 0` and `> 2100000000` bail) before the `if dev { clamp(1, 2100000000) }` step. The original code (visible in the base commit's `crates/tauri-build/src/mobile.rs`) clamped in dev mode first, so `0.0.0` and oversized versions were accepted under `tauri android dev`. Move the `if dev` clamp above the two validation checks so dev builds stay permissive while release builds still error. Keep the existing error messages.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "lineStart": 652,
+     "lineEnd": 665
+    }
+   },
+   {
+    "title": "Gradle and Android Studio builds no longer refresh tauri.properties",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The only place that wrote `app/tauri.properties` on every cargo build was `tauri-build`, which ran for any build that set `TAURI_ANDROID_PROJECT_PATH`. That writer is removed here, and the replacement only runs from the CLI's `build` and `dev` commands. The Android Studio path (`tauri android android-studio-script`, in `android_studio_script.rs`) calls `target.build(...)` directly and never calls `generate_tauri_properties`. So a user who changes `version` in `tauri.conf.json` and then builds from Android Studio or Gradle gets a stale `versionName`/`versionCode`. On a fresh checkout, Gradle falls back to `1` and `1.0`.\n\n::diff{file=\"crates/tauri-build/src/mobile.rs\" lines=\"10-11\"}\n\nEither keep the `tauri.properties` write in `tauri-build` (computing the same value from the config it already receives) or call `generate_tauri_properties` from the Android Studio script before the cargo build. Also call this out in the changefile, since it is a user-visible behavior change.",
+    "files": [
+     "crates/tauri-build/src/mobile.rs",
+     "crates/tauri-build/src/lib.rs",
+     "crates/tauri-cli/src/mobile/android/android_studio_script.rs"
+    ],
+    "fixPrompt": "This PR removed the `tauri.properties` write (versionName/versionCode) from `crates/tauri-build/src/mobile.rs` (`generate_gradle_files`, now at line 10 with the `config` parameter dropped). It is now only generated by the CLI's `build`/`dev` commands via `generate_tauri_properties` in `crates/tauri-cli/src/mobile/android/mod.rs`. The Android Studio script path (`crates/tauri-cli/src/mobile/android/android_studio_script.rs`, which calls `target.build(...)` directly) never calls it, so Gradle-driven builds keep stale versionName/versionCode. Restore the behavior: either call `generate_tauri_properties` from the android-studio-script command before building, or keep the write in tauri-build by passing the needed version values back in. Pick the option that keeps the single shared helper, and make sure `tauri.properties` is refreshed in every Gradle-triggered build.",
+    "commentAnchor": {
+     "file": "crates/tauri-build/src/mobile.rs",
+     "lineStart": 10,
+     "lineEnd": 11
+    }
+   },
+   {
+    "title": "Auto-increment silently restarts at 1 when tauri.properties is missing or unparseable",
+    "severity": "high",
+    "category": "correctness",
+    "body": "When `autoIncrementVersionCode` is true, the code reads the last versionCode from `app/tauri.properties`, and on any failure (missing file, unreadable file, non-`u32` value, a key with spaces around `=`) `.unwrap_or(1)` silently writes `versionCode=1`. The template `app/.gitignore` ignores `/tauri.properties` by default, so a fresh clone or CI checkout will always restart at `1`. Google Play rejects uploads whose versionCode does not increase, so this produces a hard-to-diagnose upload failure rather than a clear build error.\n\n::diff{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"635-646\"}\n\nWhen the file exists but yields no valid value, fail loudly. When the file is absent, the least surprising behavior is to surface a warning or error that tells the user to commit `tauri.properties`, not to silently use `1`.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs",
+     "crates/tauri-cli/templates/mobile/android/app/.gitignore",
+     "crates/tauri-utils/src/config.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/mod.rs`, the `auto_increment_version_code` branch of `generate_tauri_properties` (around lines 635-646) computes `last_version_code` with `.ok()` / `.and_then(...)` and then `.unwrap_or(1)`. A missing file, an unparseable value, or a differently formatted line silently produces `versionCode=1`, which can make Play Store uploads non-monotonic. Change it so that: (a) if `tauri.properties` exists but has no parseable `tauri.android.versionCode` value, return an error with context (use `crate::error::bail!` or `.context(...)`), and (b) if the file is absent, emit a clear warning or error telling the user to commit `tauri.properties` (the template `.gitignore` at `crates/tauri-cli/templates/mobile/android/app/.gitignore` ignores it). Follow the error style already used in this function (`.context(\"failed to write tauri.properties\")`).",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "lineStart": 635,
+     "lineEnd": 646
+    }
+   },
+   {
+    "title": "Auto-increment also bumps on every `tauri android dev` run and before the build can succeed",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The increment happens in `generate_tauri_properties`, which `dev.rs` calls on every `tauri android dev` session. Because the feature requires committing `tauri.properties` (per the schema doc), each dev session leaves a modified tracked file in the working tree. The increment also runs before `build::setup` and the cargo build, so a build that later fails still consumes a versionCode. Neither behavior is documented, and both create churn in version control and gaps in versionCode.\n\n::diff{file=\"crates/tauri-cli/src/mobile/android/dev.rs\" lines=\"274-274\"}\n\nConsider incrementing only for release `build` (where `dev` is false), or making the increment opt-in per command, and documenting the dev behavior. At minimum, state in the schema doc that every `dev` run also increments the value.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/dev.rs",
+     "crates/tauri-cli/src/mobile/android/build.rs",
+     "crates/tauri-cli/src/mobile/android/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/dev.rs` line 274, `generate_tauri_properties(config, ..., true)` runs on every `tauri android dev` invocation. When `bundle.android.autoIncrementVersionCode` is enabled, that call bumps the versionCode and rewrites the committed `app/tauri.properties`, dirtying the working tree and consuming a code even when the build later fails. Decide whether auto-increment should apply to dev at all. If not, skip the increment when `dev` is true (keep writing versionName and the non-incremented versionCode). Also update the doc comment in `crates/tauri-utils/src/config.rs` (lines 2932-2939) to describe the chosen behavior.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/dev.rs",
+     "lineStart": 274,
+     "lineEnd": 274
+    }
+   },
+   {
+    "title": "No tests for the new version-code logic",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The PR adds a non-trivial function with several branches: the auto-increment read/parse/increment, the precedence between auto-increment, explicit `version_code`, and semver-derived logic, the `0.0.0` and overflow errors, the dev clamp, and the write-if-changed check. None of it has test coverage. The base repo has no tests for the removed `tauri-build` path either, so the behavior changes above would not be caught by CI.\n\n::code{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"625-646\"}\n\nAdd unit tests for `generate_tauri_properties` against a temporary project directory. Cover: auto-increment from an existing file, first run with no file, an unparseable value, precedence over `version_code`, dev vs release for `0.0.0`, and the overflow boundary.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs"
+    ],
+    "fixPrompt": "`generate_tauri_properties` in `crates/tauri-cli/src/mobile/android/mod.rs` (around lines 625-684) has no unit tests. Add a `#[cfg(test)]` module that writes a tempdir layout (`<tmp>/app/`) and calls the function with a constructed `AndroidConfig`/`TauriConfig`. Assert the exact contents of `app/tauri.properties`. Cover: auto-increment from an existing `tauri.android.versionCode=N` file gives N+1; missing file behavior; unparseable value behavior; `autoIncrementVersionCode` overrides `versionCode`; `0.0.0` errors in release and is clamped in dev (once the ordering bug is fixed); and the 2100000000 boundary. Check for an existing test helper pattern in `crates/tauri-cli` before writing one.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "lineStart": 625,
+     "lineEnd": 646
+    }
+   },
+   {
+    "title": "Strict line parsing silently ignores valid-looking properties entries",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The reader matches `line.starts_with(\"tauri.android.versionCode=\")` on the raw line, with no trimming and no handling of Java properties syntax. A hand-edited file with leading whitespace or `tauri.android.versionCode = 5` is not matched, so the code falls back to `1`. The `split('=').nth(1)` step also drops everything after a second `=`. Gradle's `Properties.load` accepts all of these forms.\n\n::code{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"638-644\"}\n\nUse `line.trim()` and `strip_prefix` on the key, and split on the first `=` only, so the reader accepts the same syntax Gradle does.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/mod.rs`, the auto-increment reader in `generate_tauri_properties` (around lines 638-644) matches `starts_with(\"tauri.android.versionCode=\")` on untrimmed lines and then uses `split('=').nth(1)`. Gradle's `Properties.load` accepts whitespace around keys and separators. Update the reader to trim each line, strip the `tauri.android.versionCode` key (allowing optional whitespace before `=`), and parse the remainder, splitting on the first `=` only. Keep the code small and keep the existing `.parse::<u32>()`.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "lineStart": 638,
+     "lineEnd": 644
+    }
+   },
+   {
+    "title": "Auto-increment does not enforce the Play Store version-code limit",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The explicit `version_code` and semver paths are bounded to `1..=2100000000`, and the schema enforces the same range. The auto-increment path uses `saturating_add(1)` on a `u32` and then writes whatever comes out. Once the stored value reaches 2100000000, the next build writes 2100000001, or `u32::MAX` if the value is already at the top, instead of failing with the clear message the other paths give.\n\n::code{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"645-646\"}\n\nApply the same upper-bound check used in the semver branch to the incremented value, and report a clear error when the limit is reached.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/mod.rs` around lines 645-646, the auto-increment branch computes `new_version_code` with `saturating_add(1)` and pushes it without an upper-bound check. The explicit and semver paths reject values above 2100000000 with a clear `bail!`. Add the same check here: if the incremented value exceeds 2100000000, bail with a message that explains the limit and asks the user to adjust the versionCode, rather than writing an invalid value to `tauri.properties`.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "lineStart": 645,
+     "lineEnd": 646
+    }
+   },
+   {
+    "title": "Explicit version_code is silently ignored when auto-increment is on",
+    "severity": "low",
+    "category": "correctness",
+    "body": "When `autoIncrementVersionCode` is true, the `else if` chain never reads `bundle.android.versionCode`. A user who sets both gets the auto-incremented value with no warning, and the explicit value is discarded. The doc comment on the new field says it falls back to `version_code` only when the flag is false or unset, which supports this precedence, but nothing tells the user their explicit value is being ignored.\n\n::code{file=\"crates/tauri-cli/src/mobile/android/mod.rs\" lines=\"635-648\"}\n\nEither emit a warning when both are set, or reject the combination in config validation, so the precedence is visible rather than silent.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs",
+     "crates/tauri-utils/src/config.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/mod.rs` (`generate_tauri_properties`, around lines 635-648), when `tauri_config.bundle.android.auto_increment_version_code` is true, the explicit `tauri_config.bundle.android.version_code` is silently ignored by the `else if` chain. Add a `log::warn!` (or an error, if you prefer strict validation) when both are set, so the user knows the explicit value has no effect. Keep the precedence as documented in the `auto_increment_version_code` doc comment in `crates/tauri-utils/src/config.rs`.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "lineStart": 635,
+     "lineEnd": 648
+    }
+   },
+   {
+    "title": "Changefile marks tauri-build as a feature but the change removes behavior",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The changefile lists `tauri-build` as `minor:feat` and describes only the new config option. This PR also removes `tauri.properties` generation from `tauri-build` and changes dev-mode version validation in the CLI. Neither is mentioned, so release notes will not tell users that Android Studio and Gradle builds stop refreshing versionName/versionCode, or that `tauri android dev` now behaves differently for `0.0.0` (see the ordering finding).\n\n::diff{file=\"/.changes/auto-increment-android-version-code.md\" lines=\"1-8\"}\n\nUpdate the changefile text to describe the removed `tauri-build` behavior and any dev-mode validation change, or split the removal into its own changefile entry once the regressions are fixed.",
+    "files": [
+     ".changes/auto-increment-android-version-code.md"
+    ],
+    "fixPrompt": "The changefile `.changes/auto-increment-android-version-code.md` describes only the new `autoIncrementVersionCode` option. This PR also removes `tauri.properties` generation from `crates/tauri-build/src/mobile.rs` and changes dev-mode version validation in `crates/tauri-cli/src/mobile/android/mod.rs`. Update the changefile body to mention these behavior changes, or add a separate changefile for the `tauri-build` removal so release notes reflect it. Follow the format in `.changes/README.md`.",
+    "commentAnchor": {
+     "file": ".changes/auto-increment-android-version-code.md",
+     "lineStart": 1,
+     "lineEnd": 8
+    }
+   },
+   {
+    "title": "Shared helper with explicit dev flag removes duplicated version logic",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Moving the versionName/versionCode computation into one helper that both `android build` and `android dev` call is a good cleanup. The old code lived inside a build script that could only see the environment, so the dev/release distinction was inferred from `is_dev()`. Passing `dev` explicitly makes that choice visible at each call site. The helper also writes `tauri.properties` only when the content changes, which avoids needless Gradle rebuilds, a pattern the original `tauri-build` code already relied on.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/mod.rs",
+     "crates/tauri-cli/src/mobile/android/build.rs",
+     "crates/tauri-cli/src/mobile/android/dev.rs"
+    ]
+   },
+   {
+    "title": "Schema and config changes are consistent and opt-in",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The new `auto_increment_version_code` field defaults to `false`, uses the same `alias` style as `version_code`, and is exported to both copies of `config.schema.json` with identical content (the git blob hashes match). The default is `false`, so existing projects keep their current versionCode behavior. The schema doc comment matches the Rust doc comment, and the `default` blocks for `bundle` and `android` are updated.",
+    "files": [
+     "crates/tauri-utils/src/config.rs",
+     "crates/tauri-schema-generator/schemas/config.schema.json",
+     "crates/tauri-cli/config.schema.json"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":1,\"title\":\"Code Review Bench PR #14194 - feat(android): add auto_increment_version_code option for Android builds\",\"author\":\"unknown\",\"baseSha\":\"5d202503b0830d69bdc55f689ce1ddf6914a54c7\",\"headSha\":\"9e67cf3e6976ed16f7908ac29deaebd34f5bedc1\"},\"summary\":\"This PR adds an opt-in `bundle.android.autoIncrementVersionCode` config flag (default `false`) and, to support it, moves the generation of `app/tauri.properties` (versionName/versionCode) out",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 11
+}

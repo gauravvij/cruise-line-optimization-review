@@ -1,0 +1,314 @@
+{
+ "id": "firefox-ios#5",
+ "repo": "firefox-ios",
+ "num": 5,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7"
+ ],
+ "run_started_at": "2026-11-23T16:02:45.435Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Missing Mozilla Public License header",
+   "description": "The rule requires that every .swift file must begin with the exact Mozilla Public License header comment block at the top of the file. This file is missing the required header.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "import Redux\nimport Common\n\nstruct MoveTabData {\n    let originIndex: Int\n    let destinationIndex: Int\n    let isPrivate: Bool\n}",
+   "rule_name": "All Swift Files Must Include Mozilla Public License Header"
+  },
+  {
+   "title": "Off-by-one error in scroll index calculation",
+   "description": "The scroll position calculation uses `state.tabs.count` instead of `state.tabs.count - 1` when scrolling to the last tab. Since array indices are zero-based, accessing index equal to the count will cause an index out-of-bounds crash. This occurs when switching between normal and private tab panels when there's no selected tab, causing the app to attempt scrolling to a non-existent tab position. The original code correctly used `count - 1` to get the last valid index before the inactive tabs feature was removed.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/Tabs/State/TabsPanelState.swift",
+   "start_line": 130,
+   "end_line": 156,
+   "problematic_code_snippet": "if case .scrollToSelectedTab(let shouldAnimate) = scrollBehavior {\n    if let selectedTabIndex = state.tabs.firstIndex(where: { $0.isSelected }) {\n        return ScrollState(toIndex: selectedTabIndex, withAnimation: shouldAnimate)\n    } else if !state.tabs.isEmpty {\n        // If the user switches between the normal and private tab panels, there's a chance this subset of tabs does\n        // not contain a selected tab. In that case, we should scroll to the bottom of the panel.\n        // Note: Could optimize further by scrolling to the most recent tab if we had `lastExecutedTime` in our model\n        return ScrollState(toIndex: state.tabs.count, withAnimation: shouldAnimate)\n    }\n}"
+  },
+  {
+   "title": "Incorrect section index after inactive tabs removal",
+   "description": "The scrollToTab method hardcodes section index as 1, which was correct when there were two sections (inactive tabs at section 0 and regular tabs at section 1). After removing inactive tabs, there is only one section (section 0), so this will cause scroll operations to fail or crash when trying to access a non-existent section. This affects all scroll-to-tab functionality including selecting tabs, undoing tab closures, and panel switching. The TabDisplayDiffableDataSource now only creates a single section `.tabs`, but this scroll method wasn't updated accordingly.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayView.swift",
+   "start_line": 171,
+   "end_line": 181,
+   "problematic_code_snippet": "private func scrollToTab(_ scrollState: TabsPanelState.ScrollState) {\n    let indexPath = IndexPath(row: scrollState.toIndex, section: 1)\n    // Piping this into main thread let the collection view finish its layout process\n    DispatchQueue.main.async {\n        guard !self.collectionView.indexPathsForFullyVisibleItems.contains(indexPath) else { return }\n        guard self.collectionView.isValid(indexPath: indexPath) else { return }\n        self.collectionView.scrollToItem(at: indexPath,\n                                         at: .centeredVertically,\n                                         animated: scrollState.withAnimation)\n    }\n}"
+  },
+  {
+   "title": "Nested struct added without explicit access control modifier",
+   "description": "The newly added nested type `v147` is declared as `struct v147` without an explicit access control modifier (e.g., `public`/`internal`/`private`). Rule 11 requires explicit access control on declarations based on intended scope. Many other nested structs in this file use `public struct ...`, so this is an inconsistency and a clear violation in the added code.",
+   "file_path": "firefox-ios/Shared/Strings.swift",
+   "start_line": 8458,
+   "end_line": 8480,
+   "problematic_code_snippet": "        struct v147 {\n            public static let TabsTrayInactiveTabsSectionClosedAccessibilityTitle = MZLocalizedString(\n                key: \"TabsTray.InactiveTabs.SectionTitle.Closed.Accessibility.v103\",\n                tableName: nil,\n                value: \"View Inactive Tabs\",\n                comment: \"Accessibility title for the inactive tabs section button when section is closed. This section groups all tabs that haven't been used in a while.\")\n            ...\n        }",
+   "rule_name": "Rule 11: Properties and Methods Must Have Appropriate Access Control"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "c34f351b04f00b187124de6a4e68e0af5b4bdf47",
+ "diff_chars": 97185,
+ "diff_lines": 1866,
+ "user_prompt_chars": 99127,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 73090,
+ "wall_ms": 75418,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 12,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 14.920611477,
+ "spend_post_usd": 15.030339877,
+ "cost_settled": true,
+ "cost_wait_ms": 35,
+ "cost_usd": 0.10972839999999984,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.5112068000000001,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 58823,
+  "cache_read_input_tokens": 309759,
+  "output_tokens": 7755,
+  "output_tokens_details": {
+   "thinking_tokens": 735
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 58823
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5297,
+    "cache_creation_input_tokens": 601,
+    "cache_read_input_tokens": 77112,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 601,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 7755,
+   "cacheReadInputTokens": 309759,
+   "cacheCreationInputTokens": 58823,
+   "webSearchRequests": 0,
+   "costUSD": 0.5112068000000001,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 735,
+   "cacheCreationEphemeral5mInputTokens": 58823,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 5,
+   "title": "Code Review Bench PR #31168 - Remove FXIOS-14327 [Clean up] Inactive tabs removal part 2 (final)",
+   "author": "",
+   "baseSha": "1f91e4c42528ae8eeb3199e42006a3d3abefb2b0",
+   "headSha": "c34f351b04f00b187124de6a4e68e0af5b4bdf47"
+  },
+  "summary": "This PR finishes removing the Inactive Tabs feature. It deletes `InactiveTabsModel`, the inactive-tabs cell, header, footer and section manager, the inactive-tab Redux actions, middleware handlers and toast types, and the related accessibility IDs. It also drops the `.inactiveTabs(UUID)` section from the diffable data source, so the tab tray now has a single `.tabs` section. The removed localized strings move into `OldStrings.v147`, and the unit and UI tests are updated (XCUITest cell IDs change from `_1_x` to `_0_x`).\n\nMost of the cleanup is mechanical and fine. But the single-section change wasn't carried through everywhere. `TabDisplayView.scrollToTab` still hardcodes `section: 1`, which no longer exists, so scroll-to-tab silently stops working. The \"no selected tab\" fallback in `createTabScrollBehavior` changed from `count - 1` to `count`, which is out of bounds, and the existing unit test for it will now fail. `TabTrayStateTests` still references the deleted `.refreshInactiveTabs` case, so the test target won't compile. The PR also removes the MPL license header from `TabPanelAction.swift`.",
+  "verdict": "request_changes",
+  "verdictRationale": "Two problems need fixing before merge. Scroll-to-tab is broken in the tab tray (the code points at a section that no longer exists, and the fallback index is off by one). The test suite also fails: `TabTrayStateTests` won't compile, and one `TabsPanelStateTests` assertion now fails.",
+  "architecture": {
+   "overview": "The tab tray uses Redux. `TabDisplayView` sends a `TabPanelViewAction`, `TabManagerMiddleware` turns it into a `TabPanelMiddlewareAction` carrying a `TabDisplayModel`, and `TabsPanelState.reducer` builds the new state. `TabDisplayView.newState` then refreshes `TabDisplayDiffableDataSource` and calls `scrollToTab` if the state has a `ScrollState`. Before this PR the state also held `inactiveTabs` and `isInactiveTabsExpanded`, and the data source always created two sections: `.inactiveTabs(UUID)` at index 0 and `.tabs` at index 1.\n\nThis PR removes the inactive-tabs data from every layer: model, actions, middleware, state, data source, views and layout. The collection view now has one section (`.tabs`, index 0). The compositional layout always returns the tabs section, and `ScrollState` no longer has `isInactiveTabSection`. Anything that still hardcodes section index 1, or that relied on the old two-section shape, has to be updated to match.",
+   "steps": [
+    "Start at `TabPanelAction.swift`: the inactive-tab view/middleware action cases and payload fields (`isInactiveTab`, `inactiveTabModels`) are removed.",
+    "`TabManagerMiddleware.swift`: the close/undo-close inactive-tab handlers and `refreshInactiveTabs` are gone, and `getTabsDisplayModel` no longer fills in inactive tabs.",
+    "`TabsPanelState.swift`: the state drops `inactiveTabs`/`isInactiveTabsExpanded`, the reducer no longer handles `TabPanelViewAction`, and `createTabScrollBehavior` only looks at `tabs`.",
+    "`TabDisplayDiffableDataSource.swift`: the snapshot now has a single `.tabs` section, so tab index paths move from section 1 to section 0.",
+    "`TabDisplayView.swift`: inactive-tab cell/header/footer registration, layout and selection handling are removed; `scrollToTab` turns `ScrollState.toIndex` into an `IndexPath`.",
+    "Tests: the data source, panel and state tests are rewritten for one section, and the XCUITest cell IDs change from `_1_x` to `_0_x`."
+   ],
+   "diagrams": [
+    {
+     "title": "Tab tray Redux flow after removal",
+     "kind": "flowchart",
+     "description": "How a tab panel action reaches the single-section collection view after the inactive-tabs path is removed.",
+     "mermaid": "flowchart LR\n  View[TabDisplayView] -->|TabPanelViewAction| MW[TabManagerMiddleware]\n  MW -->|TabPanelMiddlewareAction + TabDisplayModel| Reducer[TabsPanelState.reducer]\n  Reducer -->|tabs, scrollState| View\n  View --> DS[TabDisplayDiffableDataSource]\n  DS -->|section 0: .tabs| CV[UICollectionView]\n  View -->|scrollToTab IndexPath| CV"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "scrollToTab still targets section 1, which no longer exists",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The data source now only adds `.tabs`, so it is section **0**. `scrollToTab` still builds its index path with `section: 1`:\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayView.swift\" lines=\"171-181\"}\n\n`collectionView.isValid(indexPath:)` (BrowserKit `ReusableCell.swift:62`) checks `0..<numberOfSections ~= indexPath.section`. With one section that check is always false, so the guard returns early every time. Scrolling to the selected tab when the tray opens, and scrolling to a restored tab after undo-close, both silently stop working. Nothing crashes, so this is easy to miss.\n\nThe XCUITest IDs in this PR were updated from `_1_x` to `_0_x`, which confirms that tab cells now live in section 0.\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayView.swift\" lines=\"172-172\"}\n        let indexPath = IndexPath(row: scrollState.toIndex, section: 0)\n\nA cleaner option is to look up the section index from the data source (`dataSource.snapshot().indexOfSection(.tabs)`) instead of hardcoding a number.",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayView.swift",
+     "firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayDiffableDataSource.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayView.swift`, `scrollToTab` (around line 172) builds `IndexPath(row: scrollState.toIndex, section: 1)`. After the inactive-tabs section was removed, `TabDisplayDiffableDataSource.updateSnapshot` only adds a single `.tabs` section (index 0), so `collectionView.isValid(indexPath:)` always fails and scrolling never happens. Change the section to 0, or better, get it from `dataSource.snapshot().indexOfSection(.tabs)` and bail out if it is nil. Consider adding a test that checks the computed index path is valid for a state with tabs.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Tabs/Views/TabDisplayView.swift",
+     "lineStart": 171,
+     "lineEnd": 181
+    }
+   },
+   {
+    "title": "Off-by-one: the no-selected-tab fallback now scrolls to `tabs.count`",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The \"scroll to the bottom\" fallback was changed from `state.tabs.count - 1` to `state.tabs.count`. Only `isInactiveTabSection` was supposed to be dropped here:\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Tabs/State/TabsPanelState.swift\" lines=\"139-144\"}\n\n`tabs.count` is one past the last row, so even with the section fixed, `isValid(indexPath:)` rejects it and the panel never scrolls to the bottom. This happens when switching between normal and private panels and the shown panel has no selected tab.\n\nThe existing test `testCreateTabScrollBehavior_forScrollToSelectedTab_noSelectedTab_returnsLastTab_ifTabsNotEmpty` still asserts `toIndex == tabCount - 1`, so it will fail with this change.\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/Tabs/State/TabsPanelState.swift\" lines=\"143-143\"}\n                return ScrollState(toIndex: state.tabs.count - 1, withAnimation: shouldAnimate)\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/Tabs/State/TabsPanelState.swift",
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/TabTray/TabsPanelStateTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/Tabs/State/TabsPanelState.swift`, line 143, inside `createTabScrollBehavior`, the fallback for \"no selected tab\" returns `ScrollState(toIndex: state.tabs.count, ...)`, which is one past the last valid row. Restore it to `state.tabs.count - 1`, as it was before this PR (only the `isInactiveTabSection` argument was meant to be removed). Then run `TabsPanelStateTests.testCreateTabScrollBehavior_forScrollToSelectedTab_noSelectedTab_returnsLastTab_ifTabsNotEmpty`, which expects `tabCount - 1`, and confirm it passes.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Tabs/State/TabsPanelState.swift",
+     "lineStart": 143,
+     "lineEnd": 143
+    }
+   },
+   {
+    "title": "TabTrayStateTests still uses the deleted `.refreshInactiveTabs` case",
+    "severity": "high",
+    "category": "correctness",
+    "body": "This PR removes `TabPanelMiddlewareActionType.refreshInactiveTabs`, but `firefox-ios/firefox-ios-tests/Tests/ClientTests/TabTray/TabTrayStateTests.swift:142-155` still has `testRefreshInactiveTabsAction`, which calls `getTabPanelMiddleWareAction(for: .refreshInactiveTabs)`. The whole ClientTests target will fail to compile, which contradicts the \"unit tests pass\" checklist item.\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift\" lines=\"86-92\"}\n\nDelete that test. While you're there, `TabViewState.swift` still has `inactiveTabs` and `isInactiveTabsExpanded` fields that look like dead leftovers from the feature.",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/TabTray/TabTrayStateTests.swift",
+     "firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift",
+     "firefox-ios/Client/Frontend/Browser/Tabs/State/TabViewState.swift"
+    ],
+    "fixPrompt": "This PR removed `TabPanelMiddlewareActionType.refreshInactiveTabs` from `firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift`, but `firefox-ios/firefox-ios-tests/Tests/ClientTests/TabTray/TabTrayStateTests.swift` still has `testRefreshInactiveTabsAction` (around lines 142-155), which uses `.refreshInactiveTabs`. That breaks compilation of the test target. Delete the test. Also check whether `inactiveTabs` and `isInactiveTabsExpanded` in `firefox-ios/Client/Frontend/Browser/Tabs/State/TabViewState.swift` are still used anywhere, and remove them if not. Grep the test targets for any other references to removed inactive-tab symbols.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift",
+     "lineStart": 86,
+     "lineEnd": 92
+    }
+   },
+   {
+    "title": "MPL license header removed from TabPanelAction.swift",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The diff deletes the Mozilla Public License header at the top of this file. Nothing in an inactive-tabs cleanup should touch it, and every source file in the repo is expected to carry the header (license-check tooling and reviewers look for it).\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift\" lines=\"1-2\"}\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift\" lines=\"1-1\"}\n// This Source Code Form is subject to the terms of the Mozilla Public\n// License, v. 2.0. If a copy of the MPL was not distributed with this\n// file, You can obtain one at http://mozilla.org/MPL/2.0/\n\nimport Redux\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift"
+    ],
+    "fixPrompt": "`firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift` lost its 3-line MPL 2.0 license header (plus the blank line after it) in this PR. Restore the exact header used in other files in the repo (for example `TabsPanelState.swift`) at the top of the file, before `import Redux`.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Tabs/Action/TabPanelAction.swift",
+     "lineStart": 1,
+     "lineEnd": 2
+    }
+   },
+   {
+    "title": "Removed strings follow the OldStrings convention",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The removed inactive-tab strings were moved into `OldStrings.v147` with their keys and comments unchanged. That matches the pattern used by `v145`/`v146`, which keeps the existing translations around for the l10n tooling. The `ToastType` cleanup also simplified the multi-pattern `case` arms correctly.",
+    "files": [
+     "firefox-ios/Shared/Strings.swift",
+     "firefox-ios/Client/Frontend/Browser/ToastType.swift"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":5,\"title\":\"Code Review Bench PR #31168 - Remove FXIOS-14327 [Clean up] Inactive tabs removal part 2 (final)\",\"author\":\"\",\"baseSha\":\"1f91e4c42528ae8eeb3199e42006a3d3abefb2b0\",\"headSha\":\"c34f351b04f00b187124de6a4e68e0af5b4bdf47\"},\"summary\":\"This PR finishes removing the Inactive Tabs feature. It deletes `InactiveTabsModel`, the inactive-tabs cell, header, footer and section manager, the inactive-tab Redux actions, middleware handlers a",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

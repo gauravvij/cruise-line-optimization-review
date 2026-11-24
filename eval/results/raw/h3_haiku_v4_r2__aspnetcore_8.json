@@ -1,0 +1,395 @@
+{
+ "id": "aspnetcore#8",
+ "repo": "aspnetcore",
+ "num": 8,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T10:19:31.470Z",
+ "num_of_issues": 9,
+ "issues": [
+  {
+   "title": "Missing MIT license header",
+   "description": "The rule requires that every C# source file must start with the exact two-line MIT license header comment: '// Licensed to the .NET Foundation under one or more agreements.' followed by '// The .NET Foundation licenses this file to you under the MIT license.' This file is missing the required license header at the start.",
+   "file_path": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "using System.Collections.Generic;\nusing System.Collections.Immutable;\nusing System.IO;\nusing Microsoft.CodeAnalysis;\nusing Microsoft.CodeAnalysis.CSharp;",
+   "rule_name": "All C# Source Files Must Include MIT License Header"
+  },
+  {
+   "title": "Remarks overwrite Summary instead of Description in XML comment transformation",
+   "description": "When XML remarks are present, they are incorrectly assigned to operation.Summary instead of operation.Description. This causes the remarks to overwrite the summary that was set earlier in the code (line 374). The XML documentation model distinguishes between summary (brief description) and remarks (detailed notes), and they should map to different OpenAPI fields. This bug causes the loss of the summary information when remarks are present, resulting in incorrect OpenAPI documentation where remarks replace the intended summary.",
+   "file_path": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+   "start_line": 380,
+   "end_line": 383,
+   "problematic_code_snippet": "if (methodComment.Remarks is { } remarks)\n{\n    operation.Summary = remarks;\n}"
+  },
+  {
+   "title": "Parameter lookup uses wrong identifier causing documentation mismatch",
+   "description": "The code searches for operation parameters using propertyName instead of metadata.Name, which causes a mismatch when the property name differs from the parameter name in the API metadata. The metadata.Name represents how the parameter is actually named in the OpenAPI operation, while propertyName is the original C# property name. Using propertyName will fail to find the correct parameter in cases where parameter naming conventions differ (e.g., camelCase in API vs PascalCase in C#), resulting in parameter descriptions not being applied correctly to the OpenAPI documentation.",
+   "file_path": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+   "start_line": 449,
+   "end_line": 452,
+   "problematic_code_snippet": "var propertyDocId = DocumentationCommentIdHelper.CreateDocumentationId(containerType, propertyName);\nif (XmlCommentCache.Cache.TryGetValue(DocumentationCommentIdHelper.NormalizeDocId(propertyDocId), out var propertyComment))\n{\n    var parameter = operation.Parameters?.SingleOrDefault(p => p.Name == propertyName);"
+  },
+  {
+   "title": "RequestBody description set after iteration may use stale or modified description value",
+   "description": "The operation.RequestBody.Description is now set after iterating through media types and parsing examples, instead of before. This reordering creates a potential race condition or state dependency issue where the description variable could be modified or cleared during the example parsing logic. Additionally, if parsing throws an exception or causes early termination, the description will never be set. The original code correctly set the description first to ensure it's always applied before potentially failing example operations. This bug can result in missing or incorrect request body descriptions in the OpenAPI specification.",
+   "file_path": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+   "start_line": 464,
+   "end_line": 479,
+   "problematic_code_snippet": "if (operation.RequestBody is not null)\n{\n    if (propertyComment.Examples?.FirstOrDefault() is { } jsonString)\n    {\n        var content = operation.RequestBody.Content?.Values;\n        if (content is null)\n        {\n            continue;\n        }\n        var parsedExample = jsonString.Parse();\n        foreach (var mediaType in content)\n        {\n            mediaType.Example = parsedExample;\n        }\n    }\n    operation.RequestBody.Description = description;\n}"
+  },
+  {
+   "title": "Test method missing Arrange/Act/Assert comments",
+   "description": "The new test method does not include the required '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases per the AAA pattern.",
+   "file_path": "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.Controllers.cs",
+   "start_line": 99,
+   "end_line": 143,
+   "problematic_code_snippet": "    [Fact]\n    public async Task SupportsRouteParametersFromControllers()\n    {\n        var source = \"\"\"\n...",
+   "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  },
+  {
+   "title": "Async test method missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.Controllers.cs",
+   "start_line": 100,
+   "end_line": 100,
+   "problematic_code_snippet": "    public async Task SupportsRouteParametersFromControllers()",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "New snapshot C# file missing MIT license header",
+   "description": "Rule requires every .cs file to start with the exact two-line .NET Foundation MIT license header. This newly added snapshot file begins with an auto-generated header instead.",
+   "file_path": "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/snapshots/OperationTests.SupportsRouteParametersFromControllers#OpenApiXmlCommentSupport.generated.verified.cs",
+   "start_line": 1,
+   "end_line": 9,
+   "problematic_code_snippet": "\u0000ef\u0000bb\u0000bf//HintName: OpenApiXmlCommentSupport.generated.cs\n//------------------------------------------------------------------------------\n// <auto-generated>\n//     This code was generated by a tool.\n//\n//     Changes to this file may cause incorrect behavior and will be lost if\n//     the code is regenerated.\n// </auto-generated>\n//------------------------------------------------------------------------------",
+   "rule_name": "All C# Source Files Must Include MIT License Header"
+  },
+  {
+   "title": "New snapshot uses block-scoped namespaces instead of file-scoped",
+   "description": "The file declares namespaces using block-scoped syntax with braces, violating the requirement to use file-scoped namespace declarations (ending with ';').",
+   "file_path": "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/snapshots/OperationTests.SupportsRouteParametersFromControllers#OpenApiXmlCommentSupport.generated.verified.cs",
+   "start_line": 13,
+   "end_line": 44,
+   "problematic_code_snippet": "namespace System.Runtime.CompilerServices\n{\n    ...\n}\n\nnamespace Microsoft.AspNetCore.OpenApi.Generated\n{\n    ...\n}",
+   "rule_name": "Use File-Scoped Namespace Declarations"
+  },
+  {
+   "title": "Manual null-check throws instead of using throw helper",
+   "description": "Null parameter validation is performed via an explicit null check and throw. The rule requires using throw helpers such as ArgumentNullException.ThrowIfNull(type).",
+   "file_path": "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/snapshots/OperationTests.SupportsRouteParametersFromControllers#OpenApiXmlCommentSupport.generated.verified.cs",
+   "start_line": 80,
+   "end_line": 89,
+   "problematic_code_snippet": "        public static string CreateDocumentationId(this Type type)\n        {\n            if (type == null)\n            {\n                throw new ArgumentNullException(nameof(type));\n            }\n\n            return \"T:\" + GetTypeDocId(type, includeGenericArguments: false, omitGenericArity: false);\n        }",
+   "rule_name": "Use ArgumentNullException Throw Helpers for Parameter Validation"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "45b170b7b4b6ba7372feab33a91cf0936060aadd",
+ "diff_chars": 43493,
+ "diff_lines": 837,
+ "user_prompt_chars": 47610,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 62831,
+ "wall_ms": 64663,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 12,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 8.316362756,
+ "spend_post_usd": 8.329430181,
+ "cost_settled": true,
+ "cost_wait_ms": 40,
+ "cost_usd": 0.013067424999999133,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.013275975000000002,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 33675,
+  "cache_read_input_tokens": 205210,
+  "output_tokens": 14027,
+  "output_tokens_details": {
+   "thinking_tokens": 5729
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 33675
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 14027,
+   "cacheReadInputTokens": 205210,
+   "cacheCreationInputTokens": 33675,
+   "webSearchRequests": 0,
+   "costUSD": 0.013275975000000002,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5729,
+   "cacheCreationEphemeral5mInputTokens": 33675,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 8,
+   "title": "Code Review Bench PR #64401 - [release/10.0] Fix ModelMetadata null reference exception in emitted XMLComment transformers",
+   "author": "",
+   "baseSha": "89422f4166e54b982b5c241a14e23e64a3a456c2",
+   "headSha": "45b170b7b4b6ba7372feab33a91cf0936060aadd"
+  },
+  "summary": "The PR's core fix is correct and small: the source generator's emitted XML-comment operation transformer now null-checks `parameterDescription.ModelMetadata` before reading `MetadataKind`, `ContainerType`, and `PropertyName`. That stops a NullReferenceException for controller route parameters that have no model metadata. The new `SupportsRouteParametersFromControllers` test reproduces the controller scenario and checks the `<param>` description.\n\nThe PR also carries several unrelated edits to `XmlCommentGenerator.Emitter.cs` that the description does not mention. They change `<remarks>` handling (now written to `Summary` instead of `Description`), reorder the RequestBody description assignment so it is skipped when `Content` is null, change the property parameter lookup from `metadata.Name` to `propertyName`, and remove the .NET Foundation license header. The snapshots were regenerated only for the null-check line, so the snapshot files no longer match the emitter source. The existing `<remarks>` assertions in `OperationTests.MinimalApis.cs` (lines 431-432) will fail with the `Summary` change. I did not run the test suite; these conclusions come from reading the head tree and the snapshot contents.",
+  "verdict": "request_changes",
+  "verdictRationale": "The null guard is the right fix and should land. But the PR bundles in behavior changes that are not described, break an existing assertion (`<remarks>` now overwrites `Summary` and no longer reaches `Description`), and leave the snapshot-based generator tests out of sync with the emitter. Those need to be reverted or split out before merge.",
+  "architecture": {
+   "overview": "At build time, the OpenAPI source generator (`XmlCommentGenerator`) reads `<summary>`, `<param>`, `<remarks>`, and related XML doc comments and emits an `OpenApiXmlCommentSupport.generated.cs` file. That file contains an `XmlCommentCache` keyed by documentation IDs plus `XmlCommentOperationTransformer` and `XmlCommentSchemaTransformer`. At runtime, `AddOpenApi()` registers these transformers, which run for each operation when the OpenAPI document is generated. The transformer looks up the action's method comment, applies it to the operation, and then walks `context.Description.ParameterDescriptions` to apply property-level comments to parameters or the request body.\n\nThis PR changes the emitted code in that second loop. The `ModelMetadata` for controller route parameters can be null, and the old code dereferenced it unconditionally, crashing document generation. The fix adds a null check before the existing property-metadata branch. The PR also includes several unrelated emitter edits (remarks mapping, request-body ordering, name lookup) that alter emitted behavior and are not covered by the snapshot updates.",
+   "steps": [
+    "Entry point: the `XmlCommentGenerator` source generator in `src/OpenApi/gen/` emits the per-compilation transformer code. The emitter text lives in `XmlCommentGenerator.Emitter.cs`, and the PR edits the string it writes.",
+    "Runtime: the generated `XmlCommentOperationTransformer.TransformAsync` runs once per operation. It first applies the method-level comment (summary, description, remarks, parameters, returns, responses) and then iterates `ParameterDescriptions`.",
+    "The PR's central change is the guard at the top of the `ParameterDescriptions` loop. `metadata is not null` now gates the property-comment branch. Controller route parameters with null metadata skip that branch instead of throwing.",
+    "Unrelated emitter edits: `<remarks>` now writes to `operation.Summary` (overwriting the `<summary>` value), the RequestBody description assignment moved after the example loop, and the parameter lookup switched from `metadata.Name` to `propertyName`. None of these are needed for the null fix.",
+    "Tests: `SupportsRouteParametersFromControllers` verifies a controller route parameter's `<param>` text lands on the OpenAPI parameter. The snapshot files are generated output of the emitter, so any emitter edit must be reflected in them."
+   ],
+   "diagrams": [
+    {
+     "kind": "flowchart",
+     "title": "XML comment pipeline for OpenAPI operations",
+     "description": "Source generator emits the transformer at build time; at runtime the operation transformer consults the cache and the parameter metadata.",
+     "mermaid": "flowchart LR\n    A[XML doc comments on controllers and models] --> B[XmlCommentGenerator]\n    B --> C[Emitter: XmlCommentGenerator.Emitter.cs]\n    C --> D[OpenApiXmlCommentSupport.generated.cs]\n    D --> E[XmlCommentCache]\n    D --> F[XmlCommentOperationTransformer]\n    G[AddOpenApi registration] --> F\n    H[ApiDescription ParameterDescriptions] --> F\n    F --> I{ModelMetadata not null and Property kind?}\n    I -- yes --> J[Apply property comment to parameter or RequestBody]\n    I -- no --> K[Skip property branch]\n    F --> L[Apply method comment to Operation]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "`<remarks>` now overwrites `Summary` and no longer populates `Description`",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The emitter text for the method-level comment changed from `operation.Description = remarks;` to `operation.Summary = remarks;`. This is unrelated to the null-reference fix. Because it runs after the `<summary>` assignment, any operation that has both `<summary>` and `<remarks>` will have its summary replaced by the remarks body.\n\nThe existing test `OperationTests.MinimalApis.cs` asserts that `Post6` has `Summary == \"Creates a new user.\"` and that `Description` contains `Sample request:`. Both assertions will fail with this change.\n\n::diff{file=\"src/OpenApi/gen/XmlCommentGenerator.Emitter.cs\" lines=\"380-383\"}\n\nRevert this line to `operation.Description = remarks;`. If the mapping is genuinely wrong, fix it in a separate PR with its own test.",
+    "files": [
+     "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.MinimalApis.cs"
+    ],
+    "fixPrompt": "In `src/OpenApi/gen/XmlCommentGenerator.Emitter.cs`, around lines 380-383, the emitted code for `methodComment.Remarks` was changed to assign `operation.Summary = remarks;`. Revert it to `operation.Description = remarks;`. This change is unrelated to the ModelMetadata null fix and breaks the existing assertions at `OperationTests.MinimalApis.cs` lines 431-432 (`Summary` must remain \"Creates a new user.\" and `Description` must contain \"Sample request:\"). If the mapping needs to change, do it in a separate PR with its own test.",
+    "commentAnchor": {
+     "file": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "lineStart": 380,
+     "lineEnd": 383
+    },
+    "severity_note": null
+   },
+   {
+    "title": "Snapshots are not regenerated for the other emitter changes",
+    "severity": "high",
+    "category": "correctness",
+    "body": "Only the `metadata is not null` line was added to the snapshot files. The emitter source also changed three other things that do not appear in any snapshot:\n\n- `operation.Summary = remarks` appears in no snapshot. Nine snapshot files still contain `operation.Description = remarks`.\n- `p.Name == propertyName` appears in no snapshot. Nine snapshot files still contain `p.Name == metadata.Name`.\n- The RequestBody description assignment moved after the example loop, but the snapshots still have it before.\n\nThe generator snapshot tests compare emitted output against these files, so they will fail. Auto-regenerating only the null-check line makes the snapshots look reviewed when they aren't.\n\n::diff{file=\"src/OpenApi/gen/XmlCommentGenerator.Emitter.cs\" lines=\"444-452\"}\n\nEither revert the unrelated emitter edits so that only the null guard changes, or regenerate every affected snapshot and call out each behavior change in the PR description.",
+    "files": [
+     "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/snapshots/AddOpenApiTests.CanInterceptAddOpenApi#OpenApiXmlCommentSupport.generated.verified.cs",
+     "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/snapshots/OperationTests.SupportsXmlCommentsOnOperationsFromControllers#OpenApiXmlCommentSupport.generated.verified.cs"
+    ],
+    "fixPrompt": "In `src/OpenApi/gen/XmlCommentGenerator.Emitter.cs`, this PR made four edits beyond the null guard at lines 444-446: `operation.Summary = remarks` (line 382), `p.Name == propertyName` (line 452), and moving `operation.RequestBody.Description = description` after the examples loop (line 479). None of these are reflected in the snapshot files under `src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/snapshots/`, which still contain the old code. Either revert those three edits so that only the `metadata is not null` guard changes, or update every affected snapshot and describe each behavior change in the PR. Match the existing snapshot style and regenerate with the usual Verify workflow rather than hand-editing.",
+    "commentAnchor": {
+     "file": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "lineStart": 444,
+     "lineEnd": 452
+    },
+    "severity_note": null
+   },
+   {
+    "title": "RequestBody description is skipped when `Content` is null",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "Moving `operation.RequestBody.Description = description;` to after the examples block means the early `continue` in the `Content is null` branch now skips it. In the old code, the description was assigned before the example logic. With a request body whose `Content` is null and a property comment that has examples, the description is now silently dropped.\n\n::code{file=\"src/OpenApi/gen/XmlCommentGenerator.Emitter.cs\" lines=\"469-479\"}\n\nThis is a regression unrelated to the null-metadata crash. Restore the original order, with the description assigned before the examples block.",
+    "files": [
+     "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs"
+    ],
+    "fixPrompt": "In `src/OpenApi/gen/XmlCommentGenerator.Emitter.cs`, inside the `if (parameter is null)` branch of the `ParameterDescriptions` loop (around lines 462-482), `operation.RequestBody.Description = description;` was moved after the examples block. The `if (content is null) { continue; }` inside that block now skips the description assignment. Move the `RequestBody.Description` assignment back to just before the `propertyComment.Examples` check so it is set regardless of `Content`. Keep the null-metadata guard change as is.",
+    "commentAnchor": {
+     "file": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "lineStart": 469,
+     "lineEnd": 479
+    },
+    "severity_note": null
+   },
+   {
+    "title": "License header removed from `XmlCommentGenerator.Emitter.cs`",
+    "severity": "medium",
+    "category": "style",
+    "body": "The diff removes the standard `// Licensed to the .NET Foundation...` header from this file. Every other file in `src/OpenApi/gen/` (for example `XmlCommentGenerator.cs` and `XmlCommentGenerator.Parser.cs`) has it. This breaks the repo's license-header convention and will likely fail the license-header check in CI. The change has no functional purpose.\n\n::diff{file=\"src/OpenApi/gen/XmlCommentGenerator.Emitter.cs\" lines=\"1-3\"}",
+    "files": [
+     "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs"
+    ],
+    "fixPrompt": "Restore the two-line .NET Foundation license header at the top of `src/OpenApi/gen/XmlCommentGenerator.Emitter.cs`, followed by a blank line, matching the header used in `src/OpenApi/gen/XmlCommentGenerator.cs`. Nothing else in the file should change for this fix.",
+    "commentAnchor": {
+     "file": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "lineStart": 1,
+     "lineEnd": 3
+    },
+    "severity_note": null
+   },
+   {
+    "title": "Unexplained change from `metadata.Name` to `propertyName`",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The property-parameter lookup changed from `p.Name == metadata.Name` to `p.Name == propertyName`. For `MetadataKind.Property` metadata these are normally the same value, so the change is probably a no-op. The PR description does not mention it, and no test covers it. If the two can ever differ, this changes which parameter gets the description. Either drop the change or explain it and add a test.\n\n::diff{file=\"src/OpenApi/gen/XmlCommentGenerator.Emitter.cs\" lines=\"452-452\"}",
+    "files": [
+     "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs"
+    ],
+    "fixPrompt": "In `src/OpenApi/gen/XmlCommentGenerator.Emitter.cs` line 452, the parameter lookup was changed from `p.Name == metadata.Name` to `p.Name == propertyName`. This is not part of the null-metadata fix and is not covered by a test. Revert it to `metadata.Name`, or, if the change is intentional, explain why in a code comment and add a test that fails on the old behavior.",
+    "commentAnchor": {
+     "file": "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs",
+     "lineStart": 452,
+     "lineEnd": 452
+    },
+    "severity_note": null
+   },
+   {
+    "title": "New test doesn't isolate the null-metadata path",
+    "severity": "low",
+    "category": "style",
+    "body": "`SupportsRouteParametersFromControllers` asserts that a `<param>` on a controller action reaches the OpenAPI parameter. That goes through the method-parameter loop, not the `ParameterDescriptions` loop where the null guard lives. The test never checks that `ModelMetadata` is null, and it doesn't verify that the property branch is skipped without an exception. A regression that drops the guard might still pass, depending on whether the controller route parameter actually has null metadata in this scenario. The test is still useful as a smoke test for the reported crash. Consider asserting that generation completes and that the path has the expected parameter, and documenting whether the null branch is reached.\n\n::code{file=\"src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.Controllers.cs\" lines=\"101-143\"}",
+    "files": [
+     "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.Controllers.cs"
+    ],
+    "fixPrompt": "In `src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.Controllers.cs`, the new test `SupportsRouteParametersFromControllers` (lines 101-143) checks only the `<param>` description. Confirm that the scenario actually produces null `ModelMetadata` for `userId` (for example, by temporarily removing the new null guard and seeing whether the test fails). If it does not, strengthen the test or add a case that reaches the null path so the regression is actually caught.",
+    "commentAnchor": {
+     "file": "src/OpenApi/test/Microsoft.AspNetCore.OpenApi.SourceGenerators.Tests/OperationTests.Controllers.cs",
+     "lineStart": 101,
+     "lineEnd": 143
+    },
+    "severity_note": null
+   },
+   {
+    "title": "Null guard correctly fixes the reported crash",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The new `metadata is not null` check sits before any dereference of `metadata`. The fallback is the same as the existing \"no property metadata\" path, so parameters with null metadata just skip property-comment lookup. The method-level comment handling is unchanged, so `<param>` on the action still applies. This is the minimal change for the reported crash.\n\n::code{file=\"src/OpenApi/gen/XmlCommentGenerator.Emitter.cs\" lines=\"444-447\"}",
+    "files": [
+     "src/OpenApi/gen/XmlCommentGenerator.Emitter.cs"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":8,\"title\":\"Code Review Bench PR #64401 - [release/10.0] Fix ModelMetadata null reference exception in emitted XMLComment transformers\",\"author\":\"\",\"baseSha\":\"89422f4166e54b982b5c241a14e23e64a3a456c2\",\"headSha\":\"45b170b7b4b6ba7372feab33a91cf0936060aadd\"},\"summary\":\"The PR's core fix is correct and small: the source generator's emitted XML-comment operation transformer now null-checks `parameterDescription.ModelMetadata` before reading ",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

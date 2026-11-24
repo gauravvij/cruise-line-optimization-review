@@ -1,0 +1,368 @@
+{
+ "id": "cal.com#6",
+ "repo": "cal.com",
+ "num": 6,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:21:26.646Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "Direct import from features package",
+   "description": "The rule requires apps/api/v2 to import from @calcom/platform-libraries instead of directly from @calcom/features, but the code imports TeamService directly from @calcom/features/ee/teams/services/teamService",
+   "file_path": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+   "start_line": 21,
+   "end_line": 21,
+   "problematic_code_snippet": "import { TeamService } from \"@calcom/features/ee/teams/services/teamService\";",
+   "rule_name": "Prevent Circular Dependencies Between Core Packages"
+  },
+  {
+   "title": "Insufficient authorization - regular members can create invite links",
+   "description": "The endpoint uses @Roles('TEAM_MEMBER') which allows any team member to create invite links, but the business logic requires admin permissions for this sensitive operation. The e2e tests verify that only admins should be able to create invites (returning 403 for regular members), but this permission check is too permissive. This security issue allows unauthorized users to generate invite tokens that could be used to add members to teams without proper authorization.",
+   "file_path": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+   "start_line": 31,
+   "end_line": 32,
+   "problematic_code_snippet": "  @Post(\"/invite\")\n  @Roles(\"TEAM_MEMBER\")\n  @ApiOperation({ summary: \"Create team invite link\" })\n  @HttpCode(HttpStatus.OK)\n  async createInvite("
+  },
+  {
+   "title": "Inverted logic causes wrong invite URLs for organizations vs teams",
+   "description": "The condition `if (isOrgContext)` returns the team invite link format when it should return the organization signup format, and vice versa. Organization invites need to direct users to the signup flow with callback to getting-started, but will incorrectly receive the teams URL. Regular team invites need the teams URL but will incorrectly receive the signup URL with callback. This breaks the entire invite flow by sending users to the wrong destination based on whether they're joining an organization or a regular team.",
+   "file_path": "packages/features/ee/teams/services/teamService.ts",
+   "start_line": 104,
+   "end_line": 112,
+   "problematic_code_snippet": "  private static async buildInviteLink(token: string, isOrgContext: boolean): Promise<string> {\n    const teamInviteLink = `${WEBAPP_URL}/teams?token=${token}`;\n    if (isOrgContext) {\n      return teamInviteLink;\n    }\n    const gettingStartedPath = await OnboardingPathService.getGettingStartedPathWhenInvited(prisma);\n    const orgInviteLink = `${WEBAPP_URL}/signup?token=${token}&callbackUrl=${gettingStartedPath}`;\n    return orgInviteLink;\n  }"
+  },
+  {
+   "title": "Wrong token value returned breaks invite link functionality",
+   "description": "The method returns `newToken.identifier` which contains the database identifier string 'invite-link-for-teamId-{teamId}' instead of returning the actual random hex token that was generated. This means the invite link will embed this identifier string in the URL instead of the actual verification token. When users attempt to use the invite link, the token lookup will fail because the identifier is not a valid token value, completely breaking the invite acceptance flow.",
+   "file_path": "packages/features/ee/teams/services/teamService.ts",
+   "start_line": 87,
+   "end_line": 101,
+   "problematic_code_snippet": "    const token = randomBytes(32).toString(\"hex\");\n    const newToken = await prisma.verificationToken.create({\n      data: {\n        identifier: `invite-link-for-teamId-${teamId}`,\n        token,\n        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +1 week\n        expiresInDays: 7,\n        teamId,\n      },\n    });\n\n    return {\n      token: newToken.identifier,\n      inviteLink: await TeamService.buildInviteLink(token, isOrganizationOrATeamInOrganization),\n    };"
+  },
+  {
+   "title": "Service filename does not match PascalCase class name",
+   "description": "Rule requires service filenames to match the exported class name exactly in PascalCase (e.g., TeamService.ts). This service class is `TeamService` but the file is named `teamService.ts` (camelCase), violating the naming convention.",
+   "file_path": "packages/features/ee/teams/services/teamService.ts",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "export class TeamService {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Missing newline at end of file",
+   "description": "Biome formatting expects standard LF line endings and a terminating newline. The diff explicitly indicates the file has no newline at end of file.",
+   "file_path": "packages/features/ee/teams/services/teamService.ts",
+   "start_line": 564,
+   "end_line": 564,
+   "problematic_code_snippet": "+}\n\\ No newline at end of file",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Line exceeds Biome configured line width",
+   "description": "The codebase formatting rule specifies a 110 character line width. This added line is clearly longer than 110 characters (chained call with long template literal), violating the configured formatting constraints.",
+   "file_path": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts",
+   "start_line": 75,
+   "end_line": 75,
+   "problematic_code_snippet": "+      const first = await request(app.getHttpServer()).post(`/v2/teams/${team.id}/invite`).expect(200);",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Line exceeds Biome configured line width",
+   "description": "The codebase formatting rule specifies a 110 character line width. This `example` string line is longer than 110 characters, violating the formatting constraints.",
+   "file_path": "apps/api/v2/src/modules/teams/invite/outputs/invite.output.ts",
+   "start_line": 13,
+   "end_line": 13,
+   "problematic_code_snippet": "+    example: \"f6a5c8b1d2e34c7f90a1b2c3d4e5f6a5b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2\",",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "505197c4057c173f9a87e84412d825a3a9f240b0",
+ "diff_chars": 14312,
+ "diff_lines": 381,
+ "user_prompt_chars": 17507,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 101035,
+ "wall_ms": 104107,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 8,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 7,
+ "turn_trace": {
+  "assistant_lines": 21,
+  "unique_message_ids": 7,
+  "lines_without_id": 0,
+  "tool_use_blocks": 8
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.405976392,
+ "spend_post_usd": 0.426124847,
+ "cost_settled": true,
+ "cost_wait_ms": 344,
+ "cost_usd": 0.020148454999999954,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.020098405,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 38873,
+  "cache_read_input_tokens": 272738,
+  "output_tokens": 25021,
+  "output_tokens_details": {
+   "thinking_tokens": 6178
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 38873
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 25021,
+   "cacheReadInputTokens": 272738,
+   "cacheCreationInputTokens": 38873,
+   "webSearchRequests": 0,
+   "costUSD": 0.020098405,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 6178,
+   "cacheCreationEphemeral5mInputTokens": 38873,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/cal.com",
+   "number": 6,
+   "title": "Code Review Bench PR #26644 - feat: api v2 team invite link endpoint",
+   "author": "unknown",
+   "baseSha": "23333875ed8066eee814e7cb69bff93480a1f72e",
+   "headSha": "505197c4057c173f9a87e84412d825a3a9f240b0"
+  },
+  "summary": "This PR adds `POST /v2/teams/:teamId/invite`, a thin controller over the shared `TeamService.createInvite`, plus the module wiring, output DTOs and an e2e spec. The endpoint itself is simple, but the diff also changes the shared service in two ways that break the invite flow. `TeamService.createInvite` now returns `newToken.identifier` (a constant string like `invite-link-for-teamId-5`) as `token` instead of the random token. `buildInviteLink` has its condition flipped, so regular teams get the signup/getting-started link and org teams get `/teams`. Because `TeamService` is shared, the tRPC `teams.createInvite` path used by the web invite modal is affected as well.\n\nThe controller also has `@Roles(\"TEAM_MEMBER\")` where the PR description and the spec require `TEAM_ADMIN`, so any team member can mint invite links. The e2e tests as written would fail on three assertions: the member 403 test, the new-token-per-request test, and the token-in-link checks. The PR checklist's \"verify E2E tests pass\" item is not satisfied. This needs changes before merge.",
+  "verdict": "request_changes",
+  "verdictRationale": "Three defects are each independently merge-blocking. The role is too permissive (`TEAM_MEMBER` passes the guard for every membership, so the required 403 for non-admin members will not happen). The returned `token` is the wrong value and is not the token embedded in the link. The link-type condition is inverted, which also changes behavior for the existing web invite flow. The spec's own tests would catch the first and second defects, which shows the suite was not run green on this head.",
+  "architecture": {
+   "overview": "Before this PR, team invite links are generated only by `TeamService.createInvite` in `packages/features/ee/teams/services/teamService.ts`. It is called from the tRPC `teams.createInvite` handler (used by `MemberInvitationModal.tsx`) and from the existing org-scoped controller `OrganizationsTeamsInviteController`. Each call writes a `verificationToken` row with identifier `invite-link-for-teamId-<id>` and a 7-day expiry, then builds a URL. API v2 requests pass through `ApiAuthGuard` and `RolesGuard`. `RolesGuard` reads `@Roles` metadata and compares it against the caller's team membership role using the `TEAM_ROLES` ordering (OWNER, ADMIN, MEMBER).\n\nThis PR adds `TeamsInviteModule` and `TeamsInviteController` under `/v2/teams/:teamId`, and registers the module in `platform-endpoints-module.ts`. The controller delegates to the shared service and wraps the result in `{ status, data }`. It also changes the shared service: the created token value is now taken from the DB row's identifier, and the `isOrgContext` branch in `buildInviteLink` is flipped. Both changes apply to every caller of `TeamService.createInvite`, not only the new endpoint.",
+   "steps": [
+    "Entry point: an authenticated HTTP POST hits `TeamsInviteController.createInvite` at `/v2/teams/:teamId/invite`. `ApiAuthGuard` resolves the user and `RolesGuard` checks the `@Roles` value. The PR sets this to `TEAM_MEMBER`, so the gate is wider than the spec's TEAM_ADMIN.",
+    "The controller calls `TeamService.createInvite(teamId)`. For a new invite, the service generates a random 32-byte hex token and inserts a `verificationToken` row with a 7-day expiry.",
+    "The PR changes the return value to `token: newToken.identifier`. That is the constant identifier string, not the random token. The `inviteLink` is still built from the raw random token, so the returned `token` does not match the link.",
+    "`buildInviteLink` now returns the `/teams?token=` link when `isOrgContext` is true and the `/signup?...&callbackUrl=` link otherwise. This is the reverse of the PR description and of the original code. The existing-token path in the same service also uses this helper, so the web tRPC flow is affected too.",
+    "The controller wraps the result as `{ status: SUCCESS_STATUS, data }` using `CreateInviteOutputDto`. This matches the existing org controller's response shape, though the DTO file is duplicated rather than shared."
+   ],
+   "diagrams": [
+    {
+     "title": "Invite request path with the PR's changes",
+     "kind": "flowchart",
+     "description": "Shows how the new endpoint reaches the shared TeamService and where the changed values are produced.",
+     "mermaid": "flowchart LR\n  Client[API client] --> Ctrl[TeamsInviteController]\n  Ctrl --> Guards[ApiAuthGuard and RolesGuard]\n  Guards -->|Roles TEAM_MEMBER changed in PR| Ctrl\n  Ctrl --> Svc[TeamService.createInvite]\n  Svc --> DB[(verificationToken)]\n  DB -->|identifier returned as token changed in PR| Svc\n  Svc --> Build[buildInviteLink condition flipped in PR]\n  Build --> Resp[status and data token and inviteLink]\n  Resp --> Client"
+    },
+    {
+     "title": "Invite creation sequence",
+     "kind": "sequence",
+     "description": "Runtime interaction between the client, the API, the guard and the database for one invite request.",
+     "mermaid": "sequenceDiagram\n  participant C as API client\n  participant G as RolesGuard\n  participant S as TeamService\n  participant D as Prisma DB\n  C->>G: POST /v2/teams/:teamId/invite\n  G->>D: membership lookup for caller\n  G-->>C: 403 if role below required\n  G->>S: createInvite(teamId)\n  S->>D: create verificationToken\n  D-->>S: row with identifier\n  S-->>C: token identifier and inviteLink"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Endpoint is gated to TEAM_MEMBER, so any team member can create invite links",
+    "severity": "critical",
+    "category": "security",
+    "body": "The HEAD commit changed `@Roles(\"TEAM_ADMIN\")` to `@Roles(\"TEAM_MEMBER\")`. In `RolesGuard`, `hasMinimumRole` returns `true` whenever the caller's `TEAM_<role>` index is less than or equal to the required index. `TEAM_MEMBER` is the last entry in `TEAM_ROLES`, so every membership passes. A plain member can therefore mint 7-day invite tokens, which is the authorization bypass the spec's \"team members receive 403\" requirement is meant to prevent. The e2e test at line 148 (\"should fail to create invite as non-admin member\") expects 403 and will get 200.\n\n::diff{file=\"apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts\" lines=\"30-34\"}\n\n::callout{type=\"security\"}\nA member with no admin rights can create invite links for their own team. Restore the admin requirement.\n\n::suggestion{file=\"apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts\" lines=\"32-32\"}\n  @Roles(\"TEAM_ADMIN\")",
+    "files": [
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "apps/api/v2/src/lib/roles/constants.ts",
+     "apps/api/v2/src/modules/auth/guards/roles/roles.guard.ts",
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts`, the `createInvite` handler at line 32 is decorated with `@Roles(\"TEAM_MEMBER\")`. Change it to `@Roles(\"TEAM_ADMIN\")` so that only team admins and owners can create invite links, as the PR description and spec require. Keep the rest of the decorator stack unchanged. Then run `teams-invite.controller.e2e-spec.ts` and confirm that the \"non-admin member\" test (around line 148) receives 403.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "lineStart": 32,
+     "lineEnd": 32
+    }
+   },
+   {
+    "title": "Returned `token` is the DB identifier, not the random token embedded in the link",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `createInvite`, the new code returns `token: newToken.identifier`. `identifier` is the constant string `invite-link-for-teamId-<teamId>`, so every new invite returns the same value. The random token is only used in `inviteLink`. The API therefore hands clients a token that doesn't match the link, and it's unusable for anything that needs the token. The e2e test \"should create a new invite on each request\" checks `token !== firstToken` (line 88), and that fails because both values are the identifier. The `toContain(token)` checks (lines 75 and 90) also fail.\n\n::diff{file=\"packages/features/ee/teams/services/teamService.ts\" lines=\"88-101\"}\n\n::callout{type=\"warning\"}\nThis is shared service code. The tRPC `teams.createInvite` handler returns the same object, so the web-side result changes too. The existing-token path (lines 73-84) still returns `existingToken.token`, so the two paths now disagree.\n\n::suggestion{file=\"packages/features/ee/teams/services/teamService.ts\" lines=\"98-101\"}\n    return {\n      token,\n      inviteLink: await TeamService.buildInviteLink(token, isOrganizationOrATeamInOrganization),\n    };",
+    "files": [
+     "packages/features/ee/teams/services/teamService.ts",
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts"
+    ],
+    "fixPrompt": "In `packages/features/ee/teams/services/teamService.ts`, `TeamService.createInvite` (around lines 88-101) now returns `token: newToken.identifier`. The identifier is the constant string `invite-link-for-teamId-<id>`, not the random token that is embedded in `inviteLink`. Return the locally generated `token` variable instead, which is also what the existing-token branch returns (`existingToken.token`). Drop the `const newToken =` assignment if it is no longer needed. Verify that `teams-invite.controller.e2e-spec.ts` (\"should create a new invite on each request\" and the `toContain(token)` assertions) passes.",
+    "commentAnchor": {
+     "file": "packages/features/ee/teams/services/teamService.ts",
+     "lineStart": 88,
+     "lineEnd": 101
+    }
+   },
+   {
+    "title": "`buildInviteLink` condition is inverted, so regular and org teams get each other's links",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The original code was `if (!isOrgContext) return teamInviteLink;`, which sends regular teams to `/teams?token=` and org or org-sub-teams to `/signup?...&callbackUrl=<getting-started>`. The PR changes it to `if (isOrgContext)`, which flips both cases. The PR description and the endpoint's documented `inviteLink` example both describe the original routing. This also changes the web invite modal's output, since `buildInviteLink` is shared with the tRPC `createInvite` path, including the existing-token path. The checklist item \"Confirm `TeamService.createInvite` generates correct links for both regular teams and org sub-teams\" would fail on this line.\n\n::diff{file=\"packages/features/ee/teams/services/teamService.ts\" lines=\"104-111\"}\n\n::callout{type=\"warning\"}\nThe fix is to restore the original negation. Org contexts should return the `/teams` link and regular teams should return the `/signup` link with the getting-started callback. Please double-check which context name the PR intends. The fix below reverts to the original code's meaning.\n\n::suggestion{file=\"packages/features/ee/teams/services/teamService.ts\" lines=\"106-106\"}\n    if (!isOrgContext) {",
+    "files": [
+     "packages/features/ee/teams/services/teamService.ts",
+     "apps/api/v2/src/modules/organizations/teams/invite/controllers/organizations-teams-invite.controller.ts",
+     "packages/trpc/server/routers/viewer/teams/createInvite.handler.ts"
+    ],
+    "fixPrompt": "In `packages/features/ee/teams/services/teamService.ts`, `TeamService.buildInviteLink` (around line 104-111) has its condition flipped from `if (!isOrgContext)` to `if (isOrgContext)`. Restore the original negation so that regular teams (non-org, non-org-sub-team) return the `${WEBAPP_URL}/teams?token=` link, and org or org-sub-team contexts return the `/signup?token=...&callbackUrl=<getting-started path>` link. Check that the existing-token and new-token paths both use this helper and that the web invite modal in `apps/web/modules/ee/teams/components/MemberInvitationModal.tsx` still gets the same link format it had before this PR.",
+    "commentAnchor": {
+     "file": "packages/features/ee/teams/services/teamService.ts",
+     "lineStart": 104,
+     "lineEnd": 111
+    }
+   },
+   {
+    "title": "Tests don't cover invite link routing for org and regular teams",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The e2e spec only checks that `inviteLink` is a string and that it contains the token. Nothing checks the path or the callback. That's how the inverted condition in `buildInviteLink` got through: a test that asserted `/teams` for a regular team and `/signup` with `callbackUrl` for an org sub-team would have caught it. The spec's own checklist asks for this verification and the spec doesn't provide it.\n\n::diff{file=\"apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts\" lines=\"67-77\"}\n\nAdd a case for a regular team that asserts `inviteLink` starts with `/teams?token=`, and one for an org sub-team (or `isOrganization: true` team) that asserts `/signup?token=` and `callbackUrl=`. Keep the assertions on the exact prefix, not on `toContain`, so the routing is actually checked.",
+    "files": [
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts",
+     "packages/features/ee/teams/services/teamService.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts`, add coverage for the invite link shape. Add one test where a regular team (`isOrganization: false`, no parent) gets an `inviteLink` that starts with `${WEBAPP_URL}/teams?token=`. Add a second test for an org or org-sub-team that gets a `/signup?token=` link containing `callbackUrl=`. Use exact prefix assertions rather than `toContain(token)` alone, so a future flip in `TeamService.buildInviteLink` fails the test. Follow the setup pattern already used in the file.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts",
+     "lineStart": 67,
+     "lineEnd": 77
+    }
+   },
+   {
+    "title": "Import from `@calcom/features` breaks the API v2 convention of using `@calcom/platform-libraries`",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "This PR changed the controller's `TeamService` import from `@calcom/platform-libraries` (the same entry the existing org invite controller and team membership services use) to a deep import into `@calcom/features/ee/teams/services/teamService`. This is the only file under `apps/api/v2/src` that imports from `@calcom/features/`. It will drift from the packaged library that the API runs against, and it might not resolve in the packaged build. The DTO is also duplicated. `apps/api/v2/src/modules/organizations/teams/invite/outputs/invite.output.ts` already defines `CreateInviteOutputDto`, and this PR adds a second copy under `teams/invite/outputs/`.\n\n::diff{file=\"apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts\" lines=\"19-22\"}\n\nSwitch the import back to `@calcom/platform-libraries`, matching `organizations-teams-invite.controller.ts`. Import `CreateInviteOutputDto` from the existing organizations DTO file or move it to a shared location, rather than keeping a second copy.",
+    "files": [
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "apps/api/v2/src/modules/organizations/teams/invite/controllers/organizations-teams-invite.controller.ts",
+     "apps/api/v2/src/modules/organizations/teams/invite/outputs/invite.output.ts",
+     "apps/api/v2/src/modules/teams/invite/outputs/invite.output.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts` (line 21), `TeamService` is imported from `@calcom/features/ee/teams/services/teamService`. Change this to `@calcom/platform-libraries`, matching `apps/api/v2/src/modules/organizations/teams/invite/controllers/organizations-teams-invite.controller.ts`. Then remove the duplicate `apps/api/v2/src/modules/teams/invite/outputs/invite.output.ts` and import `CreateInviteOutputDto` from `@/modules/organizations/teams/invite/outputs/invite.output` (or move the DTO to a shared module). Confirm the API still builds and the e2e spec runs.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "lineStart": 21,
+     "lineEnd": 21
+    }
+   },
+   {
+    "title": "No rate limit or cap on invite token creation",
+    "severity": "low",
+    "category": "security",
+    "body": "Each POST inserts a fresh `verificationToken` row valid for 7 days, and nothing limits how many a team can accumulate. Neither this controller nor the sibling `teams/memberships` controller applies a throttle, so this is a broader gap rather than something this PR introduced. Still, a repeated call from an admin key can grow the table without bound. This is worth a follow-up ticket, not a merge blocker.\n\n::diff{file=\"apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts\" lines=\"30-38\"}\n\nConsider reusing a still-valid token for the team (the service already supports this through `options.token`) or applying a throttle on this route.",
+    "files": [
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "packages/features/ee/teams/services/teamService.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts`, the `createInvite` handler (around lines 30-38) creates a new 7-day invite token on every call. Decide whether to reuse a still-valid invite token for the team or to add a per-team or per-key throttle. If you reuse tokens, look up the existing `verificationToken` rows with identifier `invite-link-for-teamId-<id>` and `expires >= now` in `TeamService.createInvite`. Track this as a follow-up and keep it out of this PR if the team agrees.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "lineStart": 30,
+     "lineEnd": 38
+    }
+   },
+   {
+    "title": "Module wiring and controller structure follow the existing v2 pattern",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "`TeamsInviteModule` is registered in `platform-endpoints-module.ts` beside `TeamsMembershipsModule`, and the controller uses the same `ApiAuthGuard, RolesGuard` stack and `/v2/teams/:teamId/*` path shape as the sibling controllers. The e2e spec uses the same `withApiAuth` harness and `supertest` default import as the rest of the v2 suite, and it includes a non-member case in addition to the member case.",
+    "files": [
+     "apps/api/v2/src/ee/platform-endpoints-module.ts",
+     "apps/api/v2/src/modules/teams/invite/teams-invite.module.ts",
+     "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/cal.com\",\"number\":6,\"title\":\"Code Review Bench PR #26644 - feat: api v2 team invite link endpoint\",\"author\":\"unknown\",\"baseSha\":\"23333875ed8066eee814e7cb69bff93480a1f72e\",\"headSha\":\"505197c4057c173f9a87e84412d825a3a9f240b0\"},\"summary\":\"This PR adds `POST /v2/teams/:teamId/invite`, a thin controller over the shared `TeamService.createInvite`, plus the module wiring, output DTOs and an e2e spec. The endpoint itself is simple, but the diff also changes the s",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

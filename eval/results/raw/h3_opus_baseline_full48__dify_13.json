@@ -1,0 +1,301 @@
+{
+ "id": "dify#13",
+ "repo": "dify",
+ "num": 13,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_final16",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#9",
+  "prefect#12",
+  "redis#8",
+  "redis#9",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-23T17:56:36.334Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Print statement in production code",
+   "description": "The rule requires that all logging in production code must be performed using logger = logging.getLogger(__name__) declared at module top, with no print() statements outside of test files",
+   "file_path": "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py",
+   "start_line": 63,
+   "end_line": 63,
+   "problematic_code_snippet": "            # Enqueue node\n            self._state_manager.enqueue_node(downstream_node_id)\n            print(f\"Starting execution for node: {downstream_node_id}\")\n            self._state_manager.start_execution(downstream_node_id)\n            return",
+   "rule_name": "Backend Code Must Use Logging Instead of Print Statements"
+  },
+  {
+   "title": "Node execution started before being enqueued and marked as TAKEN",
+   "description": "The `start_execution` method is called before `enqueue_node`, which violates the expected state machine flow. The node is added to the `_executing_nodes` set before it's marked as TAKEN or added to the ready queue. This creates a race condition where concurrent operations might observe a node in the executing state while it's still in UNKNOWN state, leading to inconsistent state validation failures. The correct order should be: first enqueue (which marks as TAKEN and adds to queue), then start execution tracking.",
+   "file_path": "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py",
+   "start_line": 62,
+   "end_line": 64,
+   "problematic_code_snippet": "        # If any edge is taken, node may still execute\n        if edge_states[\"has_taken\"]:\n            # Start execution and enqueue node\n            print(f\"Starting execution for node: {downstream_node_id}\")\n            self._state_manager.start_execution(downstream_node_id)\n            self._state_manager.enqueue_node(downstream_node_id)\n            return"
+  },
+  {
+   "title": "Edge marked as skipped after recursive propagation breaks skip chain",
+   "description": "In `_propagate_skip_to_node`, the edge is marked as skipped AFTER the recursive call to `propagate_skip_from_edge`. During the recursive propagation, the edge state is still UNKNOWN rather than SKIPPED. The `propagate_skip_from_edge` method analyzes incoming edge states and stops processing if any edge is UNKNOWN (line 56). This causes the skip propagation to terminate prematurely, leaving downstream nodes in an incorrect state instead of properly propagating the skip status through the entire dependency chain.",
+   "file_path": "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py",
+   "start_line": 83,
+   "end_line": 86,
+   "problematic_code_snippet": "        outgoing_edges = self._graph.get_outgoing_edges(node_id)\n        for edge in outgoing_edges:\n            # Recursively propagate skip\n            self.propagate_skip_from_edge(edge.id)\n            self._state_manager.mark_edge_skipped(edge.id)"
+  },
+  {
+   "title": "Nested helper function missing type annotations",
+   "description": "This function definition lacks a type annotation for its parameter and return value, violating the requirement that all Python function definitions include type hints for parameters and return types.",
+   "file_path": "api/tests/unit_tests/core/workflow/graph_engine/graph_traversal/test_skip_propagator.py",
+   "start_line": 192,
+   "end_line": 198,
+   "problematic_code_snippet": "def get_incoming_edges_side_effect(node_id):\n    if node_id == \"node_2\":\n        return [edge1]\n    elif node_id == \"node_4\":\n        return [edge3]\n    return []",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  },
+  {
+   "title": "Nested helper function missing type annotations",
+   "description": "This function definition lacks a type annotation for its parameter and return value, violating the requirement that all Python function definitions include type hints for parameters and return types.",
+   "file_path": "api/tests/unit_tests/core/workflow/graph_engine/graph_traversal/test_skip_propagator.py",
+   "start_line": 201,
+   "end_line": 207,
+   "problematic_code_snippet": "def get_outgoing_edges_side_effect(node_id):\n    if node_id == \"node_2\":\n        return [edge3]\n    elif node_id == \"node_4\":\n        return []  # No outgoing edges, stops recursion\n    return []",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "c7172e34ec08174292d1d46d3f8bf667439e12c4",
+ "diff_chars": 14009,
+ "diff_lines": 347,
+ "user_prompt_chars": 16242,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 106371,
+ "wall_ms": 108688,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 9,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 17,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 9
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 24.211426971,
+ "spend_post_usd": 24.800787771,
+ "cost_settled": true,
+ "cost_wait_ms": 347,
+ "cost_usd": 0.5893607999999979,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 10,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.3499502,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 22281,
+  "cache_read_input_tokens": 307666,
+  "output_tokens": 8847,
+  "output_tokens_details": {
+   "thinking_tokens": 1134
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 22281
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5293,
+    "cache_creation_input_tokens": 1229,
+    "cache_read_input_tokens": 39942,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 1229,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 8847,
+   "cacheReadInputTokens": 307666,
+   "cacheCreationInputTokens": 22281,
+   "webSearchRequests": 0,
+   "costUSD": 0.3499502,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1134,
+   "cacheCreationEphemeral5mInputTokens": 22281,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 13,
+   "title": "Code Review Bench PR #30251 - fix: workflow incorrectly marked as completed while nodes are still executing",
+   "author": "",
+   "baseSha": "b7d76b2d1c8b520762ed43852f46ed5fc8b060a3",
+   "headSha": "c7172e34ec08174292d1d46d3f8bf667439e12c4"
+  },
+  "summary": "The core fix is correct. When skip propagation makes a node ready, `SkipPropagator.propagate_skip_from_edge` now calls `start_execution` before `enqueue_node`. That keeps `_executing_nodes` non-empty, so the dispatcher can't see an empty queue and an empty executing set and end the run early. Every other enqueue site in `event_handlers.py` and `graph_engine.py` already makes the same pair of calls.\n\nThe PR also introduces a serious regression. In `_propagate_skip_to_node`, it moved `mark_edge_skipped(edge.id)` to after the recursive `propagate_skip_from_edge(edge.id)` call. The downstream node then checks its incoming edges while that edge is still UNKNOWN, hits the `has_unknown` early return, and propagation stops one level deep. I checked this with a small script against the real `GraphStateManager`, using the graph `IF -e1(skipped)-> A -e2-> B -e5-> J <-e4- C <-e3(taken)- IF`. On the base commit, B and e5 end up SKIPPED. On this head, B and e5 stay UNKNOWN, so the join node J can never become ready. This brings back the same family of bugs the PR is meant to fix. There's also a leftover debug `print()` in production code. The new unit tests mock `analyze_edge_states` with a fixed return value, so they can't catch the ordering regression.",
+  "verdict": "request_changes",
+  "verdictRationale": "Swapping `mark_edge_skipped` and the recursive call breaks multi-level skip propagation; I reproduced this against the real state manager. A debug print also needs to go. The `start_execution` addition is good and should be kept.",
+  "architecture": {
+   "overview": "The graph engine's dispatcher loop runs until `GraphStateManager.is_execution_complete()` returns true, meaning the ready queue is empty and `_executing_nodes` is empty. When a branch node (IF/ELSE, question classifier) finishes, `EdgeProcessor.handle_branch_completion` calls `SkipPropagator.skip_branch_paths` on the branches that weren't selected. The propagator walks downstream. For each node it looks at the incoming edge states: it stops if any are UNKNOWN, enqueues the node if any are TAKEN, and otherwise marks the node SKIPPED and recurses into its outgoing edges.\n\nThis PR makes two changes. First, in the TAKEN case it now registers the node in `_executing_nodes` (`start_execution`) before enqueueing it, so the dispatcher can't see an idle state between a worker taking the node off the queue and the node being tracked. Second, it changes the order inside `_propagate_skip_to_node` so an edge is marked SKIPPED after recursing into it rather than before. The recursion therefore sees that edge as UNKNOWN.",
+   "steps": [
+    "Start at `EdgeProcessor.handle_branch_completion` (edge_processor.py:161-186). It sorts the branch's edges into selected and unselected, then calls `skip_branch_paths(unselected_edges)`.",
+    "`skip_branch_paths` (skip_propagator.py:88-97) marks each unselected edge SKIPPED, then calls `propagate_skip_from_edge`.",
+    "`propagate_skip_from_edge` (lines 37-69) calls `GraphStateManager.analyze_edge_states` (graph_state_manager.py:129-146) on the downstream node's incoming edges and returns early if any are UNKNOWN.",
+    "Changed: in the TAKEN case it now calls `start_execution` and then `enqueue_node`, the same pairing used in event_handlers.py:196-197 and graph_engine.py:334-339.",
+    "Changed: `_propagate_skip_to_node` (lines 71-86) now recurses before marking each outgoing edge SKIPPED, which affects how far propagation reaches.",
+    "The dispatcher's `is_execution_complete` (graph_state_manager.py:247-259) depends on both the ready queue and `_executing_nodes` being accurate."
+   ],
+   "diagrams": [
+    {
+     "title": "Skip propagation decision flow",
+     "kind": "flowchart",
+     "description": "How SkipPropagator decides what to do with each downstream node after an edge is skipped.",
+     "mermaid": "flowchart TD\n  A[handle_branch_completion] --> B[skip_branch_paths]\n  B --> C[mark_edge_skipped]\n  C --> D[propagate_skip_from_edge]\n  D --> E{analyze_edge_states}\n  E -- has_unknown --> F[return]\n  E -- has_taken --> G[start_execution]\n  G --> H[enqueue_node]\n  E -- all_skipped --> I[_propagate_skip_to_node]\n  I --> J[mark_node_skipped]\n  J --> K[for each outgoing edge]\n  K --> D\n  K --> L[mark_edge_skipped]"
+    },
+    {
+     "title": "Dispatcher vs worker around a skip-enqueued node",
+     "kind": "sequence",
+     "description": "Why start_execution has to happen before a worker drains the ready queue.",
+     "mermaid": "sequenceDiagram\n  participant Disp as Dispatcher\n  participant SP as SkipPropagator\n  participant SM as GraphStateManager\n  participant W as Worker\n  Disp->>SP: skip_branch_paths\n  SP->>SM: start_execution(node)\n  SP->>SM: enqueue_node(node)\n  W->>SM: ready_queue.get()\n  Disp->>SM: is_execution_complete()\n  SM-->>Disp: false (node in _executing_nodes)\n  W-->>Disp: NodeRunSucceededEvent\n  Disp->>SM: finish_execution(node)"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Reordering `mark_edge_skipped` after the recursive call stops skip propagation one level deep",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `_propagate_skip_to_node`, the edge is now marked SKIPPED only *after* recursing into it:\n\n::diff{file=\"api/core/workflow/graph_engine/graph_traversal/skip_propagator.py\" lines=\"81-86\"}\n\n`propagate_skip_from_edge(edge.id)` immediately calls `analyze_edge_states` on the downstream node's incoming edges, and those include `edge` itself, which is still `UNKNOWN`. That hits the early `has_unknown` return on line 56, so the downstream node is never skipped or enqueued. Once the loop marks the edge SKIPPED, nothing re-examines that node.\n\nI checked this with a small script against the real `GraphStateManager`:\n\n- Graph: `IF -e1-> A -e2-> B -e5-> J` and `IF -e3-> C -e4-> J`, with e3 TAKEN and e1 skipped.\n- **Base:** A, B, e2 and e5 all end up SKIPPED. J can run once C finishes.\n- **Head:** A is SKIPPED, but B, e5 (and J) stay UNKNOWN. J has an UNKNOWN incoming edge forever, so it never becomes ready, and the workflow finishes without running the join/end node.\n\n::callout{type=\"warning\"}\nThis brings back the class of bug the PR is fixing (the workflow ends while downstream nodes never run). It affects any skipped branch more than one node deep, which is very common.\n\nRevert to the original order:\n\n::suggestion{file=\"api/core/workflow/graph_engine/graph_traversal/skip_propagator.py\" lines=\"83-86\"}\n        for edge in outgoing_edges:\n            self._state_manager.mark_edge_skipped(edge.id)\n            # Recursively propagate skip\n            self.propagate_skip_from_edge(edge.id)\n\nThis also matches how `skip_branch_paths` (lines 95-97) does it: mark first, then propagate.",
+    "files": [
+     "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py"
+    ],
+    "fixPrompt": "In `api/core/workflow/graph_engine/graph_traversal/skip_propagator.py`, `_propagate_skip_to_node` (lines 83-86) calls `self.propagate_skip_from_edge(edge.id)` before `self._state_manager.mark_edge_skipped(edge.id)`. The downstream node then sees that edge as UNKNOWN and returns early, so skip propagation stops after one level. Restore the original order: mark the edge skipped first, then recurse, matching `skip_branch_paths` at lines 95-97. Add a unit test that uses a real `GraphStateManager` (with `InMemoryReadyQueue`) and a small multi-level graph. It should assert that every node on a skipped chain ends up SKIPPED and that a join node with one taken branch gets enqueued.",
+    "commentAnchor": {
+     "file": "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py",
+     "lineStart": 83,
+     "lineEnd": 86
+    }
+   },
+   {
+    "title": "Debug `print()` left in the graph engine hot path",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "A debug print slipped into production code:\n\n::diff{file=\"api/core/workflow/graph_engine/graph_traversal/skip_propagator.py\" lines=\"60-65\"}\n\nIt writes to stdout for every node made ready by skip propagation, bypassing the logging setup. No other file under `core/workflow/graph_engine` uses `print`. Remove it, or use `logger.debug` if a trace is really needed.\n\n::suggestion{file=\"api/core/workflow/graph_engine/graph_traversal/skip_propagator.py\" lines=\"61-64\"}\n            # Start execution and enqueue node\n            self._state_manager.start_execution(downstream_node_id)\n            self._state_manager.enqueue_node(downstream_node_id)\n\n",
+    "files": [
+     "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py"
+    ],
+    "fixPrompt": "Remove the `print(f\"Starting execution for node: ...\")` call at line 62 of `api/core/workflow/graph_engine/graph_traversal/skip_propagator.py`. If a trace is needed, use a module-level `logging.getLogger(__name__)` and `logger.debug` instead. Nothing else in `core/workflow/graph_engine` prints to stdout.",
+    "commentAnchor": {
+     "file": "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py",
+     "lineStart": 62,
+     "lineEnd": 62
+    }
+   },
+   {
+    "title": "Mock-only tests can't catch the ordering regression or the original bug",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "Every new test mocks `GraphStateManager` with `create_autospec`. The recursion test also pins `analyze_edge_states.return_value` to a fixed `all_skipped=True`, whatever the actual edge states are:\n\n::code{file=\"api/tests/unit_tests/core/workflow/graph_engine/graph_traversal/test_skip_propagator.py\" lines=\"223-242\"}\n\nSo this test passes whether edges are marked before or after recursing. That's exactly why the critical regression above got through. The comments on lines 148-150 and 183-184 (\"We'll trust the logic\") say outright that recursion isn't actually checked.\n\nNo test reproduces the reported bug either: a node becomes ready via skip propagation, and the engine has to wait for it before completing. The two `assert_called_once_with` checks only confirm that `start_execution` was called, which tests the implementation rather than the behavior.\n\n`test_propagate_skip_from_edge_with_mixed_edge_states_handles_correctly` just repeats the three earlier tests in one function with `reset_mock()`, so it adds no coverage.\n\nA better test uses a real `GraphStateManager(graph, InMemoryReadyQueue())` on a small multi-level graph and asserts the final node/edge states, `is_execution_complete()`, and queue contents. An engine-level test in `tests/unit_tests/core/workflow/graph_engine/` using the DSL from the linked issue would cover the end-to-end symptom.",
+    "files": [
+     "api/tests/unit_tests/core/workflow/graph_engine/graph_traversal/test_skip_propagator.py"
+    ],
+    "fixPrompt": "The tests in `api/tests/unit_tests/core/workflow/graph_engine/graph_traversal/test_skip_propagator.py` mock `GraphStateManager.analyze_edge_states` with fixed return values, so they can't catch edge-ordering bugs in `SkipPropagator._propagate_skip_to_node`. Add tests that use a real `GraphStateManager` with `InMemoryReadyQueue` and a minimal fake graph (edges/nodes with `state`, `get_incoming_edges`, `get_outgoing_edges`). Cover: (1) a skipped chain of 2+ nodes ends up fully SKIPPED; (2) a join node with one TAKEN and one skipped incoming edge is enqueued, and `is_execution_complete()` returns False even after the ready queue is drained. Remove the redundant mixed-states test and the 'trust the logic' comments.",
+    "commentAnchor": {
+     "file": "api/tests/unit_tests/core/workflow/graph_engine/graph_traversal/test_skip_propagator.py",
+     "lineStart": 186,
+     "lineEnd": 242
+    }
+   },
+   {
+    "title": "Adding `start_execution` before enqueue correctly closes the early-completion race",
+    "severity": "info",
+    "category": "correctness",
+    "body": "This is the right root-cause fix. All other enqueue sites (`event_handlers.py:196-197`, `279-280`, `309-310`, `graph_engine.py:334-339`) pair `enqueue_node` with `start_execution`. The skip-propagation path was the only one missing it, so a worker could drain `_ready_queue` while `_executing_nodes` was still empty, and `is_execution_complete()` would return True too early.\n\nCalling `start_execution` *before* `enqueue_node` is, if anything, slightly safer than the order used elsewhere: there's no window where the node is in the queue but not yet tracked.\n\n::code{file=\"api/core/workflow/graph_engine/graph_traversal/skip_propagator.py\" lines=\"60-65\"}\n",
+    "files": [
+     "api/core/workflow/graph_engine/graph_traversal/skip_propagator.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":13,\"title\":\"Code Review Bench PR #30251 - fix: workflow incorrectly marked as completed while nodes are still executing\",\"author\":\"\",\"baseSha\":\"b7d76b2d1c8b520762ed43852f46ed5fc8b060a3\",\"headSha\":\"c7172e34ec08174292d1d46d3f8bf667439e12c4\"},\"summary\":\"The core fix is correct. When skip propagation makes a node ready, `SkipPropagator.propagate_skip_from_edge` now calls `start_execution` before `enqueue_node`. That keeps `_executing_nodes` non",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 4
+}

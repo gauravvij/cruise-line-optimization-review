@@ -1,0 +1,301 @@
+{
+ "id": "redis#5",
+ "repo": "redis",
+ "num": 5,
+ "tag": "e3_v1_recall",
+ "model": "anthropic/claude-haiku-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "promptVariant": "v1_recall.txt",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Direct malloc_usable_size instead of zmalloc_size",
+   "description": "The rule requires all memory operations to use Redis zmalloc wrappers (zmalloc_size) instead of direct libc functions (malloc_usable_size)",
+   "file_path": "src/object.c",
+   "start_line": 1216,
+   "end_line": 1217,
+   "problematic_code_snippet": "    /* All kv-objects has at least kvobj header and embedded key */\n    size_t asize = malloc_usable_size((void *)o);",
+   "rule_name": "Use zmalloc/zfree Wrappers Instead of Direct malloc/free"
+  },
+  {
+   "title": "Incorrect memory calculation for QUICKLIST due to wrong denominator",
+   "description": "In the QUICKLIST encoding branch, the average element size calculation uses `elesize/samples` instead of `elesize/elecount`. This divides the accumulated element size by the number of sampled nodes rather than the total element count in those nodes. Since `elecount` represents the sum of all `node->count` values (the actual number of elements), using `samples` (number of nodes) produces an incorrect average that doesn't represent the true per-element memory usage. This causes the MEMORY USAGE command to return wildly inaccurate values for quicklist-encoded lists.",
+   "file_path": "src/object.c",
+   "start_line": 1234,
+   "end_line": 1239,
+   "problematic_code_snippet": "            do {\n                elesize += sizeof(quicklistNode)+zmalloc_size(node->entry);\n                elecount += node->count;\n                samples++;\n            } while ((node = node->next) && samples < sample_size);\n            asize += (double)elesize/samples*ql->count;"
+  },
+  {
+   "title": "Variable shadowing breaks sampling consistency for STREAM objects",
+   "description": "A local `samples` variable is declared at line 1319 within the OBJ_STREAM branch, shadowing the outer `samples` variable declared at line 1214. This prevents the outer samples counter from being updated during stream memory calculation. While this doesn't break the stream calculation itself, it violates the function's sampling design pattern where the outer `samples` variable tracks total sampling across all object type branches. This inconsistency could lead to unexpected behavior if the function logic is modified to check or use the outer samples counter after processing.",
+   "file_path": "src/object.c",
+   "start_line": 1318,
+   "end_line": 1319,
+   "problematic_code_snippet": "        raxStart(&ri,s->rax);\n        raxSeek(&ri,\"^\",NULL,0);\n        size_t lpsize = 0;\n        size_t samples = 0;\n        while(samples < sample_size && raxNext(&ri)) {"
+  },
+  {
+   "title": "Double-counting last listpack in STREAM memory calculation",
+   "description": "The stream memory estimation algorithm samples the first N listpacks, computes their average size, and then explicitly adds the last listpack's actual size separately (line 1336). The multiplication at line 1330 should use `(s->rax->numele-1)` to account for all listpacks except the last one, but it incorrectly uses `s->rax->numele` without the subtraction. This causes the last listpack to be counted twice: once in the averaged estimate and once with its actual size, resulting in inflated memory usage reports for streams with more elements than the sample size.",
+   "file_path": "src/object.c",
+   "start_line": 1326,
+   "end_line": 1336,
+   "problematic_code_snippet": "        if (s->rax->numele <= samples) {\n            asize += lpsize;\n        } else {\n            if (samples) lpsize /= samples; /* Compute the average. */\n            asize += lpsize * s->rax->numele;\n            /* No need to check if seek succeeded, we enter this branch only\n             * if there are a few elements in the radix tree. */\n            raxSeek(&ri,\"$\",NULL,0);\n            raxNext(&ri);\n            /* Use the allocated size, since we overprovision the node initially. */\n            asize += zmalloc_size(ri.data);\n        }"
+  },
+  {
+   "title": "Unused variable 'elecount' causes build failure with -Werror",
+   "description": "The variable 'elecount' is declared and incremented in the QUICKLIST encoding branch (line 1236: 'elecount += node->count') but is never used after the PR changed the calculation from 'elesize/elecount' to 'elesize/samples'. This creates an unused-but-set variable which triggers compiler warnings under -Wall (enabled in Makefile) and causes build failures when compiling with -Werror flag. This violates AGENTS.MD Rule #4 which requires the codebase to compile without warnings when REDIS_CFLAGS=\"-Werror\" is enabled.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "size_t elesize = 0, elecount = 0, samples = 0;\n...\nif (o->encoding == OBJ_ENCODING_QUICKLIST) {\n    quicklist *ql = o->ptr;\n    quicklistNode *node = ql->head;\n    asize += sizeof(quicklist);\n    do {\n        elesize += sizeof(quicklistNode)+zmalloc_size(node->entry);\n        elecount += node->count;\n        samples++;\n    } while ((node = node->next) && samples < sample_size);\n    asize += (double)elesize/samples*ql->count;"
+  },
+  {
+   "title": "Internal helper function kvobjComputeSize is not declared static",
+   "description": "`kvobjComputeSize` appears to be an internal helper used within `src/object.c` (e.g., by the MEMORY USAGE handling code in the same file). Per the rule, such single-compilation-unit helper functions must be declared `static` to avoid exporting unnecessary global symbols.",
+   "file_path": "src/object.c",
+   "start_line": 1208,
+   "end_line": 1208,
+   "problematic_code_snippet": "size_t kvobjComputeSize(robj *key, kvobj *o, size_t sample_size, int dbid) {",
+   "rule_name": "Rule 7: Internal Helper Functions Must Be Declared Static"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd",
+ "diff_chars": 10143,
+ "diff_lines": 220,
+ "user_prompt_chars": 11195,
+ "exit_code": 0,
+ "timed_out": false,
+ "latency_ms": 127715,
+ "wall_ms": 129775,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "objectComputeSize|kvobjComputeSize"
+  },
+  {
+   "name": "Grep",
+   "detail": "malloc_usable_size|define zmalloc_size|zmalloc_size\\(void|USE_JEMALLOC|with-jemalloc-prefix"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/object.c"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/tests/unit/type/string.tcl"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 11,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "cost_usd": 0.021519345000001522,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 12,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.02122329,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 39396,
+  "cache_read_input_tokens": 224409,
+  "output_tokens": 28107,
+  "output_tokens_details": {
+   "thinking_tokens": 19664
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 39396
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 28107,
+   "cacheReadInputTokens": 224409,
+   "cacheCreationInputTokens": 39396,
+   "webSearchRequests": 0,
+   "costUSD": 0.02122329,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 19664,
+   "cacheCreationEphemeral5mInputTokens": 39396,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 5,
+   "title": "Code Review Bench PR #14288 - Fix MEMORY USAGE command",
+   "author": "unknown",
+   "baseSha": "5d0e57b83bcd5412e5778ab90f0c4113a861a587",
+   "headSha": "b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd"
+  },
+  "summary": "This PR fixes MEMORY USAGE after the kvobj change. Since the embedded key now lives inside the object allocation, the function renamed from objectComputeSize() to kvobjComputeSize() starts from the size of the whole allocation instead of sizeof(robj), and drops the per-branch sizeof(*o) terms. It also adds a string MEMORY USAGE bounds test and updates comments in the hash and list tests.\n\nThe core idea is right, and the string encodings are handled correctly. The implementation has three real problems. First, the allocation size is read with a bare libc malloc_usable_size() call, not the allocator-aware zmalloc_size() wrapper the PR description asks for. In the default jemalloc build that is an undeclared function that reads another allocator's chunk header, and on macOS or tcmalloc it doesn't link at all. Second, two collection-size formulas were changed as side effects, not as part of the key-embedding fix: the quicklist per-element divisor now uses node count instead of element count, which overestimates large lists by roughly the number of elements per node, and the stream estimate now counts one listpack twice. Third, the new test only checks loose bounds on strings, so none of the list or stream accounting changes are covered.",
+  "verdict": "request_changes",
+  "verdictRationale": "The bare malloc_usable_size() call is a build and correctness blocker for the default Linux jemalloc configuration and for macOS. The quicklist divisor and stream listpack-count changes are unrelated to the key-embedding fix and produce materially wrong MEMORY USAGE values for lists and streams. Both should be reverted or justified before merge, and the test gap should be addressed.",
+  "architecture": {
+   "overview": "MEMORY USAGE is handled in the memory command branch of src/object.c. It looks up the key with dbFind(), which returns a kvobj: an robj header followed by an optional expire field and the embedded key SDS, allocated in one block by kvobjCreate(). Before this PR the size function started from sizeof(*o) and added the container and value allocations per encoding, so the embedded key bytes were never counted. After the rename, kvobjComputeSize() starts from the size of the whole kvobj allocation, which is the right baseline for the key, the header and the embedded value. The per-branch sizeof(*o) terms are removed because the header is already in that baseline.\n\nThe PR also makes changes outside that baseline. It changes the quicklist per-element divisor from elecount to samples and changes the stream estimate from numele-1 to numele, so the average-based estimates for those types change too. The new string bounds test runs on every allocator, while the list and stream changes have no assertion that would catch errors in them.",
+   "steps": [
+    "Entry point: the MEMORY USAGE branch in src/object.c looks up the key with dbFind(), which returns a kvobj (type robj, iskvobj set), and passes it with the sample count to kvobjComputeSize().",
+    "Baseline: kvobjComputeSize() in src/object.c starts from the size of the kvobj allocation. The PR uses malloc_usable_size() here, but the PR description and the allocator wrapper call for zmalloc_size(). That baseline is where the embedded key bytes get counted.",
+    "Per-encoding accounting: STRING INT and EMBSTR add nothing extra because the value is already inside the allocation. RAW adds sdsZmallocSize() for the separate value buffer. Collection branches add their out-of-line structures (dict, listpack, quicklist, zset skiplist, stream rax and listpacks) and sample a few elements to extrapolate.",
+    "What this PR changed in that flow: the quicklist per-element divisor (elecount to samples) and the stream listpack count (numele-1 to numele). Both are behavioral changes that the key-embedding fix does not require.",
+    "Tests: tests/unit/type/string.tcl adds a bounds test over key and value sizes, asserting the result falls between header plus key plus value and roughly twice that. hash.tcl and list.tcl only rename a coverage comment."
+   ],
+   "diagrams": [
+    {
+     "title": "MEMORY USAGE size computation",
+     "kind": "flowchart",
+     "description": "How MEMORY USAGE resolves a key to a kvobj and computes its size by encoding branch.",
+     "mermaid": "flowchart LR\n  client[\"Client: MEMORY USAGE key\"] --> memcmd[\"memory usage branch (object.c)\"]\n  memcmd --> dbfind[\"dbFind: returns kvobj\"]\n  dbfind --> compute[\"kvobjComputeSize (object.c)\"]\n  compute --> base[\"Baseline: whole kvobj allocation size\"]\n  compute --> str[\"STRING: INT / RAW / EMBSTR\"]\n  compute --> coll[\"LIST / SET / ZSET / HASH encodings\"]\n  compute --> strm[\"STREAM: rax and listpack sampling\"]\n  base --> total[\"Total bytes returned\"]\n  str --> total\n  coll --> total\n  strm --> total"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Bare malloc_usable_size() bypasses the allocator wrapper and breaks the jemalloc build",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The PR description says to replace `sizeof(*o)` with `zmalloc_size((void *)o)`, but the code calls libc's `malloc_usable_size` directly. The original EMBSTR branch in this same function already used `zmalloc_size` on this object, and every other size call in the file uses the wrapper.\n\nThis breaks in three configurations:\n\n- **Default Linux build (jemalloc).** Redis builds jemalloc with `--with-jemalloc-prefix=je_` (`deps/Makefile:141`), and `src/zmalloc.c` maps `malloc` to `je_malloc`. Every kvobj is allocated by jemalloc. Glibc's `malloc_usable_size()` reads the chunk header of its own allocator, so on a jemalloc pointer it returns garbage.\n- **Compilation under jemalloc.** No included header declares a bare `malloc_usable_size` in the jemalloc build. `zmalloc.h` declares it only in the glibc-only branch, and jemalloc's prototypes are `je_malloc_usable_size`. The call is therefore an implicit declaration. That is a hard error by default on GCC 14+ and Clang 16+, and on older compilers it silently returns `int`.\n- **macOS and tcmalloc.** Neither provides `malloc_usable_size`, so the build fails at link time (macOS exposes `malloc_size`, which `zmalloc.h` already wraps).\n\nI did not run a build. This comes from reading the source and the jemalloc configuration.\n\n::diff{file=\"src/object.c\" lines=\"1215-1219\"}\n\n::suggestion{file=\"src/object.c\" lines=\"1217-1217\"}\n    size_t asize = zmalloc_size((void *)o);\n",
+    "files": [
+     "src/object.c",
+     "src/zmalloc.h"
+    ],
+    "fixPrompt": "In src/object.c, kvobjComputeSize() (around line 1217) initializes `asize` with the bare libc call `malloc_usable_size((void *)o)`. Change it to `zmalloc_size((void *)o)`, the allocator-aware wrapper from src/zmalloc.h. This matches the PR description and the EMBSTR branch in the same function. Do not add a direct libc include or call. Confirm the change compiles under both the default jemalloc build and USE_JEMALLOC=no.",
+    "commentAnchor": {
+     "file": "src/object.c",
+     "lineStart": 1217,
+     "lineEnd": 1217
+    }
+   },
+   {
+    "title": "Quicklist average now divides by node count, overestimating large lists",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The PR changed the quicklist per-element estimate from `elesize/elecount` to `elesize/samples`. This is unrelated to the key-embedding fix, and it is wrong.\n\n`elesize` accumulates one entry per sampled quicklist **node** (`sizeof(quicklistNode) + zmalloc_size(node->entry)`). `elecount` accumulates the **elements** in those nodes. Dividing by `elecount` gives the cost per element, and multiplying by `ql->count` (total elements) gives the total. Dividing by `samples` (the node count) gives the cost per node and then multiplies it by the element count, which overestimates by roughly the number of elements per node.\n\nExample: 10,000 items of 10 bytes in quicklist nodes of about 100 items each. Sampling 5 nodes gives `elesize` ≈ 41,000, `elecount` = 500, and `samples` = 5. The base formula returns about 820 KB, which matches the real 100 nodes of about 8 KB. The new formula returns about 82 MB, roughly 100× too large. With `elecount` now unused except for accumulation, the variable is effectively dead.\n\n::diff{file=\"src/object.c\" lines=\"1229-1240\"}\n\n::suggestion{file=\"src/object.c\" lines=\"1239-1239\"}\n            asize += (double)elesize/elecount*ql->count;\n",
+    "files": [
+     "src/object.c"
+    ],
+    "fixPrompt": "In src/object.c, kvobjComputeSize(), the OBJ_ENCODING_QUICKLIST branch (around line 1239) divides `elesize` by `samples`. Restore the base-commit divisor, `elecount`, so the expression is `(double)elesize/elecount*ql->count`. `elesize` sums per-node costs and `elecount` sums the elements in those nodes, so `elecount` is the correct per-element denominator. Keep the sampling loop unchanged. This change is not needed for the key-embedding fix, so revert it rather than justifying it in the PR.",
+    "commentAnchor": {
+     "file": "src/object.c",
+     "lineStart": 1239,
+     "lineEnd": 1239
+    }
+   },
+   {
+    "title": "Stream estimate now counts one listpack twice",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The stream branch estimates the first N-1 listpacks from the sampled average, then adds the real size of the last listpack separately. The code does this with `raxSeek(&ri,\"$\",...)` and `zmalloc_size(ri.data)`. Changing the multiplier from `numele-1` to `numele` counts the last listpack in both the average and the exact term.\n\nThe overcount is about one average listpack for each stream with more listpacks than `sample_size`. The effect is small for large streams but a real regression for mid-size ones. The PR description does not mention this change, and nothing in the key-embedding fix requires it.\n\n::diff{file=\"src/object.c\" lines=\"1326-1337\"}\n\n::suggestion{file=\"src/object.c\" lines=\"1330-1330\"}\n            asize += lpsize * (s->rax->numele-1);\n",
+    "files": [
+     "src/object.c"
+    ],
+    "fixPrompt": "In src/object.c, kvobjComputeSize(), the OBJ_STREAM branch (around line 1330) changed `asize += lpsize * (s->rax->numele-1);` to `numele`. Revert to `numele-1`. The last listpack is added separately after `raxSeek(&ri,\"$\")`, so counting all `numele` nodes in the average double-counts one listpack. Keep the rest of the stream accounting unchanged.",
+    "commentAnchor": {
+     "file": "src/object.c",
+     "lineStart": 1330,
+     "lineEnd": 1330
+    }
+   },
+   {
+    "title": "New MEMORY USAGE test covers only loose string bounds",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The new `MEMORY USAGE - STRINGS` test checks a lower bound of header plus key plus value, and an upper bound that is `max(64, 2 * min)`. That detects a missing key, but not the bugs above, and it runs only on strings.\n\nThe PR changes accounting for quicklists, streams, and hashes, and none of those paths get an assertion. A regression in the quicklist divisor (about 100× at the sizes above) or the stream double count would pass. The string bounds are also loose enough that a much smaller error would pass too. The hash and list test edits only rename a comment and add no assertions.\n\n::code{file=\"tests/unit/type/string.tcl\" lines=\"687-712\"}\n\nSuggested fix: add a test that builds a list large enough for several quicklist nodes and asserts the result is within a tight factor of the real per-element cost, and a stream with more listpacks than the default sample size. Also tighten the string upper bound so it actually constrains the per-encoding accounting.",
+    "files": [
+     "tests/unit/type/string.tcl",
+     "src/object.c"
+    ],
+    "fixPrompt": "In tests/unit/type/string.tcl, the new `MEMORY USAGE - STRINGS` test (around lines 687-712) only checks loose bounds on string keys. Add coverage that would fail if the quicklist per-element divisor or the stream listpack count regressed. Add a list built from enough elements to span several quicklist nodes, and assert MEMORY USAGE stays within a tight factor of an expected per-element cost. Also add a stream with more listpacks than the default sample size and assert a bounded result. Keep the existing string test and tighten its upper bound if it is too loose to constrain the accounting.",
+    "commentAnchor": {
+     "file": "tests/unit/type/string.tcl",
+     "lineStart": 687,
+     "lineEnd": 712
+    }
+   },
+   {
+    "title": "Stream block redeclares samples, shadowing the function-level variable",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The stream branch declares `size_t samples = 0;`, which shadows the function-level `samples` declared at the top of `kvobjComputeSize()`. The shadow predates this PR, but the PR touched this declaration by splitting it onto its own line and left the shadow in place.\n\nNothing breaks today. Future edits to the function-level `samples` could silently affect the wrong variable.\n\n::code{file=\"src/object.c\" lines=\"1315-1320\"}\n\nSuggested fix: drop the inner declaration and reuse the function-level `samples`, resetting it to zero before the stream loop.",
+    "files": [
+     "src/object.c"
+    ],
+    "fixPrompt": "In src/object.c, kvobjComputeSize(), the OBJ_STREAM branch (around lines 1318-1319) declares an inner `size_t samples = 0;` that shadows the function-level `samples`. Remove the inner declaration, set the function-level `samples = 0;` before the stream sampling loop, and keep the rest of the stream logic unchanged.",
+    "commentAnchor": {
+     "file": "src/object.c",
+     "lineStart": 1318,
+     "lineEnd": 1319
+    }
+   },
+   {
+    "title": "Callers and declarations are consistent after the rename",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The rename is complete. The only call site is the MEMORY USAGE handler in ::file{file=\"src/object.c\"}, and it passes the `kvobj *` that `dbFind()` returns. There are no stale `objectComputeSize` references in `src/` or `tests/`, and no header declared the old name. The comment-only edits in `tests/unit/type/hash.tcl` and `tests/unit/type/list.tcl` keep the coverage notes in step with the new name.",
+    "files": [
+     "src/object.c",
+     "tests/unit/type/hash.tcl",
+     "tests/unit/type/list.tcl"
+    ]
+   },
+   {
+    "title": "String encoding accounting does not double-count the value",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The reasoning about string encodings is right. INT and EMBSTR add nothing beyond the header allocation, because the integer or the embedded value already lives inside the kvobj block (`kvobjCreate` in `src/object.c`, layout in `src/server.h`). RAW adds `sdsZmallocSize()` for the separate value buffer. The comments explain the reasoning, and the `sizeof(*o)` terms are removed from the other types because the header is now in the baseline. The baseline is the part that needs the fix above.",
+    "files": [
+     "src/object.c",
+     "src/server.h"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":5,\"title\":\"Code Review Bench PR #14288 - Fix MEMORY USAGE command\",\"author\":\"unknown\",\"baseSha\":\"5d0e57b83bcd5412e5778ab90f0c4113a861a587\",\"headSha\":\"b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd\"},\"summary\":\"This PR fixes MEMORY USAGE after the kvobj change. Since the embedded key now lives inside the object allocation, the function renamed from objectComputeSize() to kvobjComputeSize() starts from the size of the whole allocation instead of s",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

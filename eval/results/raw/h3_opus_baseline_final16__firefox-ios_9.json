@@ -1,0 +1,313 @@
+{
+ "id": "firefox-ios#9",
+ "repo": "firefox-ios",
+ "num": 9,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_final16",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#9",
+  "prefect#12",
+  "redis#8",
+  "redis#9",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-23T17:58:25.022Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Missing private modifier on gleanWrapper",
+   "description": "The rule requires that properties have explicit access control modifiers with 'private' for implementation details. The gleanWrapper property lacks the 'private' modifier, exposing an internal implementation detail that should not be accessible outside the struct.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/Toolbars/ToolbarTelemetry.swift",
+   "start_line": 8,
+   "end_line": 13,
+   "problematic_code_snippet": "struct ToolbarTelemetry {\n    let gleanWrapper: GleanWrapper\n\n    init(gleanWrapper: GleanWrapper = DefaultGleanWrapper()) {\n        self.gleanWrapper = gleanWrapper\n    }",
+   "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+  },
+  {
+   "title": "Incorrect Reader Mode URL handling in cancelEditMode",
+   "description": "The cancelEditMode function now incorrectly preserves reader mode URLs when canceling edit mode. The logic was changed from '&&' (AND) to '||' (OR), which means reader mode URLs will now be kept instead of being cleared. This breaks the expected behavior where reader mode URLs should be filtered out when canceling URL editing, potentially causing the address bar to display internal reader:// URLs to users instead of the original webpage URL.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift",
+   "start_line": 482,
+   "end_line": 486,
+   "problematic_code_snippet": "@MainActor\nprivate func cancelEditMode(windowUUID: WindowUUID) {\n    var url = tabManager(for: windowUUID).selectedTab?.url\n    if let currentURL = url {\n        url = (currentURL.isWebPage() || currentURL.isReaderModeURL) ? url : nil\n    }"
+  },
+  {
+   "title": "Inverted reader mode telemetry state tracking",
+   "description": "The recordReaderModeTelemetry function has inverted logic for determining reader mode state. When the reader mode is 'available' (about to be enabled), it reports false instead of true, and for all other states it reports true instead of false. This causes telemetry data to incorrectly track reader mode usage patterns - reporting that reader mode is being disabled when it's actually being enabled and vice versa. This will corrupt analytics data about reader mode feature usage.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift",
+   "start_line": 520,
+   "end_line": 529,
+   "problematic_code_snippet": "private func recordReaderModeTelemetry(state: AppState, windowUUID: WindowUUID) {\n    guard let toolbarState = state.screenState(ToolbarState.self, for: .toolbar, window: windowUUID) else { return }\n\n    let isReaderModeEnabled = switch toolbarState.addressToolbar.readerModeState {\n    case .available: false // will be enabled after action gets executed\n    default: true\n    }\n\n    toolbarTelemetry.readerModeButtonTapped(isPrivate: toolbarState.isPrivateMode, isEnabled: isReaderModeEnabled)\n}"
+  },
+  {
+   "title": "Wrong display view type for reader mode action",
+   "description": "The handleShowReaderModeAction function sets the wrong displayView type when the user taps the reader mode button. Instead of setting displayView to '.readerMode' (which would show the reader mode view), it's set to '.readerModeLongPressAction' (which is meant for long-press actions). This causes the wrong UI component to be displayed when users try to activate reader mode, breaking the core reader mode functionality and showing an incorrect action sheet instead of the reader view.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/BrowserViewController/State/BrowserViewControllerState.swift",
+   "start_line": 558,
+   "end_line": 568,
+   "problematic_code_snippet": "@MainActor\nprivate static func handleShowReaderModeAction(state: BrowserViewControllerState,\n                                               action: GeneralBrowserAction) -> BrowserViewControllerState {\n    return BrowserViewControllerState(\n        searchScreenState: state.searchScreenState,\n        toast: state.toast,\n        windowUUID: state.windowUUID,\n        browserViewType: state.browserViewType,\n        displayView: .readerModeLongPressAction,\n        microsurveyState: MicrosurveyPromptState.reducer(state.microsurveyState, action))\n}"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "de948b018e79cc42c868127f853fed6fb12006ec",
+ "diff_chars": 24850,
+ "diff_lines": 517,
+ "user_prompt_chars": 26735,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 85555,
+ "wall_ms": 87953,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 8,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 7,
+ "turn_trace": {
+  "assistant_lines": 14,
+  "unique_message_ids": 7,
+  "lines_without_id": 0,
+  "tool_use_blocks": 8
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 24.800787771,
+ "spend_post_usd": 25.109473771,
+ "cost_settled": true,
+ "cost_wait_ms": 355,
+ "cost_usd": 0.30868600000000157,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.3858388,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 29888,
+  "cache_read_input_tokens": 276114,
+  "output_tokens": 9056,
+  "output_tokens_details": {
+   "thinking_tokens": 624
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 29888
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 6313,
+    "cache_creation_input_tokens": 1105,
+    "cache_read_input_tokens": 47673,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 1105,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 9056,
+   "cacheReadInputTokens": 276114,
+   "cacheCreationInputTokens": 29888,
+   "webSearchRequests": 0,
+   "costUSD": 0.3858388,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 624,
+   "cacheCreationEphemeral5mInputTokens": 29888,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 9,
+   "title": "Code Review Bench PR #31577 - Remove FXIOS-14593 [BVC] Clean up qr code related code from BVC",
+   "author": "",
+   "baseSha": "db5723b28f6497d72d8499b7cf0415813d018cda",
+   "headSha": "de948b018e79cc42c868127f853fed6fb12006ec"
+  },
+  "summary": "The PR's main goal is to remove QR code scanning from BrowserViewController. It removes the `QRCodeViewControllerDelegate` conformance and its scan handlers from the BVC. It also drops the QRCode home-screen quick action and deeplink, the `showQRCode` app action route, the `qrCode` toolbar action with its middleware branch, Redux state and telemetry, and the `qr_code.scanned` and `toolbar.qr_scan_button_tapped` Glean probes. That cleanup is consistent with itself. I grepped for leftover references and found none in the Client target. The shared `QRCodeViewController`, `QRCodeCoordinator` and `QRCodeNavigationHandler`, which the Fxa sign-in flows still use, are correctly left alone.\n\nThe PR also slips in several changes that have nothing to do with QR codes, and three of them are real regressions in reader mode. `handleShowReaderModeAction` now sets `displayView: .readerModeLongPressAction`, so tapping the reader-mode button adds the page to the Reading List instead of opening reader mode. The URL filter in `cancelEditMode` was flipped from `&&!` to `||`, so the internal `http://localhost/reader-mode/page` URL now leaks into the address bar. The reader-mode telemetry `isEnabled` flag is inverted, which also breaks an existing test. On top of that, the app version moves from 147.1 to 147.2, and `ToolbarTelemetry.gleanWrapper` is no longer `private`. Neither has any stated reason.",
+  "verdict": "request_changes",
+  "verdictRationale": "The QR cleanup itself is fine. But the PR also changes reader-mode behavior without saying so: the reader-mode button now does the wrong thing, an internal URL leaks into the address bar, and telemetry is inverted. These need to be reverted before merge.",
+  "architecture": {
+   "overview": "The toolbar uses Redux. Button taps reach `ToolbarMiddleware`, which records telemetry and dispatches `GeneralBrowserAction`s. `BrowserViewControllerState.reducer` maps each action to a `displayView` value, and `BrowserViewController` reads that value to present UI through `navigationHandler` (the BrowserCoordinator). Before this PR, QR scanning could start from three places: the toolbar `.qrCode` button, which went through `showQRcodeReader` → `.qrCodeReader` → `showQRCode(delegate: self)`; the `QRCode` home-screen shortcut and deeplink, which went through `RouteBuilder` → `.action(.showQRCode)` → `BrowserCoordinator.handleQRCode`; and the BVC acting as the `QRCodeViewControllerDelegate` that handled scan results.\n\nThis PR removes all three entry points from the browser side. It also removes the BVC delegate conformance, the legacy `TelemetryWrapper` QR events, and the Glean probes. The shared QR coordinator stays in place for the Fxa sign-in flows. Separately, the PR changes the reader-mode reducer mapping, the URL filter in `cancelEditMode`, and the reader-mode telemetry flag, all in this same toolbar/BVC Redux pipeline.",
+   "steps": [
+    "Start at the external entry points: `QuickActions.ShortcutType` and `DeeplinkInput.Shortcut` lose `qrCode`, so `RouteBuilder` no longer produces `.action(.showQRCode)` and `Route.AppAction` drops that case.",
+    "`BrowserCoordinator.handle(route:)` loses its `.showQRCode` branch and the `handleQRCode` helper, and BVC's `handleQRCode()` is deleted along with the mock override and its test.",
+    "On the toolbar side, `ToolbarActionConfiguration.ActionType.qrCode` and its middleware branch are removed, which also removes `GeneralBrowserActionType.showQRcodeReader` and `DisplayType.qrCodeReader`.",
+    "`BrowserViewController` no longer conforms to `QRCodeViewControllerDelegate`. The scan-result handlers and the `TelemetryWrapper` `.qrCodeText`/`.qrCodeURL` events go away, and with them the `qr_code.scanned` and `toolbar.qr_scan_button_tapped` probes.",
+    "Separate from the QR cleanup, look at `handleShowReaderModeAction` in BrowserViewControllerState, and at `cancelEditMode` and `recordReaderModeTelemetry` in ToolbarMiddleware. These carry behavior changes to reader mode."
+   ],
+   "diagrams": [
+    {
+     "title": "QR entry points removed vs. reader-mode path",
+     "kind": "flowchart",
+     "description": "Shows the QR flows removed by this PR and the reader-mode Redux path that the PR also changes.",
+     "mermaid": "flowchart LR\n  subgraph Removed\n    QA[QuickActions QRCode] --> RB[RouteBuilder]\n    RB --> AA[AppAction.showQRCode]\n    AA --> BC[BrowserCoordinator.handleQRCode]\n    TB[Toolbar .qrCode] --> SQ[showQRcodeReader]\n    SQ --> DV[displayView .qrCodeReader]\n    BC --> BVCQ[BVC QRCodeViewControllerDelegate]\n    DV --> BVCQ\n  end\n  subgraph Changed\n    RM[Toolbar .readerMode tap] --> TM[ToolbarMiddleware]\n    TM --> SR[showReaderMode]\n    SR --> RED[BrowserViewControllerState reducer]\n    RED --> DISP[BVC displayView switch]\n    DISP --> TRM[toggleReaderMode]\n    DISP --> TRL[toggleReaderModeLongPressAction]\n  end\n  QRC[QRCodeCoordinator] --- FXA[Fxa sign-in flows]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Tapping the reader-mode button now adds the page to the Reading List instead of opening reader mode",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`handleShowReaderModeAction` used to set `displayView: .readerMode`. This PR changes it to `.readerModeLongPressAction`:\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/BrowserViewController/State/BrowserViewControllerState.swift\" lines=\"556-568\"}\n\nIn `BrowserViewController`, `.readerMode` calls `toggleReaderMode()`, while `.readerModeLongPressAction` calls `toggleReaderModeLongPressAction()`, which writes to `profile.readingList`.\n\n::code{file=\"firefox-ios/Client/Frontend/Browser/BrowserViewController/Views/BrowserViewController.swift\" lines=\"2872-2875\"}\n\nThree code paths dispatch `showReaderMode`, and all of them are now broken:\n- tapping the toolbar reader-mode button (`ToolbarMiddleware.swift:263-267`)\n- long-pressing the summarizer button (`ToolbarMiddleware.swift:358-361`)\n- `accessibilityPerformMagicTap` in the BVC (line 2391)\n\nAfter this change, none of them can open reader mode. Each one silently creates a Reading List entry.\n\n`.readerMode` is now unreachable, and this change has nothing to do with QR codes. It should be reverted.\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/BrowserViewController/State/BrowserViewControllerState.swift\" lines=\"566-566\"}\n            displayView: .readerMode,\n\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/BrowserViewController/State/BrowserViewControllerState.swift",
+     "firefox-ios/Client/Frontend/Browser/BrowserViewController/Views/BrowserViewController.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/BrowserViewController/State/BrowserViewControllerState.swift`, `handleShowReaderModeAction` (around line 556-568) was changed to set `displayView: .readerModeLongPressAction`. As a result, tapping the reader-mode button, long-pressing summarizer, and the accessibility magic tap all add the page to the Reading List instead of toggling reader mode. Revert it to `displayView: .readerMode`. Then add a reducer test in the BrowserViewControllerState tests asserting that `GeneralBrowserActionType.showReaderMode` produces `displayView == .readerMode`.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/BrowserViewController/State/BrowserViewControllerState.swift",
+     "lineStart": 566,
+     "lineEnd": 566
+    }
+   },
+   {
+    "title": "cancelEditMode now shows the internal localhost reader-mode URL in the address bar",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The filter used to keep the URL only if it was a normal web page and not a reader-mode URL. It now keeps the URL if it is a web page or a reader-mode URL:\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift\" lines=\"482-486\"}\n\n`isReaderModeURL` checks for `http://localhost/reader-mode/page`, which is also an `http` URL, so `isWebPage()` is already true for it. With `||`, reader-mode URLs are always kept. When a user is in reader mode and taps Tabs, Menu or Cancel, the address bar gets `http://localhost:<port>/reader-mode/page?url=...` instead of a nil URL (which lets the toolbar fall back to its normal display).\n\nNon-web URLs still map to nil, because `isReaderModeURL` is false for them, so the `||` only matters for reader-mode URLs.\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift\" lines=\"485-485\"}\n            url = (currentURL.isWebPage() && !currentURL.isReaderModeURL) ? url : nil\n\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift` at line 485, `cancelEditMode` changed the URL filter from `isWebPage() && !isReaderModeURL` to `isWebPage() || isReaderModeURL`. This lets the internal localhost reader-mode URL leak into the address bar when edit mode is cancelled. Revert to the original `&& !` condition. Add a ToolbarMiddlewareTests case where the selected tab's URL is a reader-mode URL (http://localhost:<port>/reader-mode/page?url=...) and assert that the dispatched cancelEdit ToolbarAction has a nil url.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift",
+     "lineStart": 485,
+     "lineEnd": 485
+    }
+   },
+   {
+    "title": "Reader-mode telemetry `enabled` flag is inverted, and an existing test now fails",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The branches of the switch were swapped:\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift\" lines=\"520-529\"}\n\nWhen reader mode is `.available` (not active yet), the tap is about to turn it on, so `isEnabled` should be `true`. The comment on that line still says so. The new code reports the opposite on every tap, which corrupts the `toolbar.reader_mode_button_tapped` metric.\n\nThe existing test `testDidTapButton_tapOnReaderModeButton_dispatchesShowReaderModes` asserts `savedExtras.enabled == false` for the default state, which falls through to `default`. It will now get `true` and fail, so CI should catch this.\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift\" lines=\"524-525\"}\n        case .available: true // will be enabled after action gets executed\n        default: false\n\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift",
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Toolbar/ToolbarMiddlewareTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift`, `recordReaderModeTelemetry` (around lines 520-529) has its switch branches inverted: `.available` now maps to `false` and `default` to `true`. Restore `.available: true` and `default: false` to match the inline comment and the existing test `testDidTapButton_tapOnReaderModeButton_dispatchesShowReaderModes` in ToolbarMiddlewareTests.swift. Optionally add a test where readerModeState is `.available` and assert that `enabled == true`.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Toolbars/Redux/ToolbarMiddleware.swift",
+     "lineStart": 524,
+     "lineEnd": 525
+    }
+   },
+   {
+    "title": "Unrelated app version bump to 147.2",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "This QR cleanup PR also changes `APP_VERSION` from 147.1 to 147.2. Version bumps are normally handled by the release process, and putting one in a feature or cleanup PR can cause release-branch conflicts or ship the wrong version. Unless it's intentional, drop it from this PR.\n\n::diff{file=\"firefox-ios/Client/Configuration/version.xcconfig\" lines=\"1-1\"}",
+    "files": [
+     "firefox-ios/Client/Configuration/version.xcconfig"
+    ],
+    "fixPrompt": "Revert `firefox-ios/Client/Configuration/version.xcconfig` line 1 to `APP_VERSION = 147.1`. The version bump is unrelated to the QR code cleanup in this PR and should go through the normal release process.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Configuration/version.xcconfig",
+     "lineStart": 1,
+     "lineEnd": 1
+    }
+   },
+   {
+    "title": "ToolbarTelemetry.gleanWrapper is no longer private, for no reason",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`gleanWrapper` changed from `private let` to `let`. Nothing outside the struct reads it; I grepped for `toolbarTelemetry.gleanWrapper` and found no hits. The other telemetry structs keep their wrapper private, so this only widens the API surface.\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/Toolbars/ToolbarTelemetry.swift\" lines=\"8-9\"}\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/Toolbars/ToolbarTelemetry.swift\" lines=\"9-9\"}\n    private let gleanWrapper: GleanWrapper\n\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/Toolbars/ToolbarTelemetry.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/Toolbars/ToolbarTelemetry.swift` line 9, restore `private let gleanWrapper: GleanWrapper`. No caller accesses it externally, and the change is unrelated to the QR code cleanup.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/Toolbars/ToolbarTelemetry.swift",
+     "lineStart": 9,
+     "lineEnd": 9
+    }
+   },
+   {
+    "title": "QR removal is complete, and the shared QR infrastructure is kept",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "I grepped the Client target for `showQRcodeReader`, `qrCodeReader`, `handleQRCode`, `.qrCodeText`/`.qrCodeURL`, `QrCode.scanned` and `qrScanButtonTapped`, and found nothing left behind. The Glean YAML probes and their `TelemetryWrapper` mappings were removed together, so the generated metrics should still compile.\n\nThe PR correctly keeps `QRCodeViewController`, `QRCodeCoordinator` and `QRCodeNavigationHandler.showQRCode(delegate:)`, because the Fxa sign-in flows still use them (`FirefoxAccountSignInViewController.qrCodeNavigationHandler`, with implementations in Settings, Bookmarks and RemoteTabs coordinators). The QR tests were removed in step with the code (BrowserCoordinatorTests, ShortcutRouteTests, ToolbarMiddlewareTests, MockBrowserViewController).",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/BrowserViewController/Views/BrowserViewController.swift",
+     "firefox-ios/Client/Coordinators/QRCode/QRCodeCoordinator.swift"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":9,\"title\":\"Code Review Bench PR #31577 - Remove FXIOS-14593 [BVC] Clean up qr code related code from BVC\",\"author\":\"\",\"baseSha\":\"db5723b28f6497d72d8499b7cf0415813d018cda\",\"headSha\":\"de948b018e79cc42c868127f853fed6fb12006ec\"},\"summary\":\"The PR's main goal is to remove QR code scanning from BrowserViewController. It removes the `QRCodeViewControllerDelegate` conformance and its scan handlers from the BVC. It also drops the QRCode home-",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

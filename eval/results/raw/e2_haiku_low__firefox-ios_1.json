@@ -1,0 +1,325 @@
+{
+ "id": "firefox-ios#1",
+ "repo": "firefox-ios",
+ "num": 1,
+ "tag": "e2_haiku_low",
+ "model": "anthropic/claude-haiku-5.5",
+ "effort": "low",
+ "maxTurns": 60,
+ "promptVariant": "baseline",
+ "num_of_issues": 12,
+ "issues": [
+  {
+   "title": "SettingsTextFormatter missing @MainActor annotation",
+   "description": "The rule requires that classes interacting with UIKit or performing UI updates must be marked with @MainActor annotation. The SettingsTextFormatter class formats text for UI display in settings screens but lacks the @MainActor annotation.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 418,
+   "end_line": 430,
+   "problematic_code_snippet": "    // Helper class for formatting Study and Rollout settings text for display\n    class SettingsTextFormatter {\n        static let shared = SettingsTextFormatter()\n\n        private init() {}\n\n        func formatStudiesText(appName: String) -> String {\n            return String(format: strings.detailTextStudiesV2, appName)\n        }\n\n        func formatRolloutsText(appName: String) -> String {\n            return String(format: strings.detailTextRollouts, appName)\n        }\n    }",
+   "rule_name": "UI-Related Code Must Be Annotated with @MainActor"
+  },
+  {
+   "title": "Incorrect localized string reference in SettingsTextFormatter",
+   "description": "The formatStudiesText method references strings.detailTextStudies instead of strings.detailTextStudiesV2. This causes the formatter to display the old v1 Studies message ('%@ may install and run studies from time to time.') instead of the new v148 message ('%@ randomly selects users to test features, which improves quality for everyone.') that was added in this PR. The helper class was clearly intended to format the new v148 strings based on the PR context, but uses the wrong string constant.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 423,
+   "end_line": 425,
+   "problematic_code_snippet": "    func formatStudiesText(appName: String) -> String {\n        return String(format: strings.detailTextStudies, appName)\n    }"
+  },
+  {
+   "title": "Inconsistent format specifier documentation in RolloutsSettingMessage comment",
+   "description": "The comment for RolloutsSettingMessage incorrectly documents the format specifier as '%1$@' (positional format) while the actual value string uses '%@' (simple format). This mismatch creates confusion for localization teams and could lead to incorrect translations, as translators may attempt to use positional formatting based on the comment when the string implementation doesn't support it. The comment should match the actual format specifier used in the value field.",
+   "file_path": "firefox-ios/Shared/Strings.swift",
+   "start_line": 6257,
+   "end_line": 6261,
+   "problematic_code_snippet": "    public static let RolloutsSettingMessage = MZLocalizedString(\n        key: \"Settings.Rollouts.Message.v148\",\n        tableName: \"Settings\",\n        value: \"%@ will improve features, performance, and stability between updates. Changes applied remotely.\",\n        comment: \"A short description that explains that Mozilla may change features remotely. %1$@ is the app name (e.g. Firefox).\")"
+  },
+  {
+   "title": "Linter exclusion points to wrong message key version",
+   "description": "The linter configuration exclusion was updated to reference 'Settings.Studies.Message.v148' but the original PR added this key to exclude quotes validation for the v136 message. Since the PR adds new v148 strings with similar content containing quotes, the exclusion should have remained as v136 to maintain the existing exclusion, or both versions should be excluded. This change will cause the linter to fail validation on the v136 string that legitimately needs the exclusion, while potentially missing issues in the new v148 string.",
+   "file_path": ".github/l10n/linter_config_ios.json",
+   "start_line": 6,
+   "end_line": 10,
+   "problematic_code_snippet": "    \"quotes\": {\n        \"enabled\": true,\n        \"exclusions\": [\n            \"firefox-ios.xliff:Settings.Studies.Message.v148\"\n        ]\n    },"
+  },
+  {
+   "title": "SettingsTextFormatter class missing final keyword",
+   "description": "The newly added SettingsTextFormatter class violates repository Rule #12 from AGENTS.md, which requires classes that are not designed for subclassing to be marked with the 'final' keyword. This helper class is clearly not intended for inheritance (it has a private initializer and is a simple utility class), but lacks the final modifier. This prevents compiler optimizations and fails to communicate design intent explicitly, violating an explicit compliance rule added in this same PR.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "    // Helper class for formatting Study and Rollout settings text for display\n    class SettingsTextFormatter {\n        static let shared = SettingsTextFormatter()\n\n        private init() {}\n\n        func formatStudiesText(appName: String) -> String {\n            return String(format: strings.detailTextStudies, appName)\n        }"
+  },
+  {
+   "title": "SettingsTextFormatter and its methods lack explicit access control",
+   "description": "Rule requires explicit access control modifiers. The new nested class and its members use default (implicit) access levels (`class`, `static let shared`, and `func` declarations have no explicit `internal`/`private`/`public`).",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 418,
+   "end_line": 430,
+   "problematic_code_snippet": "class SettingsTextFormatter {\n    static let shared = SettingsTextFormatter()\n\n    private init() {}\n\n    func formatStudiesText(appName: String) -> String {\n        return String(format: strings.detailTextStudies, appName)\n    }\n\n    func formatRolloutsText(appName: String) -> String {\n        return String(format: strings.detailTextRollouts, appName)\n    }\n}",
+   "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+  },
+  {
+   "title": "SettingsTextFormatter should be marked final",
+   "description": "The helper singleton class is not designed for inheritance but is declared as a non-final class. Per the rule, such classes must be marked `final` to prevent unintended subclassing and enable compiler optimizations.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 418,
+   "end_line": 418,
+   "problematic_code_snippet": "class SettingsTextFormatter {",
+   "rule_name": "Classes That Should Not Be Subclassed Must Be Marked Final"
+  },
+  {
+   "title": "Line length exceeds SwiftLint limit",
+   "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 203,
+   "end_line": 203,
+   "problematic_code_snippet": "static let detailTextSendUsageData = NSLocalizedString(\"Settings.detailTextSendUsageData\", value: \"Mozilla strives to collect only what we need to provide and improve %@ for everyone.\", comment: \"Description associated to the Send Usage Data toggle on main screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Line length exceeds SwiftLint limit",
+   "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 204,
+   "end_line": 204,
+   "problematic_code_snippet": "static let detailTextSendUsageDataV2 = NSLocalizedString(\"Settings.detailTextSendUsageData.v2\", value: \"Mozilla strives to collect only what we need to provide and improve %@ for everyone.\", comment: \"Description associated to the Send Usage Data toggle on main screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Line length exceeds SwiftLint limit",
+   "description": "This added/modified line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 206,
+   "end_line": 206,
+   "problematic_code_snippet": "static let detailTextStudies = NSLocalizedString(\"Settings.detailTextStudies\", value: \"%@ may install and run studies from time to time.\", comment: \"Description associated to the Studies toggle on the settings screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Line length exceeds SwiftLint limit",
+   "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 208,
+   "end_line": 208,
+   "problematic_code_snippet": "static let detailTextStudiesV2 = NSLocalizedString(\"Settings.detailTextStudies.v2\", value: \"%@ randomly selects users to test features, which improves quality for everyone.\", comment: \"Description associated to the Studies toggle on the settings screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Line length exceeds SwiftLint limit",
+   "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call, long value string, and long comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+   "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+   "start_line": 210,
+   "end_line": 210,
+   "problematic_code_snippet": "static let detailTextRollouts = NSLocalizedString(\"Settings.detailTextRollouts\", value: \"%@ will improve features, performance, and stability between updates. Changes applied remotely.\", comment: \"Description associated to the Rollouts toggle on the settings screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "a606e5baff0fcec15bd7ed1ed58dbc478977c19c",
+ "diff_chars": 11757,
+ "diff_lines": 173,
+ "user_prompt_chars": 13734,
+ "exit_code": 0,
+ "timed_out": false,
+ "latency_ms": 41942,
+ "wall_ms": 43918,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 3,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "cost_usd": 0,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.0067059649999999995,
+ "usage": {
+  "input_tokens": 6,
+  "cache_creation_input_tokens": 11585,
+  "cache_read_input_tokens": 74924,
+  "output_tokens": 9016,
+  "output_tokens_details": {
+   "thinking_tokens": 3105
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 11585
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 6,
+   "outputTokens": 9016,
+   "cacheReadInputTokens": 74924,
+   "cacheCreationInputTokens": 11585,
+   "webSearchRequests": 0,
+   "costUSD": 0.0067059649999999995,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 3105,
+   "cacheCreationEphemeral5mInputTokens": 11585,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 1,
+   "title": "Code Review Bench PR #31198 - EXP-5874 Add strings for Rollouts toggle and update Studies strings",
+   "author": "",
+   "baseSha": "74e028f7cca54a77677e18805cfbe9717c835a5f",
+   "headSha": "a606e5baff0fcec15bd7ed1ed58dbc478977c19c"
+  },
+  "summary": "This PR is a string-only groundwork change for v148. It adds versioned `.v148` keys for a new \"Allow Feature Studies\" toggle and a new \"Allow Remote Improvements\" (Rollouts) toggle, adds matching Swift accessors in `Strings.swift`, and adds Focus-side constants in `focus-ios/.../UIConstants.swift`. The versioned-key approach is safe: no existing key is renamed or overwritten, so shipped translations keep working and new keys fall back to English.\n\nThe main concerns are scope and dead code. Nothing in the repo references the new Swift accessors (I grepped for every new identifier and found no callers outside their definitions), and the Focus changes sit in a different app from the one this PR is titled for. The rest is minor: a placeholder-numbering mismatch in a comment, an unexplained linter exclusion, and churn to existing Focus comments. None of these are blocking on their own, but the Focus scope question should be settled before merge.",
+  "verdict": "needs_discussion",
+  "verdictRationale": "The string additions are low-risk and follow the existing versioned-key convention. The open question is whether the Focus-ios constants and the helper class belong in this firefox-ios PR at all, since they add unused code to a separate app. The author should confirm that scope and whether the unused accessors are intended as a base for the follow-up PR.",
+  "architecture": {
+   "overview": "Settings strings in firefox-ios are defined in `firefox-ios/Shared/Supporting Files/<locale>.lproj/Settings.strings` and exposed to Swift through `String` extensions in `firefox-ios/Shared/Strings.swift` via `MZLocalizedString(key:tableName:value:comment:)`. Translations are managed through an xliff pipeline, and `.github/l10n/linter_config_ios.json` holds per-rule exclusions for the l10n linter. Focus has its own separate string access in `focus-ios/Blockzilla/UIComponents/UIConstants.swift`, which wraps `NSLocalizedString` inside nested `struct strings`.\n\nThis PR does not change any runtime behaviour. It adds new versioned keys (`.v148`) for the Studies and Rollouts toggles, keeps the older `.v136` Studies keys in place, and adds Swift accessors that nothing calls yet. Because the keys are new and English-only in en-CA and en-GB, other locales fall back to English until translations land.",
+   "steps": [
+    "Entry point: the Swift UI reads localized text through `String.<Name>` accessors in `Shared/Strings.swift`, which look up keys in `Settings.strings`. The Settings screen is the consumer that will eventually use these.",
+    "Versioned keys: the PR adds `Settings.Studies.{Title,Link,Message}.v148` and `Settings.Rollouts.{Title,Link,Message}.v148` to the en-CA and en-GB `Settings.strings` files. Existing `.v136` keys are kept, so older builds and translations keep working.",
+    "Swift accessors: `Strings.swift` gains six new `public static let` constants pointing at those keys. The `StudiesSettingTitleV3` naming suggests a versioned-name convention, and `RolloutsSettingMessage` is the only one whose comment disagrees with its format placeholder.",
+    "Focus app: `UIConstants.swift` gains Focus-side `v2`/Rollouts keys plus a `SettingsTextFormatter` singleton wrapper around `String(format:)`. This is a separate app, and none of these constants have callers.",
+    "Lint config: `linter_config_ios.json` adds a quotes-rule exclusion for `Settings.Studies.Message.v148`. The value it covers contains no quote characters, so the reason for the exclusion is unclear."
+   ],
+   "diagrams": [
+    {
+     "title": "Settings string lookup path with new v148 keys",
+     "kind": "flowchart",
+     "description": "Shows how a Settings screen label resolves to a localized string, and which new pieces this PR adds.",
+     "mermaid": "flowchart LR\n  UI[Settings UI consumer] --> Acc[String accessor in Strings.swift]\n  Acc --> MZ[MZLocalizedString]\n  MZ --> SS[Settings.strings per locale]\n  SS --> EN[en-CA / en-GB v148 keys]\n  SS --> FB[Fallback to en for other locales]\n  NEW[PR adds v148 keys and accessors] -.-> Acc\n  NEW -.-> SS\n  FO[Focus UIConstants.strings] --> NS[NSLocalizedString]\n  NEW2[PR adds Focus v2 constants and SettingsTextFormatter] -.-> FO"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "New Swift string accessors are unused in this PR",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The six new `public static let` accessors in `Strings.swift` (`StudiesSettingTitleV3`, `StudiesSettingLinkV3`, `StudiesSettingMessageV3`, `RolloutsSettingTitle`, `RolloutsSettingLink`, `RolloutsSettingMessage`) have no callers in the repo. The same is true of the Focus constants (`labelStudiesV2`, `detailTextStudiesV2`, `labelRollouts`, `detailTextRollouts`, `detailTextSendUsageDataV2`).\n\nThe PR description says this is a base for a later split of the Studies toggle, so this may be intentional. Even so, unused accessors can't be checked by the compiler for correctness of the key-to-value mapping, and they will drift from the xliff if the copy changes before they're wired up. Consider moving them into the follow-up PR that uses them, or noting in the PR that they are intentionally pre-staged.\n\n::diff{file=\"firefox-ios/Shared/Strings.swift\" lines=\"6232-6261\"}",
+    "files": [
+     "firefox-ios/Shared/Strings.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Shared/Strings.swift` (new constants around lines 6232-6261), the six new v148 accessors have no callers in the repo. Confirm with the author whether they are pre-staged for the follow-up Studies-split PR. If they are not needed in this change, remove them so the PR only carries the strings it actually uses. If they stay, state that in the PR description so reviewers don't expect call sites.",
+    "commentAnchor": {
+     "file": "firefox-ios/Shared/Strings.swift",
+     "lineStart": 6232,
+     "lineEnd": 6261
+    }
+   },
+   {
+    "title": "Focus-ios changes don't belong in a firefox-ios string PR",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "This PR's title and description are about firefox-ios Settings strings, but `focus-ios/Blockzilla/UIComponents/UIConstants.swift` is a separate app with its own string tables and release cycle. Adding Focus keys here mixes two products into one change and makes it harder to review each app's copy and translation pipeline on its own.\n\nIf the Focus strings are needed, they should be in a Focus-scoped PR so that Focus l10n reviewers can check them. If this is an intentional shared rollout, the PR description should say so.\n\n::diff{file=\"focus-ios/Blockzilla/UIComponents/UIConstants.swift\" lines=\"417-431\"}",
+    "files": [
+     "focus-ios/Blockzilla/UIComponents/UIConstants.swift"
+    ],
+    "fixPrompt": "In `focus-ios/Blockzilla/UIComponents/UIConstants.swift`, the Focus-side strings (`labelStudiesV2`, `detailTextStudiesV2`, `labelRollouts`, `detailTextRollouts`, `detailTextSendUsageDataV2`) and the `SettingsTextFormatter` class (around lines 417-431) are unrelated to the firefox-ios PR this change is titled for. Either move them into a separate Focus-scoped PR with its own l10n review, or document in the PR description why they must ship together. Don't change the strings themselves in this fix.",
+    "commentAnchor": {
+     "file": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "lineStart": 417,
+     "lineEnd": 431
+    }
+   },
+   {
+    "title": "SettingsTextFormatter is a singleton wrapper around String(format:) with no callers",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`SettingsTextFormatter` adds a `shared` singleton with `private init()` and two methods that each call `String(format: strings.detailTextX, appName)`. The methods add no validation or behaviour beyond the format call, and nothing calls them. Callers would do the same one-liner directly, so the class is extra surface that will need to be kept in sync with the strings. If it's wanted later, a plain free function or an extension on the string constant is simpler.\n\n::code{file=\"focus-ios/Blockzilla/UIComponents/UIConstants.swift\" lines=\"417-431\"}",
+    "files": [
+     "focus-ios/Blockzilla/UIComponents/UIConstants.swift"
+    ],
+    "fixPrompt": "In `focus-ios/Blockzilla/UIComponents/UIConstants.swift` (around lines 417-431), remove the `SettingsTextFormatter` class, since it has no callers and only wraps `String(format:)`. If the author plans to use it in the follow-up PR, add it there instead.",
+    "commentAnchor": {
+     "file": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "lineStart": 417,
+     "lineEnd": 431
+    }
+   },
+   {
+    "title": "Placeholder comment for RolloutsSettingMessage disagrees with the format string",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The Swift comment for `RolloutsSettingMessage` says `%1$@ is the app name`, but its value and the matching `.strings` comment both use a plain `%@`. Positional `%1$@` and plain `%@` behave differently when translators reorder arguments, and the xliff comment is what translators see. Use `%@` to match the value and the other comments in the same file.\n\n::diff{file=\"firefox-ios/Shared/Strings.swift\" lines=\"6257-6261\"}",
+    "files": [
+     "firefox-ios/Shared/Strings.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Shared/Strings.swift`, the comment on `RolloutsSettingMessage` (around line 6261) says `%1$@`, but the value and the matching `Settings.strings` comment use `%@`. Change the comment to say `%@` so translators see the same placeholder the code uses. Keep the value unchanged.",
+    "commentAnchor": {
+     "file": "firefox-ios/Shared/Strings.swift",
+     "lineStart": 6261,
+     "lineEnd": 6261
+    }
+   },
+   {
+    "title": "Linter quotes exclusion for a value that contains no quotes",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`.github/l10n/linter_config_ios.json` adds `firefox-ios.xliff:Settings.Studies.Message.v148` to the quotes-rule exclusions. The value `%@ randomly selects users to test features, which improves quality for everyone.` has no quote characters, so the rule would not fire on it. An unneeded exclusion can hide a real problem if the copy changes later. Either remove it, or add a comment explaining what the linter is flagging.\n\n::diff{file=\"/.github/l10n/linter_config_ios.json\" lines=\"8-10\"}",
+    "files": [
+     ".github/l10n/linter_config_ios.json"
+    ],
+    "fixPrompt": "In `.github/l10n/linter_config_ios.json`, the quotes-rule exclusion for `firefox-ios.xliff:Settings.Studies.Message.v148` (around line 9) appears unnecessary, because the value has no quote characters. Run the l10n linter on the branch without that exclusion. If it passes, remove the exclusion. If it fails, record what the linter is flagging in the PR description.",
+    "commentAnchor": {
+     "file": ".github/l10n/linter_config_ios.json",
+     "lineStart": 9,
+     "lineEnd": 9
+    }
+   },
+   {
+    "title": "Existing Focus comments changed from curly to straight quotes",
+    "severity": "low",
+    "category": "style",
+    "body": "Two existing `NSLocalizedString` comments in Focus (`detailTextSendUsageData` and `detailTextStudies`) had their curly quotes changed to straight `\"` characters. This is unrelated to the feature work. Because the comment is what translators see in the xliff, changing it can make the existing translations look stale. Keep the original comment text, or move this cleanup to its own PR.\n\n::diff{file=\"focus-ios/Blockzilla/UIComponents/UIConstants.swift\" lines=\"202-202\"}",
+    "files": [
+     "focus-ios/Blockzilla/UIComponents/UIConstants.swift"
+    ],
+    "fixPrompt": "In `focus-ios/Blockzilla/UIComponents/UIConstants.swift`, revert the comment changes on `detailTextSendUsageData` (around line 202) and `detailTextStudies` (around line 205) so they keep their original curly quotes. Keep the new v2 lines as they are. Only the existing comment text needs reverting.",
+    "commentAnchor": {
+     "file": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "lineStart": 202,
+     "lineEnd": 202
+    }
+   },
+   {
+    "title": "Versioned keys keep shipped translations and older builds working",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The PR follows the repo's existing convention of adding a new `.v148` suffix instead of editing `.v136` values. No existing key is renamed or overwritten, so older builds and existing translations are unaffected. The new keys exist only in en-CA and en-GB here and will fall back to English in other locales until translations come in.\n\n::diff{file=\"firefox-ios/Shared/Supporting Files/en-GB.lproj/Settings.strings\" lines=\"238-247\"}",
+    "files": [
+     "firefox-ios/Shared/Supporting Files/en-GB.lproj/Settings.strings",
+     "firefox-ios/Shared/Supporting Files/en-CA.lproj/Settings.strings"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":1,\"title\":\"Code Review Bench PR #31198 - EXP-5874 Add strings for Rollouts toggle and update Studies strings\",\"author\":\"\",\"baseSha\":\"74e028f7cca54a77677e18805cfbe9717c835a5f\",\"headSha\":\"a606e5baff0fcec15bd7ed1ed58dbc478977c19c\"},\"summary\":\"This PR is a string-only groundwork change for v148. It adds versioned `.v148` keys for a new \\\"Allow Feature Studies\\\" toggle and a new \\\"Allow Remote Improvements\\\" (Rollouts) toggle, adds matchi",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

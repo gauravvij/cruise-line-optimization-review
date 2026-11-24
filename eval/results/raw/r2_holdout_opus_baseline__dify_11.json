@@ -1,0 +1,152 @@
+{
+ "id": "dify#11",
+ "repo": "dify",
+ "num": 11,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T15:49:56.829Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Pydantic v1 Config class usage",
+   "description": "The rule requires data validation to use Pydantic v2 with ConfigDict(extra='forbid'), but this code uses Pydantic v1 'class Config' syntax with 'extra = allow' which permits undeclared fields",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 52,
+   "end_line": 65,
+   "problematic_code_snippet": "class AgentThoughtValidation(BaseModel):\n    \"\"\"\n    Validation model for agent thought data before database persistence.\n    \"\"\"\n\n    message_id: str\n    position: int\n    thought: str | None = None\n    tool: str | None = None\n    tool_input: str | None = None\n    observation: str | None = None\n\n    class Config:\n        extra = \"allow\"  # Pydantic v1 syntax - should use ConfigDict(extra='forbid')",
+   "rule_name": "Python Backend Must Use Pydantic v2 for Data Validation"
+  },
+  {
+   "title": "Swapped answer price unit values causing incorrect billing calculations",
+   "description": "In the create_agent_thought method, the answer_unit_price and answer_price_unit values are swapped. The answer_unit_price is initialized to Decimal('0.001') instead of Decimal(0), while answer_price_unit is initialized to Decimal(0) instead of Decimal('0.001'). This mirrors the correct initialization pattern used for message_unit_price and message_price_unit but with reversed values. This will cause incorrect pricing calculations when computing the total cost of agent responses, potentially leading to billing discrepancies or revenue loss.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 324,
+   "end_line": 326,
+   "problematic_code_snippet": "            answer=\"\",\n            observation=\"\",\n            answer_token=0,\n            answer_unit_price=Decimal(\"0.001\"),\n            answer_price_unit=Decimal(0),\n            tokens=0,"
+  },
+  {
+   "title": "Type mismatch in total_price initialization breaks Decimal arithmetic",
+   "description": "The total_price field is initialized with integer 0 instead of Decimal(0), creating a type inconsistency. The MessageAgentThought model defines total_price as Mapped[Decimal | None] expecting a Decimal type, and other price fields (message_unit_price, answer_unit_price, etc.) are correctly initialized with Decimal types. This inconsistency will cause type errors during price calculations when the system attempts to perform Decimal arithmetic operations (addition, multiplication) between Decimal and int types, potentially breaking billing computations or causing runtime exceptions.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 327,
+   "end_line": 328,
+   "problematic_code_snippet": "            answer_price_unit=Decimal(0),\n            tokens=0,\n            total_price=0,\n            position=self.agent_thought_count + 1,"
+  },
+  {
+   "title": "Tool responses replaced with tool inputs in agent history organization",
+   "description": "In the organize_agent_history method, when building ToolPromptMessage objects, the content is incorrectly populated from tool_inputs dictionary instead of tool_responses dictionary. This means the LLM will receive the tool's input parameters as if they were the tool's output/response. For example, if a tool was called with {\"query\": \"weather in NYC\"}, the agent history would show this input dict as the tool's response instead of the actual weather data. This breaks the agent's ability to learn from previous tool executions and will cause incorrect context to be passed to subsequent LLM calls.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 499,
+   "end_line": 505,
+   "problematic_code_snippet": "                            tool_call_response.append(\n                                ToolPromptMessage(\n                                    content=str(tool_inputs.get(tool, agent_thought.observation)),\n                                    name=tool,\n                                    tool_call_id=tool_call_id,\n                                )\n                            )"
+  },
+  {
+   "title": "Broad exception catch (except Exception) added for tool_inputs JSON parsing",
+   "description": "Ruff’s \"blind-except\"/\"broad-except\" rules typically disallow catching `Exception` without narrowing the exception type (e.g., `json.JSONDecodeError`, `TypeError`) and/or handling specific failure modes. The new code introduces a broad `except Exception:` while parsing JSON.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 469,
+   "end_line": 474,
+   "problematic_code_snippet": "                        if tool_input_payload:\n                            try:\n                                tool_inputs = json.loads(tool_input_payload)\n                            except Exception:\n                                tool_inputs = {tool: {} for tool in tool_names}",
+   "rule_name": "Python Code Must Follow Ruff Linting Rules"
+  },
+  {
+   "title": "Broad exception catch (except Exception) added for tool_responses JSON parsing",
+   "description": "Ruff’s \"blind-except\"/\"broad-except\" rules typically disallow catching `Exception` without narrowing the exception type. The new code introduces another broad `except Exception:` while parsing JSON observations.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 479,
+   "end_line": 484,
+   "problematic_code_snippet": "                        if observation_payload:\n                            try:\n                                tool_responses = json.loads(observation_payload)\n                            except Exception:\n                                tool_responses = dict.fromkeys(tool_names, observation_payload)",
+   "rule_name": "Python Code Must Follow Ruff Linting Rules"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "52096912714ff82a551ae147eec85534fdb94cde",
+ "diff_chars": 13918,
+ "diff_lines": 293,
+ "user_prompt_chars": 15513,
+ "exit_code": 1,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 2576,
+ "wall_ms": 23773,
+ "tool_calls": [],
+ "n_tool_calls": 0,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 1,
+ "turn_trace": {
+  "assistant_lines": 1,
+  "unique_message_ids": 1,
+  "lines_without_id": 0,
+  "tool_use_blocks": 0
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 2.969159357,
+ "spend_post_usd": 3.089281557,
+ "cost_settled": true,
+ "cost_wait_ms": 18162,
+ "cost_usd": 0.12012219999999996,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": true,
+ "num_turns": 1,
+ "stop_reason": "stop_sequence",
+ "cli_cost_usd": 0,
+ "usage": {
+  "output_tokens_details": {
+   "thinking_tokens": 0
+  },
+  "input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 0,
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {},
+ "structured_output": null,
+ "result_text_head": "API Error: 402 This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 120729. To increase, visit https://openrouter.ai/workspaces/default/keys/c11fc93ffbed165e461748ba5cf65716beccf8d2a850ea12e740f539ed089b6b and adjust the key's total limit",
+ "schema_valid": false,
+ "schema_errors": [
+  "structured_output missing"
+ ],
+ "n_findings": 0
+}

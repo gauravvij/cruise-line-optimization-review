@@ -1,0 +1,365 @@
+{
+ "id": "firefox-ios#7",
+ "repo": "firefox-ios",
+ "num": 7,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:29:21.023Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "WebServer class missing final keyword",
+   "description": "The WebServer class is not designed for subclassing (it implements a singleton pattern with sharedInstance) but lacks the 'final' keyword, allowing unintended inheritance and missing compiler optimization opportunities",
+   "file_path": "firefox-ios/Client/Application/WebServer.swift",
+   "start_line": 18,
+   "end_line": 18,
+   "problematic_code_snippet": "class WebServer: WebServerProtocol, @unchecked Sendable {\n    static let sharedInstance = WebServer()\n\n    private let logger: Logger\n\n    let server = GCDWebServer()",
+   "rule_name": "Classes That Should Not Be Subclassed Must Be Marked Final"
+  },
+  {
+   "title": "Thread safety violation calling @MainActor completion handler from background thread",
+   "description": "In the handleServerTrust method, when SSL/TLS certificate validation fails (guard else clause), the @MainActor-isolated completionHandler is called directly from the background dispatchQueue without using ensureMainThread wrapper. This violates Swift Concurrency's actor isolation and can cause runtime crashes or data races. The success path correctly wraps the completion call in ensureMainThread, but the failure path at line 1343 does not, creating inconsistent thread safety behavior.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/BrowserViewController/Extensions/BrowserViewController+WebViewDelegates.swift",
+   "start_line": 1329,
+   "end_line": 1352,
+   "problematic_code_snippet": "    func handleServerTrust(\n        challenge: URLAuthenticationChallenge,\n        dispatchQueue: DispatchQueueInterface,\n        completionHandler: @escaping @MainActor (URLSession.AuthChallengeDisposition, URLCredential?) -> Void\n    ) {\n        dispatchQueue.async {\n            let origin = \"\\(challenge.protectionSpace.host):\\(challenge.protectionSpace.port)\"\n\n            guard let trust = challenge.protectionSpace.serverTrust,\n                  let cert = SecTrustCopyCertificateChain(trust) as? [SecCertificate],\n                  self.profile.certStore.containsCertificate(cert[0], forOrigin: origin)\n            else {\n                completionHandler(.performDefaultHandling, nil)\n                return\n            }"
+  },
+  {
+   "title": "ensureMainThread generic function loses return value when dispatched asynchronously",
+   "description": "The generic ensureMainThread<T> function was modified to return T? but has a critical flaw: when not on the main thread, it dispatches the work asynchronously to main queue and immediately returns nil, discarding the actual computation result. This breaks any caller that depends on the return value, as they will always receive nil when called from background threads. The function's contract promises to return the work result but fails to do so in the async dispatch path.",
+   "file_path": "BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift",
+   "start_line": 22,
+   "end_line": 33,
+   "problematic_code_snippet": "public func ensureMainThread<T>(execute work: @escaping @MainActor () -> T) -> T? {\n    if Thread.isMainThread {\n        return MainActor.assumeIsolated {\n            return work()\n        }\n    } else {\n        DispatchQueue.main.async {\n            _ = work()\n        }\n        return nil\n    }\n}"
+  },
+  {
+   "title": "MainThreadThrottler timing logic inverted causing throttling to never execute",
+   "description": "In the throttle method, lastExecutionTime is updated to Date() BEFORE checking the threshold guard condition. This means timeIntervalSinceNow will always be approximately 0 (since it was just set), which will never be less than -threshold (a negative value). The guard condition will always fail, preventing the completion from ever executing. This completely breaks the throttling mechanism, causing any code depending on throttled callbacks to never receive them.",
+   "file_path": "firefox-ios/Client/Utils/MainThreadThrottler.swift",
+   "start_line": 25,
+   "end_line": 29,
+   "problematic_code_snippet": "    func throttle(completion: @escaping @MainActor () -> Void) {\n        lastExecutionTime = Date()\n        guard threshold <= 0 || lastExecutionTime.timeIntervalSinceNow < -threshold else { return }\n        DispatchQueue.main.async(execute: completion)\n    }"
+  },
+  {
+   "title": "Public ensureMainThread<T> lacks documentation comment",
+   "description": "A new/modified public API was introduced/changed without an accompanying triple-slash documentation comment describing its purpose/parameters/return value.",
+   "file_path": "BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift",
+   "start_line": 19,
+   "end_line": 19,
+   "problematic_code_snippet": "public func ensureMainThread<T>(execute work: @escaping @MainActor () -> T) -> T? {",
+   "rule_name": "Rule 14: Public APIs Must Have Documentation Comments"
+  },
+  {
+   "title": "SwiftLint violation: multiple consecutive spaces",
+   "description": "The modified line contains two spaces between '@MainActor' and '(' which typically violates SwiftLint's whitespace rules (e.g., multiple_spaces).",
+   "file_path": "firefox-ios/Client/Frontend/Browser/RelayController.swift",
+   "start_line": 7,
+   "end_line": 7,
+   "problematic_code_snippet": "typealias RelayPopulateCompletion = @MainActor  (RelayMaskGenerationResult) -> Void",
+   "rule_name": "Rule 2: Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Modified typealias missing explicit access control",
+   "description": "This typealias was modified in the diff but still lacks an explicit access control modifier (e.g., 'private', 'internal', 'public'), violating the requirement for explicit access control on declarations.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/RelayController.swift",
+   "start_line": 7,
+   "end_line": 7,
+   "problematic_code_snippet": "typealias RelayPopulateCompletion = @MainActor  (RelayMaskGenerationResult) -> Void",
+   "rule_name": "Rule 11: Properties and Methods Must Have Appropriate Access Control"
+  },
+  {
+   "title": "Modified typealias missing explicit access control",
+   "description": "This typealias was modified in the diff but still lacks an explicit access control modifier (e.g., 'private', 'internal', 'public'), violating the requirement for explicit access control on declarations.",
+   "file_path": "firefox-ios/Client/Frontend/Browser/SearchEngines/SearchEngineProvider.swift",
+   "start_line": 5,
+   "end_line": 5,
+   "problematic_code_snippet": "typealias SearchEngineCompletion = @MainActor (SearchEnginePrefs, [OpenSearchEngine]) -> Void",
+   "rule_name": "Rule 11: Properties and Methods Must Have Appropriate Access Control"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "5183c2719f603b478c75f587b27bd093f817b665",
+ "diff_chars": 49449,
+ "diff_lines": 874,
+ "user_prompt_chars": 52226,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 56962,
+ "wall_ms": 59580,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 3,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 3,
+ "turn_trace": {
+  "assistant_lines": 9,
+  "unique_message_ids": 3,
+  "lines_without_id": 0,
+  "tool_use_blocks": 3
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.794947446,
+ "spend_post_usd": 7.805953061,
+ "cost_settled": true,
+ "cost_wait_ms": 358,
+ "cost_usd": 0.01100561500000019,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.011817484999999999,
+ "usage": {
+  "input_tokens": 6,
+  "cache_creation_input_tokens": 35009,
+  "cache_read_input_tokens": 117326,
+  "output_tokens": 12535,
+  "output_tokens_details": {
+   "thinking_tokens": 5560
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 35009
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 6,
+   "outputTokens": 12535,
+   "cacheReadInputTokens": 117326,
+   "cacheCreationInputTokens": 35009,
+   "webSearchRequests": 0,
+   "costUSD": 0.011817484999999999,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5560,
+   "cacheCreationEphemeral5mInputTokens": 35009,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 7,
+   "title": "Refactor FXIOS-13122 [Swift 6] Remove @Sendable from closures marked as @MainActor",
+   "author": "unknown",
+   "baseSha": "325933132c40c39a68a9f983ca67313d035f717a",
+   "headSha": "5183c2719f603b478c75f587b27bd093f817b665"
+  },
+  "summary": "The PR removes redundant `@Sendable` annotations from closures that are already `@MainActor`-isolated. That premise is sound: global-actor function types are implicitly Sendable, so most of the ~80 mechanical edits are no-ops at the type level. The PR also carries three unrelated behavior changes that aren't described in the title or description: a reordering in `MainThreadThrottler.throttle`, a changed return type on the generic `ensureMainThread` overload, and a dropped `final` on `WebServer`. It also removes the main-thread hop from a WebKit completion handler in `handleServerTrust`.\n\nThe throttler reorder is a hard regression. `lastExecutionTime` is now set before the guard that reads it, so the guard always sees a time of roughly zero and drops every call when the threshold is positive. The existing `MainThreadThrottlerTests` would fail on this. I don't think the PR was run against them.",
+  "verdict": "request_changes",
+  "verdictRationale": "The throttler change breaks debouncing for every production caller, since the completion never fires when the threshold is positive. The server-trust change moves a completion handler off the main thread, and the Sendable-removal premise doesn't cover that. Both need fixing before merge. The generic `ensureMainThread` return-type change and the `final` removal are unrelated scope creep that should be split out or reverted.",
+  "architecture": {
+   "overview": "Firefox iOS routes UI-facing completions through two helpers in the `Common` module: `ensureMainThread`, which runs work inline when already on the main thread and otherwise hops with `DispatchQueue.main.async`, and `MainThreadThrottler`, which drops calls that arrive within a threshold window. Many completion types (WebKit delegate callbacks, Tab helpers, Storage queues, Redux reducers) were annotated `@MainActor @Sendable`. In Swift 6, the `@MainActor` annotation already implies `Sendable` for function types, so the extra `@Sendable` is redundant.\n\nThis PR strips `@Sendable` from about 80 signatures and call sites across BrowserKit and the Client app, and also makes three behavior changes: the throttler now updates its timestamp before the guard, the generic `ensureMainThread` now returns `T?`, and `WebServer` loses `final`. It also replaces a main-thread hop in `handleServerTrust` with a direct call on a background queue.",
+   "steps": [
+    "Start at the shared helpers in `BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift`. The non-generic `ensureMainThread` only lost `@Sendable`, which is safe. The generic overload gained a `T?` return and now returns `nil` off the main thread, so callers cannot rely on the value.",
+    "`firefox-ios/Client/Utils/MainThreadThrottler.swift` is the highest-impact change. Its `throttle` now stamps `lastExecutionTime` before the guard, so debouncing never admits a call once the threshold is positive.",
+    "Most of the remaining diff is mechanical. Signatures across `BrowserViewController`, `TabProviderAdapter`, `SearchEnginesManager`, `Queue` and `SQLiteQueue`, `PasswordManagerViewModel`, and the Redux `Reducer` typealias drop `@Sendable` with no change in semantics.",
+    "`handleServerTrust` in `BrowserViewController+WebViewDelegates.swift` runs inside `dispatchQueue.async`, which is off the main thread. Its `else` branch now calls the `@MainActor` WebKit completion directly, while the success branch still wraps the same call in `ensureMainThread`. The two branches now disagree about the thread.",
+    "`WebServer` drops `final`, which widens the type's surface for subclassing. The PR does not explain this, and the comment above it warns about `@MainActor` interaction with GCDWebServer.",
+    "Test mocks (`MockThrottler`, `MockAppAuthenticator`, `MockTabProviderProtocol`, `MockTab`) were updated to match the new signatures, but no test covers the throttler change or the generic `ensureMainThread` return value."
+   ],
+   "diagrams": [
+    {
+     "title": "Main-thread dispatch and throttling helpers",
+     "kind": "flowchart",
+     "description": "How `ensureMainThread` and `MainThreadThrottler` route work, including the path the throttler reorder breaks.",
+     "mermaid": "flowchart LR\n  A[\"Caller on any thread\"] --> B[\"ensureMainThread in DispatchQueueHelper.swift\"]\n  B -->|\"Thread.isMainThread\"| C[\"MainActor.assumeIsolated runs work inline\"]\n  B -->|\"background thread\"| D[\"DispatchQueue.main.async runs work later\"]\n  E[\"MainThreadThrottler.throttle\"] --> F[\"Set lastExecutionTime, then guard\"]\n  F -->|\"guard passes\"| G[\"DispatchQueue.main.async completion\"]\n  F -->|\"guard fails\"| H[\"Call is dropped\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Throttler timestamp set before guard drops every call",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `throttle`, `lastExecutionTime = Date()` now runs before the guard that compares `lastExecutionTime.timeIntervalSinceNow` against `-threshold`. The guard therefore always sees a value near zero. With a positive threshold (the default is 0.35s), `~0 < -threshold` is false and the function returns without running `completion`. Debounced work never executes.\n\nThe existing `MainThreadThrottlerTests.testSecondCallAfterDelayThresholdCallsBothClosures` and `testMultipleFastConsecutiveCallsAreThrottledAndExecutedAtMostOneTime` expect the first completion to fire, so they will time out on this change. Only the `threshold <= 0` path still works.\n\n::diff{file=\"firefox-ios/Client/Utils/MainThreadThrottler.swift\" lines=\"25-29\"}\n\n::callout{type=\"warning\"}\nThe original order was: read the previous timestamp in the guard, then update it only if the call passes. Restore that order.\n\n::suggestion{file=\"firefox-ios/Client/Utils/MainThreadThrottler.swift\" lines=\"26-28\"}\n        guard threshold <= 0 || Date().timeIntervalSince(lastExecutionTime) > threshold else { return }\n        lastExecutionTime = Date()\n        DispatchQueue.main.async(execute: completion)\n",
+    "files": [
+     "firefox-ios/Client/Utils/MainThreadThrottler.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Utils/MainThreadThrottler.swift`, `throttle(completion:)` (around lines 25-29) sets `lastExecutionTime = Date()` before the guard that reads `lastExecutionTime`, so the guard always fails when `threshold > 0` and the completion never runs. Restore the original ordering: check the guard against the previous timestamp first, then update `lastExecutionTime` only when the call is allowed through. Check that `MainThreadThrottlerTests` passes afterward.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Utils/MainThreadThrottler.swift",
+     "lineStart": 26,
+     "lineEnd": 27
+    }
+   },
+   {
+    "title": "Completion handler now invoked off the main thread in handleServerTrust",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`handleServerTrust` runs its body inside `dispatchQueue.async`, which is a background queue. Before this PR, the rejection path wrapped `completionHandler(.performDefaultHandling, nil)` in `ensureMainThread`, the same way the accept path still does. This PR removes that wrapper, so WebKit's `@MainActor` challenge completion now runs on a background thread on the rejection path.\n\nThe two branches now disagree about the thread. The `@MainActor` completion is also called from a non-isolated closure, which may fail to compile under Swift 6 strict concurrency. Restoring the `ensureMainThread` wrapper, or moving the whole completion onto the main actor, keeps the two paths consistent.\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/BrowserViewController/Extensions/BrowserViewController+WebViewDelegates.swift\" lines=\"1334-1351\"}\n\n::suggestion{file=\"firefox-ios/Client/Frontend/Browser/BrowserViewController/Extensions/BrowserViewController+WebViewDelegates.swift\" lines=\"1343-1343\"}\n                ensureMainThread {\n                    completionHandler(.performDefaultHandling, nil)\n                }\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/BrowserViewController/Extensions/BrowserViewController+WebViewDelegates.swift"
+    ],
+    "fixPrompt": "In `BrowserViewController+WebViewDelegates.swift`, `handleServerTrust` (around lines 1332-1351) calls `completionHandler(.performDefaultHandling, nil)` directly inside `dispatchQueue.async`, which runs off the main thread. The success branch correctly wraps its call in `ensureMainThread`. Restore the same wrapper on the rejection branch so both paths deliver the `@MainActor` completion on the main thread. Confirm the method still compiles under Swift 6 strict concurrency.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/BrowserViewController/Extensions/BrowserViewController+WebViewDelegates.swift",
+     "lineStart": 1340,
+     "lineEnd": 1345
+    }
+   },
+   {
+    "title": "Generic ensureMainThread silently returns nil off the main thread",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The generic overload changed from returning `Void` to returning `T?`. It executes `work` synchronously on the main thread and returns the value. Off the main thread it schedules `work` asynchronously and returns `nil`, even though `work` ran. A caller that reads the result gets a value on one thread and `nil` on another, and nothing in the type signature says so.\n\nThis change is also not part of the stated purpose of the PR, which is removing `@Sendable`. Two more concerns: passing a closure that returns a non-`Void` value now resolves to this overload and can produce unused-result warnings, and `MainActor.assumeIsolated` may require its result type to be `Sendable`, which the unconstrained `T` does not guarantee. Split this out into its own change. If the value is needed, make the API explicitly synchronous-only, for example by asserting `Thread.isMainThread` instead of returning `nil`.\n\n::diff{file=\"BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift\" lines=\"22-32\"}\n",
+    "files": [
+     "BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift`, the generic `ensureMainThread<T>(execute:) -> T?` (lines 22-32) was changed in this PR from returning `Void`. It returns `nil` on background threads even though the work still runs, so the result depends on the calling thread. Revert this overload to its original `Void` signature, since this PR is only about removing `@Sendable`. If a value-returning variant is needed, add it as a separate, clearly named API that documents its main-thread-only behavior. Also confirm that no caller relies on the new return value.",
+    "commentAnchor": {
+     "file": "BrowserKit/Sources/Common/Utilities/DispatchQueueHelper.swift",
+     "lineStart": 22,
+     "lineEnd": 32
+    }
+   },
+   {
+    "title": "Unrelated removal of final from WebServer",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "`WebServer` changed from `final class` to `class`. This is not part of the Sendable cleanup and is not explained in the PR. The change widens the type's API surface and allows subclassing of a singleton (`sharedInstance`) that has `@unchecked Sendable` thread-safety guarantees, which a subclass could silently break. Unless there is an intended subclass, restore `final`.\n\n::diff{file=\"firefox-ios/Client/Application/WebServer.swift\" lines=\"17-17\"}\n",
+    "files": [
+     "firefox-ios/Client/Application/WebServer.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Application/WebServer.swift`, line 17, `WebServer` was changed from `final class` to `class` in a PR about removing `@Sendable`. Restore `final` unless there is a documented need to subclass `WebServer`. The `@unchecked Sendable` and `sharedInstance` guarantees depend on the type not being subclassed. Keep the `@MainActor` and handler-signature changes in the same file as they are.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Application/WebServer.swift",
+     "lineStart": 17,
+     "lineEnd": 17
+    }
+   },
+   {
+    "title": "Test suite not updated to cover the changed behavior",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The PR updates mock signatures but adds no tests. The throttler regression above would have been caught by the existing `MainThreadThrottlerTests`, so the PR was probably not run against them. There is also no test for the generic `ensureMainThread` return value, which now behaves differently on and off the main thread, or for the server-trust rejection path that changed threads.\n\nAdd a test that asserts the throttler's completion runs for the first call when the threshold is positive. Add one that asserts the rejection path of `handleServerTrust` calls the completion on the main thread.\n\n::diff{file=\"firefox-ios/Client/Utils/MainThreadThrottler.swift\" lines=\"25-29\"}\n",
+    "files": [
+     "firefox-ios/Client/Utils/MainThreadThrottler.swift",
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Utils/MainThreadThrottlerTests.swift"
+    ],
+    "fixPrompt": "Run `MainThreadThrottlerTests` (`firefox-ios/firefox-ios-tests/Tests/ClientTests/Utils/MainThreadThrottlerTests.swift`) against this branch; the first-call and second-call tests should fail because of the reordered guard in `MainThreadThrottler.throttle`. After fixing that, add a test that a `ensureMainThread` completion is delivered on the main thread for the server-trust rejection path, or document why it is not practical to test. Do not change the existing throttler test expectations.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Utils/MainThreadThrottler.swift",
+     "lineStart": 25,
+     "lineEnd": 29
+    }
+   },
+   {
+    "title": "Stray double space in RelayPopulateCompletion typealias",
+    "severity": "low",
+    "category": "style",
+    "body": "The typealias has two spaces between `@MainActor` and the parenthesis. Swift formatters will flag this, and it looks like a leftover from the sed-style edit.\n\n::diff{file=\"firefox-ios/Client/Frontend/Browser/RelayController.swift\" lines=\"11-11\"}\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Browser/RelayController.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Browser/RelayController.swift` at line 11, the `RelayPopulateCompletion` typealias has a double space between `@MainActor` and `(`. Remove the extra space so it matches the other typealiases in the codebase, such as `SearchEngineCompletion` in `SearchEngineProvider.swift`.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Browser/RelayController.swift",
+     "lineStart": 11,
+     "lineEnd": 11
+    }
+   },
+   {
+    "title": "Dropping @Sendable from @MainActor closures is type-safe",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The core change is sound. In Swift 6, a function type with a global-actor attribute such as `@MainActor` is already implicitly `Sendable`, so removing the redundant `@Sendable` does not change what callers may do. The mechanical edits across `Reducer`, `SingleActionViewModel`, the `WKUIDelegate` and `WKNavigationDelegate` signatures, the `Tab` and `TabWebView` overrides, and the `*Completion` typealiases are consistent and match the premise in the PR description.\n\n::diff{file=\"firefox-ios/Client/AccountSyncHandler.swift\" lines=\"19-19\"}\n",
+    "files": [
+     "firefox-ios/Client/AccountSyncHandler.swift",
+     "BrowserKit/Sources/Redux/Reducer.swift",
+     "firefox-ios/Client/Frontend/Widgets/PhotonActionSheet/SingleActionViewModel.swift"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":7,\"title\":\"Refactor FXIOS-13122 [Swift 6] Remove @Sendable from closures marked as @MainActor\",\"author\":\"unknown\",\"baseSha\":\"325933132c40c39a68a9f983ca67313d035f717a\",\"headSha\":\"5183c2719f603b478c75f587b27bd093f817b665\"},\"summary\":\"The PR removes redundant `@Sendable` annotations from closures that are already `@MainActor`-isolated. That premise is sound: global-actor function types are implicitly Sendable, so most of the ~80 mechani",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

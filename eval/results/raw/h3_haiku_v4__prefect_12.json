@@ -1,0 +1,379 @@
+{
+ "id": "prefect#12",
+ "repo": "prefect",
+ "num": 12,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T08:14:49.689Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Test file separated from hook",
+   "description": "The rule requires test files to be co-located with their corresponding component files in the same directory. The test file use-state-favicon.test.ts was moved to ui-v2/src/__tests__/hooks/ instead of remaining in ui-v2/src/hooks/ with the hook file use-state-favicon.ts.",
+   "file_path": "ui-v2/src/__tests__/hooks/use-state-favicon.test.ts",
+   "start_line": 1,
+   "end_line": 3,
+   "problematic_code_snippet": "import { act, renderHook } from \"@testing-library/react\";\nimport { afterEach, beforeEach, describe, expect, it, vi } from \"vitest\";\nimport { useStateFavicon } from \"../../hooks/use-state-favicon\";",
+   "rule_name": "React Component Test Files Must Be Co-Located"
+  },
+  {
+   "title": "Incorrect falsy value handling for run_count displays wrong value for zero",
+   "description": "The run_count display uses the logical OR operator (||) instead of the nullish coalescing operator (??). This causes a bug when run_count is explicitly 0 (a valid value indicating the task has not been retried). When run_count is 0, the || operator treats it as falsy and displays the fallback value '0' instead of the actual value 0 from the API. While the visual output is the same, this semantic error means the code doesn't distinguish between 'no data' (null/undefined) and 'zero retries' (0), which could cause issues if the UI behavior needs to differentiate these states in the future or if the fallback value changes.",
+   "file_path": "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+   "start_line": 86,
+   "end_line": 89,
+   "problematic_code_snippet": "<dl className=\"flex flex-col gap-1 mb-2\">\n\t<dt className=\"text-gray-500\">Run Count</dt>\n\t<dd className=\"\">{taskRun.run_count || 0}</dd>\n</dl>"
+  },
+  {
+   "title": "Missing type coercion for retries value causes potential type inconsistency",
+   "description": "The retries display removes the .toString() call that was present in the original PR, directly rendering taskRun.empirical_policy?.retries ?? \"0\". This creates a type inconsistency where the value could be either a number (when retries exists) or a string \"0\" (when it doesn't). While React can render both, this inconsistency violates the principle of uniform data handling and could cause issues in the component tree if parent or child components expect consistent string formatting for this field, or if the value is later used in string operations or comparisons.",
+   "file_path": "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+   "start_line": 160,
+   "end_line": 165,
+   "problematic_code_snippet": "<dl className=\"flex flex-col gap-1 mb-2\">\n\t<dt className=\"text-gray-500\">Retries</dt>\n\t<dd className=\"\">\n\t\t{taskRun.empirical_policy?.retries ?? \"0\"}\n\t</dd>\n</dl>"
+  },
+  {
+   "title": "Incorrect truthy check for retry_jitter_factor hides valid zero values",
+   "description": "The retry_jitter_factor check was changed from an explicit null/undefined check to a simple truthy check. This is a critical bug because a jitter factor of 0 is a valid configuration value (meaning no randomness in retry delays), but the truthy check treats 0 as falsy and displays \"None\" instead. This misrepresents the actual task configuration to users, making them think no jitter factor is set when it's actually configured to 0. The original PR correctly distinguished between 'not set' (null/undefined) and 'set to zero' (0), but this change breaks that distinction.",
+   "file_path": "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+   "start_line": 176,
+   "end_line": 183,
+   "problematic_code_snippet": "<dl className=\"flex flex-col gap-1 mb-2\">\n\t<dt className=\"text-gray-500\">Retry Jitter Factor</dt>\n\t<dd className=\"\">\n\t\t{taskRun.empirical_policy?.retry_jitter_factor\n\t\t\t? taskRun.empirical_policy.retry_jitter_factor.toString()\n\t\t\t: \"None\"}\n\t</dd>\n</dl>"
+  },
+  {
+   "title": "Missing test file for new use-state-favicon hook violates repository testing rules",
+   "description": "A new hook use-state-favicon.ts was added without a corresponding test file. This directly violates AGENTS.md Rule #10 requiring test files to be co-located with their components/hooks, and ui-v2/src/hooks/AGENTS.md which states 'Code, test, and related files should be in the same directory'. The ui-v2/AGENTS.md also explicitly requires 'Always write tests for new components and hooks' as a quality standard. All other hooks in the directory have test files (use-page-title.test.ts, use-stepper.test.ts, etc.), making this omission a clear violation of established patterns and explicit repository rules.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "// New hook file added without corresponding use-state-favicon.test.ts\nexport function useStateFavicon(stateType: StateType | null | undefined): void {\n\tuseEffect(() => {\n\t\tconst colorScheme = getPreferredColorScheme();\n\t\t// ... hook implementation\n\t}, [stateType]);\n}"
+  },
+  {
+   "title": "Flow run link displays empty or undefined text when flow_run_name is missing",
+   "description": "The condition for displaying the flow run link was changed from checking both flow_run_id AND flow_run_name to only checking flow_run_id. When a task run has a flow_run_id but flow_run_name is null or undefined (which is valid according to the UITaskRun schema where flow_run_name is 'string | null | undefined'), the link will render with empty text or display 'undefined'. This creates a broken user experience where users see a clickable link with no visible text. The original code correctly ensured both values existed before showing the link.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "{taskRun.flow_run_id ? (\n\t<dl className=\"flex flex-col gap-1 mb-2\">\n\t\t<dt className=\"text-gray-500\">Flow Run</dt>\n\t\t<dd>\n\t\t\t<Link\n\t\t\t\tto=\"/runs/flow-run/$id\"\n\t\t\t\tparams={{ id: taskRun.flow_run_id }}\n\t\t\t\tclassName=\"text-blue-500 hover:underline cursor-pointer flex items-center\"\n\t\t\t>\n\t\t\t\t<Icon id=\"ExternalLink\" className=\"mr-1 size-4\" />\n\t\t\t\t{taskRun.flow_run_name}\n\t\t\t</Link>\n\t\t</dd>\n\t</dl>"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect",
+ "head_sha": "73405db785401f325ea8d60408bee88e535759a6",
+ "diff_chars": 15212,
+ "diff_lines": 409,
+ "user_prompt_chars": 21686,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 88993,
+ "wall_ms": 91404,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 8,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 7,
+ "turn_trace": {
+  "assistant_lines": 21,
+  "unique_message_ids": 7,
+  "lines_without_id": 0,
+  "tool_use_blocks": 8
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.969207016,
+ "spend_post_usd": 6.986632726,
+ "cost_settled": true,
+ "cost_wait_ms": 334,
+ "cost_usd": 0.017425709999999484,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.018331684999999997,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 40149,
+  "cache_read_input_tokens": 283566,
+  "output_tokens": 20952,
+  "output_tokens_details": {
+   "thinking_tokens": 6291
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 40149
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 20952,
+   "cacheReadInputTokens": 283566,
+   "cacheCreationInputTokens": 40149,
+   "webSearchRequests": 0,
+   "costUSD": 0.018331684999999997,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 6291,
+   "cacheCreationEphemeral5mInputTokens": 40149,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/prefect",
+   "number": 12,
+   "title": "Code Review Bench PR #19951 - feat(ui-v2): improve task run details page parity with Vue",
+   "author": "unknown",
+   "baseSha": "993e31f14631c5a12f080f343d2c7d5984812651",
+   "headSha": "73405db785401f325ea8d60408bee88e535759a6"
+  },
+  "summary": "This PR brings the React task run details page closer to the legacy Vue UI. It adds a copy button to the Task Inputs JSON view, sets the browser tab title to \"Task Run: {name}\", adds a `useStateFavicon` hook that swaps the favicon for a per-state SVG (seven new SVGs under `ui-v2/public`), fixes the \"Runs\" breadcrumb to link to `/runs?tab=task-runs`, and changes the details sidebar to render \"None\" for empty fields instead of hiding them. The breadcrumb, copy button, and page-title pieces are sound and reuse existing abstractions (`JsonInput`'s `copy` prop, `usePageTitle`).\n\nThe favicon hook has a real bug: its cleanup restores the default icons from `/favicon-16x16.png` and friends, but those files live under `public/ico/`, so the reset URLs 404 and the tab icon stays broken after leaving the page. Two states (CANCELLING, PAUSED) also point at SVGs that do not exist. The PR description says 10 unit tests were added for `useStateFavicon`, but no test file exists on the head commit, and none of the sidebar \"None\" changes are tested. There are also smaller logic slips: a Retry Jitter Factor of `0` renders as \"None\", and Run Count shows `0` where the description says \"None\".\n\nOverall assessment: the UI intent is good, but the favicon hook needs fixing and the missing tests need to land before merge, so I'm recommending request_changes.",
+  "verdict": "request_changes",
+  "verdictRationale": "The favicon cleanup writes 404 URLs on every task run page unmount, which is a user-visible regression in the new feature. The PR claims 10 tests for `useStateFavicon`, and the checklist ticks \"includes unit tests\", but no such tests are in the tree. The Retry Jitter Factor falsy check misrenders a valid `0` value. The rest is minor.",
+  "architecture": {
+   "overview": "The task run details page (`ui-v2/src/components/task-runs/task-run-details-page/index.tsx`) is the entry point, rendered from the `/runs/task-run/$id` route. It reads the task run with `useSuspenseQuery` and passes it into the sidebar component `TaskRunDetails` (`task-run-details/task-run-details.tsx`), which renders label/value `dl` rows. Browser-level behaviour such as the document title and favicon lives in small hooks under `src/hooks/`. `usePageTitle` already exists and sets `document.title` with a \"Prefect Server\" suffix. The favicon `<link>` elements (`favicon-16`, `favicon-32`, and their `-dark` variants) are defined statically in `ui-v2/index.html`.\n\nThis PR adds `useStateFavicon`, which swaps those link `href`s to a per-state SVG in `public/` (for example `/running.svg`) and restores defaults on cleanup. It also wires `usePageTitle` and `useStateFavicon` into the page component, changes the breadcrumb to pass a `tab` search param into `/runs`, adds `copy` to the Task Inputs `JsonInput`, and rewrites the sidebar so every field always renders, with \"None\" as the fallback. The data flow is otherwise unchanged. The favicon hook is the only new piece that mutates global DOM state, so its cleanup path is where the risk sits.",
+   "steps": [
+    "Entry point: the `/runs/task-run/$id` route renders `TaskRunDetailsPage`, which fetches the task run via `useSuspenseQuery` and polls every 5s while RUNNING or PENDING.",
+    "The page now calls `usePageTitle(\"Task Run: <name>\")` and `useStateFavicon(taskRun.state_type)` right after fetching. The title hook is pre-existing; the favicon hook is new in this PR.",
+    "`useStateFavicon` looks up the matching `<link id=\"favicon-16/32[-dark]\">` element from `index.html`, sets its `href` to `/<state>.svg` for the seven covered states, and on cleanup restores the default PNGs. The cleanup URLs are wrong (see the high-severity finding).",
+    "`TaskRunDetails` (sidebar) switched from conditional rendering to always rendering each row, with \"None\" as the empty fallback. The Flow Run guard changed from name-and-id to id only.",
+    "The breadcrumb's \"Runs\" link now passes `search={{ tab: \"task-runs\" }}`, which matches the `tab` enum in `routes/runs/index.tsx`.",
+    "Task Inputs gains the `copy` prop on the existing `JsonInput` component. No new shared components are introduced."
+   ],
+   "diagrams": [
+    {
+     "title": "Task run details page wiring",
+     "kind": "flowchart",
+     "description": "How the task run details page connects to the new title and favicon hooks, the sidebar, and the global DOM.",
+     "mermaid": "flowchart LR\n  R[\"routes/runs/task-run.$id.tsx\"] --> P[\"TaskRunDetailsPage\"]\n  P --> Q[\"useSuspenseQuery task run\"]\n  P --> T[\"usePageTitle (existing)\"]\n  P --> F[\"useStateFavicon (new)\"]\n  P --> S[\"TaskRunDetails sidebar\"]\n  P --> I[\"TaskInputs JsonInput copy\"]\n  F --> L[\"favicon link elements in index.html\"]\n  F --> A[\"public/*.svg per state\"]\n  T --> D[\"document.title\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Favicon cleanup restores default icons from URLs that 404",
+    "severity": "high",
+    "category": "correctness",
+    "body": "When `useStateFavicon` unmounts it resets the icon to `/favicon-16x16.png` and friends. Those files are under `ui-v2/public/ico/`, not the public root, so the reset requests return 404. After a user leaves a task run page, the browser tab keeps a broken icon for the rest of the session.\n\n::diff{file=\"ui-v2/src/hooks/use-state-favicon.ts\" lines=\"55-64\"}\n\n::callout{type=\"warning\"}\nThe default `<link>` tags in `index.html` point at `/ico/favicon-*.png`. The reset paths should match those, not the root.\n\n::suggestion{file=\"ui-v2/src/hooks/use-state-favicon.ts\" lines=\"55-64\"}\n\t\treturn () => {\n\t\t\t// Reset to default favicon on unmount\n\t\t\tif (colorScheme === \"dark\") {\n\t\t\t\tfavicon16?.setAttribute(\"href\", \"/ico/favicon-16x16-dark.png\");\n\t\t\t\tfavicon32?.setAttribute(\"href\", \"/ico/favicon-32x32-dark.png\");\n\t\t\t} else {\n\t\t\t\tfavicon16?.setAttribute(\"href\", \"/ico/favicon-16x16.png\");\n\t\t\t\tfavicon32?.setAttribute(\"href\", \"/ico/favicon-32x32.png\");\n\t\t\t}\n\t\t};\n",
+    "files": [
+     "ui-v2/src/hooks/use-state-favicon.ts",
+     "ui-v2/index.html",
+     "ui-v2/public/ico"
+    ],
+    "fixPrompt": "In `ui-v2/src/hooks/use-state-favicon.ts`, the cleanup function (around lines 55-64) resets the favicon to `/favicon-16x16.png`, `/favicon-32x32.png`, and their `-dark` variants. Those files live under `public/ico/`, so the requests 404. Change the reset paths to `/ico/...` to match the default `<link>` hrefs in `ui-v2/index.html`. Keep the color-scheme branching as it is.",
+    "commentAnchor": {
+     "file": "ui-v2/src/hooks/use-state-favicon.ts",
+     "lineStart": 55,
+     "lineEnd": 64
+    }
+   },
+   {
+    "title": "Claimed useStateFavicon tests are missing from the PR",
+    "severity": "high",
+    "category": "maintainability",
+    "body": "The PR description says \"Added comprehensive test coverage for `useStateFavicon` hook (10 test cases)\", and the checklist ticks \"adds new functionality includes unit tests\". There's no `use-state-favicon.test.ts` in the diff or on the head commit. The sidebar rewrite is also untested: no test covers \"None\" for empty fields, the Retry Jitter Factor `0` case, or the new copy button. The existing `task-run-details.test.tsx` only checks that a few labels render.\n\nThe favicon bug above would have been caught by a test that asserts the cleanup `href`. A test for the jitter `0` case would have caught the falsy check.\n\n::callout{type=\"info\"}\nThe test file should cover: each state maps to `/<state>.svg`; unknown or null state is a no-op; unmount restores the defaults and asserts the real `/ico/` paths; color-scheme branching; and the `-dark` elements.",
+    "files": [
+     "ui-v2/src/hooks/use-state-favicon.ts",
+     "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+     "ui-v2/src/components/task-runs/task-run-details/task-run-details.test.tsx"
+    ],
+    "fixPrompt": "Add `ui-v2/src/hooks/use-state-favicon.test.ts`, which the PR description says exists but does not. Cover: each covered state sets `href` on `favicon-16`/`favicon-32` (or the `-dark` ids under dark scheme) to `/<state>.svg`; a null or undefined state leaves the links unchanged; unmount restores the default `/ico/favicon-*.png` URLs (verify the paths match `ui-v2/index.html`); and missing link elements don't throw. Also add sidebar tests in `ui-v2/src/components/task-runs/task-run-details/task-run-details.test.tsx` for \"None\" fallbacks, including `retry_jitter_factor: 0` rendering as \"0\".",
+    "commentAnchor": {
+     "file": "ui-v2/src/hooks/use-state-favicon.ts",
+     "lineStart": 37,
+     "lineEnd": 66
+    }
+   },
+   {
+    "title": "CANCELLING and PAUSED map to SVG files that do not exist",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`StateType` includes CANCELLING and PAUSED, so `useStateFavicon` sets the icon to `/cancelling.svg` or `/paused.svg`. Neither file is in `ui-v2/public`, so those states produce a 404 and a broken icon. The PR's review checklist says these states \"will not update favicon\", which is not what the code does. It sets a bad href.\n\n::diff{file=\"ui-v2/src/hooks/use-state-favicon.ts\" lines=\"49-53\"}\n\nEither add the two SVGs, or skip the update for states without an icon (for example, check the set of supported states and only set the href when one exists).",
+    "files": [
+     "ui-v2/src/hooks/use-state-favicon.ts",
+     "ui-v2/public"
+    ],
+    "fixPrompt": "In `ui-v2/src/hooks/use-state-favicon.ts`, the effect (around lines 49-53) sets the favicon href to `/${stateType.toLowerCase()}.svg` for every `StateType`. CANCELLING and PAUSED have no matching files in `ui-v2/public`, so they 404. Either add `cancelling.svg` and `paused.svg` to `ui-v2/public`, or keep a set of states that have icons and skip the update for the others, which leaves the current favicon in place. Match the existing SVG style in `ui-v2/public`.",
+    "commentAnchor": {
+     "file": "ui-v2/src/hooks/use-state-favicon.ts",
+     "lineStart": 49,
+     "lineEnd": 53
+    }
+   },
+   {
+    "title": "Retry Jitter Factor of 0 renders as \"None\"",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The new Retry Jitter Factor row uses a truthiness check. A jitter factor of `0` is a valid value (no jitter), and it's typed `number | null` in `ui-v2/src/api/prefect.ts`. With this change, `0` shows \"None\", which looks like the value is missing. The old code showed `0` when the value was not null or undefined.\n\n::diff{file=\"ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx\" lines=\"176-183\"}\n\nUse a null and undefined check, the same way the Estimated Run Time and Duration rows do.",
+    "files": [
+     "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx"
+    ],
+    "fixPrompt": "In `ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx`, the Retry Jitter Factor row (around lines 176-183) uses a truthy check on `taskRun.empirical_policy?.retry_jitter_factor`, so a value of `0` shows \"None\". Change it to an explicit null and undefined check, matching the Estimated Run Time row a few lines above. `0` should render as \"0\". Add a test for the `0` case in `task-run-details.test.tsx`.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+     "lineStart": 176,
+     "lineEnd": 183
+    }
+   },
+   {
+    "title": "Run Count shows 0 instead of \"None\" for missing values",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The PR description lists Run Count among the fields that now show \"None\" when empty. The code uses `taskRun.run_count || 0`, so a null run count renders as `0`. The description and the code disagree. A reviewer checking parity with Vue will see a different empty state.\n\n::diff{file=\"ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx\" lines=\"86-89\"}\n\nIf \"None\" is the intent, use the same null check as the other rows. If `0` is intended, update the description.",
+    "files": [
+     "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx"
+    ],
+    "fixPrompt": "In `ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx`, the Run Count row (around line 88) renders `taskRun.run_count || 0`. The PR description says empty values should show \"None\". Change the row to show \"None\" when `run_count` is null or undefined, and show the number otherwise, including `0`. Use the same null check pattern as the Estimated Run Time row.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+     "lineStart": 86,
+     "lineEnd": 89
+    }
+   },
+   {
+    "title": "Flow Run link can render with empty text when name is missing",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The Flow Run row used to require both `flow_run_name` and `flow_run_id`. It now only checks `flow_run_id`. If the id is set but the name is null, the link renders with no visible text, so it's an invisible, unlabeled link.\n\n::diff{file=\"ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx\" lines=\"45-58\"}\n\nEither keep the name check in the condition, or fall back to the id as the link text.",
+    "files": [
+     "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx"
+    ],
+    "fixPrompt": "In `ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx`, the Flow Run condition (around line 45) changed from `flow_run_name && flow_run_id` to just `flow_run_id`. When the name is null, the link has no text. Either restore the name check so it falls back to \"None\", or render the id as the link text when the name is missing.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/task-runs/task-run-details/task-run-details.tsx",
+     "lineStart": 45,
+     "lineEnd": 58
+    }
+   },
+   {
+    "title": "Breadcrumb tab search value is valid",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The new `search={{ tab: \"task-runs\" }}` on the \"Runs\" breadcrumb matches the zod enum `z.enum([\"flow-runs\", \"task-runs\"])` in `ui-v2/src/routes/runs/index.tsx`. The runs page will open on the Task Runs tab, which fixes the breadcrumb as the PR describes.",
+    "files": [
+     "ui-v2/src/components/task-runs/task-run-details-page/index.tsx",
+     "ui-v2/src/routes/runs/index.tsx"
+    ]
+   },
+   {
+    "title": "Reuses existing title and copy abstractions",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The page title is set with the existing `usePageTitle` hook, which handles the \"Prefect Server\" suffix and the reset on unmount. Copy support uses the existing `copy` prop on `JsonInput`, which already renders a copy button. Neither change adds a new component or duplicates logic, which keeps the diff small and consistent with the rest of the app.",
+    "files": [
+     "ui-v2/src/components/task-runs/task-run-details-page/index.tsx",
+     "ui-v2/src/hooks/use-page-title.ts",
+     "ui-v2/src/components/ui/json-input.tsx"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/prefect\",\"number\":12,\"title\":\"Code Review Bench PR #19951 - feat(ui-v2): improve task run details page parity with Vue\",\"author\":\"unknown\",\"baseSha\":\"993e31f14631c5a12f080f343d2c7d5984812651\",\"headSha\":\"73405db785401f325ea8d60408bee88e535759a6\"},\"summary\":\"This PR brings the React task run details page closer to the legacy Vue UI. It adds a copy button to the Task Inputs JSON view, sets the browser tab title to \\\"Task Run: {name}\\\", adds a `useStateFavico",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 8
+}

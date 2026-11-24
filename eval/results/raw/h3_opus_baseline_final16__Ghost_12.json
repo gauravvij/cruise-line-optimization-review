@@ -1,0 +1,285 @@
+{
+ "id": "Ghost#12",
+ "repo": "Ghost",
+ "num": 12,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_final16",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#9",
+  "prefect#12",
+  "redis#8",
+  "redis#9",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-23T17:49:18.069Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Documentation references npm instead of yarn",
+   "description": "The rule requires all package management commands to use yarn, but the code documentation references npm commands for installing and running Tinybird tools",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 61,
+   "end_line": 67,
+   "problematic_code_snippet": "/**\n * Service for managing Tinybird JWT tokens and authentication\n *\n * To run Tinybird tests locally:\n * npm install -g @tinybird/cli\n * npm run docker:dev:analytics\n */",
+   "rule_name": "Package Manager Must Be Yarn v1"
+  },
+  {
+   "title": "Token caching stores entire object instead of token string",
+   "description": "In the getToken method, when caching the JWT token, the code now stores the entire tokenData object (containing both 'token' and 'exp' properties) instead of just extracting the token string. This causes the returned token structure to be malformed as {token: {token: string, exp: number}, exp: number} instead of the expected {token: string, exp: number}. This will break any consumers of the Tinybird API (like the /api/tinybird/token endpoint and stats/tinybird.js) that expect a string token value, causing authentication failures when making requests to Tinybird pipes.",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 97,
+   "end_line": 99,
+   "problematic_code_snippet": "if (!this._serverToken || this._isJWTExpired(this._serverToken)) {\n    const tokenData = this._generateToken({name, expiresInMinutes});\n    this._serverToken = tokenData;\n    this._serverTokenExp = tokenData.exp;\n}"
+  },
+  {
+   "title": "JWT signature validation bypassed in token expiration check",
+   "description": "The _isJWTExpired method now uses jwt.decode() instead of jwt.verify() to check token expiration. While jwt.verify() validates the token's signature and ensures it hasn't been tampered with, jwt.decode() only decodes the token without any cryptographic validation. This creates a security vulnerability where expired, tampered, or forged tokens could be accepted as valid. An attacker could potentially modify token claims (like extending expiration or changing site_uuid in scopes) and the system would accept the malicious token, bypassing authentication controls for Tinybird API access.",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 162,
+   "end_line": 170,
+   "problematic_code_snippet": "_isJWTExpired(token, bufferSeconds = 300) {\n    try {\n        const decoded = jwt.decode(token);\n        if (typeof decoded !== 'object' || !decoded.exp) {\n            return true;\n        }\n        const now = Math.floor(Date.now() / 1000);\n        const timeRemaining = decoded.exp - now;\n        return timeRemaining < bufferSeconds;"
+  },
+  {
+   "title": "JWT token structure changed by removing noTimestamp option",
+   "description": "The _generateToken method previously created JWT tokens with {noTimestamp: true} to exclude the 'iat' (issued at) claim from the token payload. This option has been removed, causing the JWT library to automatically include the 'iat' timestamp in the token. This changes the token structure that Tinybird expects and may cause authentication failures if Tinybird's API validates or expects a specific token payload structure without the 'iat' claim. The changed token format could also affect token caching behavior and invalidate existing token validation logic.",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 147,
+   "end_line": 147,
+   "problematic_code_snippet": "const token = jwt.sign(payload, this.tinybirdConfig.adminToken);"
+  },
+  {
+   "title": "Type mismatch in _isJWTExpired call after token caching change",
+   "description": "The _isJWTExpired method expects a string token parameter, but after line 98 changes this._serverToken from storing just the token string to storing the entire tokenData object, line 96 now passes an object {token: string, exp: number} to _isJWTExpired instead of a string. This causes jwt.decode() at line 164 to fail when trying to decode an object instead of a JWT string. The method will always return true (treating the token as expired) on subsequent calls, forcing unnecessary token regeneration on every request and breaking the token caching mechanism entirely.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "if (!this._serverToken || this._isJWTExpired(this._serverToken)) {\n    const tokenData = this._generateToken({name, expiresInMinutes});\n    this._serverToken = tokenData;\n    this._serverTokenExp = tokenData.exp;\n}"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "6fdbd46582bcf0885572a8c2025bd99ad633e2d0",
+ "diff_chars": 35514,
+ "diff_lines": 675,
+ "user_prompt_chars": 36359,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 70878,
+ "wall_ms": 72905,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 6,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 12,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 6
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 22.521803371,
+ "spend_post_usd": 22.763450371,
+ "cost_settled": true,
+ "cost_wait_ms": 344,
+ "cost_usd": 0.2416470000000004,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.3390938,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 30812,
+  "cache_read_input_tokens": 248029,
+  "output_tokens": 6769,
+  "output_tokens_details": {
+   "thinking_tokens": 877
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 30812
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4695,
+    "cache_creation_input_tokens": 581,
+    "cache_read_input_tokens": 49121,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 581,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 6769,
+   "cacheReadInputTokens": 248029,
+   "cacheCreationInputTokens": 30812,
+   "webSearchRequests": 0,
+   "costUSD": 0.3390938,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 877,
+   "cacheCreationEphemeral5mInputTokens": 30812,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 12,
+   "title": "Code Review Bench PR #25477 - Removed unused tinybird filters",
+   "author": "",
+   "baseSha": "ea99744877907cfbea6bd18f3f4ea550c82a8e15",
+   "headSha": "6fdbd46582bcf0885572a8c2025bd99ad633e2d0"
+  },
+  "summary": "The description says this PR only removes the unused `device`, `browser` and `os` filters from the Tinybird pipes (`api_kpis`, `api_top_locations`, `api_top_pages`, `filtered_sessions`). It also deletes the matching YAML tests and repoints the \"multiple filters combined\" tests to `source` + `pathname`. Separately, it drops `api_top_browsers`, `api_top_devices` and `api_top_os` from the JWT scope list. The Tinybird part is clean, and the endpoint pipes for those three resources are already gone from `endpoints/`.\n\nThe PR also makes three changes to JWT handling in `TinybirdService.js` that the description doesn't mention, and one of them breaks things. `getToken()` now stores the whole `{token, exp}` object in `this._serverToken` instead of the token string. When JWT auth is on, every caller now gets an object back in `token`. The server-side stats requests send `Bearer [object Object]`, and the admin `/tinybird/token` endpoint returns an object where clients expect a JWT string. On top of that, the expiry check can't read the object, so caching stops working and a new token is signed on every call. The other two changes (dropping `noTimestamp`, and switching `jwt.verify` to `jwt.decode`) don't seem needed for a filter cleanup. The existing unit tests miss all of this because they only check that `token` is truthy.",
+  "verdict": "request_changes",
+  "verdictRationale": "`getToken()` now returns an object instead of a JWT string, which breaks every Tinybird request made with JWT auth. That alone blocks merge. The other JWT changes aren't in the PR's scope and should be reverted or explained.",
+  "architecture": {
+   "overview": "Ghost's analytics run on Tinybird. Ghost-side services call Tinybird endpoint pipes (`api_kpis`, `api_top_*`) over HTTP, and many of those pipes reuse the `filtered_sessions` pipe for session-level filtering. Authentication goes through `TinybirdService`. When a workspace ID and admin token are configured, it signs a JWT whose scopes list each allowed pipe and fix `site_uuid` to the site. It caches that JWT in memory and hands it out to `stats/utils/tinybird.js` (server-side queries) and to the admin API endpoint `api/endpoints/tinybird.js`, which passes it on to the stats front end.\n\nThe PR removes the `device`, `browser` and `os` WHERE clauses from the pipes, along with their YAML tests. It also removes the three dropped `api_top_*` pipes from the JWT scope list. Beyond that, it changes the token lifecycle in `TinybirdService`: the cache now holds the whole `{token, exp}` object, tokens are signed with an `iat` claim, and the expiry check decodes the token without verifying the signature.",
+   "steps": [
+    "Start at `TinybirdService.getToken()`. It's the only way callers get Tinybird credentials, either a JWT or the static local/stats tokens.",
+    "`_generateToken()` builds the JWT payload, with one `PIPES:READ` scope per entry in `TINYBIRD_PIPES`. The PR removes `api_top_browsers`, `api_top_devices` and `api_top_os` from that list.",
+    "Before reusing the cached `_serverToken`, `getToken()` checks it with `_isJWTExpired()`. The PR changes both what gets cached and how it's checked.",
+    "The token is used in two places: `stats/utils/tinybird.js#buildRequest` sends it as a bearer token, and `api/endpoints/tinybird.js` returns it to the admin client.",
+    "On the Tinybird side, the endpoint pipes and `pipes/filtered_sessions.pipe` drop their `device`/`browser`/`os` clauses. The `tests/*.yaml` fixtures are updated to match."
+   ],
+   "diagrams": [
+    {
+     "title": "Tinybird token and query flow",
+     "kind": "flowchart",
+     "description": "How the JWT from TinybirdService reaches Tinybird pipes through the server stats utility and the admin token endpoint.",
+     "mermaid": "flowchart LR\n  TS[TinybirdService.getToken] --> GEN[_generateToken]\n  GEN --> SCOPES[TINYBIRD_PIPES scopes]\n  TS --> CHK[_isJWTExpired]\n  TS --> UTIL[stats/utils/tinybird.js buildRequest]\n  TS --> EP[api/endpoints/tinybird.js token]\n  EP --> ADMIN[Admin stats app]\n  UTIL --> PIPES[Tinybird endpoint pipes]\n  ADMIN --> PIPES\n  PIPES --> FS[filtered_sessions.pipe]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "getToken() caches the {token, exp} object instead of the JWT string",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `getToken()`, the cache now stores the whole return value of `_generateToken()` instead of its `token` field:\n\n::diff{file=\"ghost/core/core/server/services/tinybird/TinybirdService.js\" lines=\"94-104\"}\n\nWhen JWT auth is on, `getToken()` now returns `{token: {token: '<jwt>', exp}, exp}`. Downstream:\n\n- `stats/utils/tinybird.js:33-34` reads `tokenData?.token` and puts it in the `Authorization` header, which becomes `Bearer [object Object]`. Every server-side Tinybird query fails auth.\n- `api/endpoints/tinybird.js:17-22` returns `token: tokenData.token` to the admin client, so the stats app gets an object where it expects a JWT string.\n\nCaching breaks too. On the next call, `_isJWTExpired(this._serverToken)` passes the object to `jwt.decode`, which returns `null`. Reading `null.exp` then throws inside the `try`, the `catch` returns `true`, and a new JWT is signed on every request.\n\n::callout{type=\"warning\"}\nNone of the current unit tests catch this. They only check `assert.ok(tokenResult.token)` and `notEqual` between results, and both pass with object references.\n\n::suggestion{file=\"ghost/core/core/server/services/tinybird/TinybirdService.js\" lines=\"98-98\"}\n                this._serverToken = tokenData.token;\n\n",
+    "files": [
+     "ghost/core/core/server/services/tinybird/TinybirdService.js",
+     "ghost/core/core/server/services/stats/utils/tinybird.js",
+     "ghost/core/core/server/api/endpoints/tinybird.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/server/services/tinybird/TinybirdService.js` line 98, `getToken()` sets `this._serverToken = tokenData`, but `tokenData` is the `{token, exp}` object. As a result, `getToken().token` is an object instead of a JWT string, and the expiry check never hits the cache. Change it back to `this._serverToken = tokenData.token`. Then tighten `ghost/core/test/unit/server/services/tinybird/TinybirdService.test.js` (the `getToken` describe block, around lines 118-150). Assert that `typeof result.token === 'string'` and that `jwt.verify(result.token, adminToken)` succeeds. Also assert that two calls inside the buffer window return the identical token string, which proves caching works.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+     "lineStart": 98,
+     "lineEnd": 98
+    }
+   },
+   {
+    "title": "Unrelated JWT changes: noTimestamp removed and verify replaced by decode",
+    "severity": "medium",
+    "category": "security",
+    "body": "The PR is described as a Tinybird filter cleanup, but it also changes how JWTs are signed and checked:\n\n::diff{file=\"ghost/core/core/server/services/tinybird/TinybirdService.js\" lines=\"147-148\"}\n\n::diff{file=\"ghost/core/core/server/services/tinybird/TinybirdService.js\" lines=\"162-174\"}\n\n- Dropping `{noTimestamp: true}` adds an `iat` claim to every token. That changes the payload Tinybird receives and was presumably excluded on purpose. Nothing in this PR explains why it now needs to be included.\n- Switching `jwt.verify` to `jwt.decode` means `_isJWTExpired` no longer checks the signature. Today it only sees tokens Ghost signed itself, so the immediate risk is low. But the helper now accepts any well-formed token with a future `exp` as valid. For example, if the admin token rotates, a cached token signed with the old secret is kept instead of being regenerated.\n\nUnless there's a reason that isn't documented here, revert both and keep this PR limited to the filter removal.\n\n::suggestion{file=\"ghost/core/core/server/services/tinybird/TinybirdService.js\" lines=\"147-147\"}\n        const token = jwt.sign(payload, this.tinybirdConfig.adminToken, {noTimestamp: true});\n\n",
+    "files": [
+     "ghost/core/core/server/services/tinybird/TinybirdService.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/server/services/tinybird/TinybirdService.js`, this PR made two JWT changes outside its stated scope. Revert both. (1) Line 147: restore `{noTimestamp: true}` as the third argument to `jwt.sign`. (2) Line 164 in `_isJWTExpired`: restore `jwt.verify(token, this.tinybirdConfig.adminToken)` instead of `jwt.decode(token)`, so tokens with a bad signature or signed with a rotated secret are treated as expired. Keep the existing try/catch that returns true on error. Run `ghost/core/test/unit/server/services/tinybird/TinybirdService.test.js` afterwards.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+     "lineStart": 147,
+     "lineEnd": 147
+    }
+   },
+   {
+    "title": "ARCHITECTURE.md still lists the removed top_browsers/devices/os endpoints",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`ghost/core/core/server/data/tinybird/ARCHITECTURE.md` lines 253-256 still list `api_top_browsers`, `api_top_devices` and `api_top_os` as available endpoints. Those pipes no longer exist in `endpoints/`, and this PR removes them from the JWT scopes.\n\n::diff{file=\"ghost/core/core/server/services/tinybird/TinybirdService.js\" lines=\"47-59\"}\n\nIt's worth updating the doc in this PR so the cleanup is complete.",
+    "files": [
+     "ghost/core/core/server/data/tinybird/ARCHITECTURE.md",
+     "ghost/core/core/server/services/tinybird/TinybirdService.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/server/data/tinybird/ARCHITECTURE.md` (around lines 253-256), remove the entries for `api_top_browsers`, `api_top_devices` and `api_top_os`. These endpoint pipes no longer exist and are no longer in `TINYBIRD_PIPES` in `ghost/core/core/server/services/tinybird/TinybirdService.js`. Also check whether the doc still lists device/browser/os as supported filter parameters on any endpoint, and update those mentions.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+     "lineStart": 47,
+     "lineEnd": 59
+    }
+   },
+   {
+    "title": "Filter removal and test updates are consistent",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The pipe changes are consistent. `device`, `browser` and `os` are removed from all four places they were defined (`api_kpis`, `api_top_locations`, `api_top_pages`, `filtered_sessions`). The stale commented-out `source` clause in `api_top_pages.pipe` is removed too, which makes sense because `filtered_sessions` handles source filtering.\n\nThe \"multiple filters combined\" YAML tests were repointed to `source=bing.com&pathname=/about/` instead of being deleted, so every `api_top_*` endpoint still has a test combining two filters.",
+    "files": [
+     "ghost/core/core/server/data/tinybird/pipes/filtered_sessions.pipe",
+     "ghost/core/core/server/data/tinybird/endpoints/api_top_pages.pipe",
+     "ghost/core/core/server/data/tinybird/tests/api_top_sources.yaml"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":12,\"title\":\"Code Review Bench PR #25477 - Removed unused tinybird filters\",\"author\":\"\",\"baseSha\":\"ea99744877907cfbea6bd18f3f4ea550c82a8e15\",\"headSha\":\"6fdbd46582bcf0885572a8c2025bd99ad633e2d0\"},\"summary\":\"The description says this PR only removes the unused `device`, `browser` and `os` filters from the Tinybird pipes (`api_kpis`, `api_top_locations`, `api_top_pages`, `filtered_sessions`). It also deletes the matching YAML tests and repoint",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 4
+}

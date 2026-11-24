@@ -1,0 +1,288 @@
+{
+ "id": "dify#6",
+ "repo": "dify",
+ "num": 6,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:24:50.914Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Obfuscated SMTP class selection logic",
+   "description": "The rule requires code to maintain readable control flow and avoid clever hacks. The code uses a ternary expression to dynamically select and instantiate an SMTP class in a single line, making the logic harder to understand and maintain compared to a straightforward if-else structure.",
+   "file_path": "api/libs/smtp.py",
+   "start_line": 27,
+   "end_line": 30,
+   "problematic_code_snippet": "# Use ternary to select SMTP class based on TLS mode\nsmtp = (smtplib.SMTP_SSL if (self.use_tls and not self.opportunistic_tls) else smtplib.SMTP)(\n    self.server, self.port, timeout=10, local_hostname=local_host\n)",
+   "rule_name": "Python Backend Must Use Deterministic Control Flow"
+  },
+  {
+   "title": "Incorrect EHLO hostname parameter in opportunistic TLS mode",
+   "description": "When opportunistic TLS is enabled, the code passes `local_host` (which can be None or an empty string) to the EHLO command instead of using `self.server`. According to RFC 5321, the EHLO command should identify the client using its fully qualified domain name. The original code correctly used `self.server` as the EHLO identifier before this PR. This bug will cause SMTP servers that validate EHLO domains to reject the connection, especially when SMTP_LOCAL_HOSTNAME is not configured or is empty.",
+   "file_path": "api/libs/smtp.py",
+   "start_line": 33,
+   "end_line": 36,
+   "problematic_code_snippet": "assert smtp is not None\nif self.use_tls and self.opportunistic_tls:\n    smtp.ehlo(local_host)\n    smtp.starttls()\n    smtp.ehlo(local_host)"
+  },
+  {
+   "title": "Empty string fallback breaks SMTP local_hostname default behavior",
+   "description": "The code uses `dify_config.SMTP_LOCAL_HOSTNAME or \"\"` which converts None to an empty string. However, the smtplib library expects None (not an empty string) when no custom hostname is specified, allowing it to use the system's FQDN as a default. By providing an empty string instead of None, the SMTP connection will fail to properly identify itself during the HELO/EHLO handshake when SMTP_LOCAL_HOSTNAME is not configured. This breaks the intended fallback behavior and can cause mail delivery failures on servers that validate client hostnames.",
+   "file_path": "api/libs/smtp.py",
+   "start_line": 25,
+   "end_line": 25,
+   "problematic_code_snippet": "local_host = dify_config.SMTP_LOCAL_HOSTNAME or \"\""
+  },
+  {
+   "title": "Redundant empty string to None conversion defeats purpose of hostname override",
+   "description": "After converting None to empty string on line 25, the code then converts empty string back to None using `local_host or None` when passing to the SMTP constructor. This double conversion defeats the entire purpose of the SMTP_LOCAL_HOSTNAME feature. When a user explicitly sets SMTP_LOCAL_HOSTNAME to an empty string (perhaps to force default behavior), this logic will pass None to smtplib instead of respecting the user's configuration. The redundant `or None` should be removed, and the initial conversion to empty string is also problematic as explained in the previous issue.",
+   "file_path": "api/libs/smtp.py",
+   "start_line": 28,
+   "end_line": 30,
+   "problematic_code_snippet": "smtp = (smtplib.SMTP_SSL if (self.use_tls and not self.opportunistic_tls) else smtplib.SMTP)(\n    self.server, self.port, timeout=10, local_hostname=local_host or None\n)"
+  },
+  {
+   "title": "Backend config module exceeds 800 lines",
+   "description": "This backend Python file is already well beyond the 800-line limit (the diff context shows changes around line ~949). Adding more code here violates the rule requiring backend Python files under 800 lines; the module should be split into smaller files.",
+   "file_path": "api/configs/feature/__init__.py",
+   "start_line": 949,
+   "end_line": 955,
+   "problematic_code_snippet": "+    SMTP_LOCAL_HOSTNAME: str | None = Field(\n+        description=\"Override the local hostname used in SMTP HELO/EHLO. \"\n+        \"Useful behind NAT or when the default hostname causes rejections.\",\n+        default=None,\n+    )",
+   "rule_name": "Python Backend Files Must Not Exceed 800 Lines"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "6facade85c2723292b4d8585dfa587921059a5b7",
+ "diff_chars": 7693,
+ "diff_lines": 188,
+ "user_prompt_chars": 9319,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 50901,
+ "wall_ms": 53665,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 4,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 3,
+ "turn_trace": {
+  "assistant_lines": 7,
+  "unique_message_ids": 3,
+  "lines_without_id": 0,
+  "tool_use_blocks": 4
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.446764502,
+ "spend_post_usd": 0.458027752,
+ "cost_settled": true,
+ "cost_wait_ms": 340,
+ "cost_usd": 0.011263250000000002,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.00871444,
+ "usage": {
+  "input_tokens": 6,
+  "cache_creation_input_tokens": 18738,
+  "cache_read_input_tokens": 82259,
+  "output_tokens": 11098,
+  "output_tokens_details": {
+   "thinking_tokens": 4852
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 18738
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 6,
+   "outputTokens": 11098,
+   "cacheReadInputTokens": 82259,
+   "cacheCreationInputTokens": 18738,
+   "webSearchRequests": 0,
+   "costUSD": 0.00871444,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 4852,
+   "cacheCreationEphemeral5mInputTokens": 18738,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 6,
+   "title": "Code Review Bench PR #30975 - feat: allow pass hostname in docker env",
+   "author": "",
+   "baseSha": "2b1c59db20af13caf17e8cae397f15c470ca0055",
+   "headSha": "6facade85c2723292b4d8585dfa587921059a5b7"
+  },
+  "summary": "The PR adds an optional SMTP_LOCAL_HOSTNAME setting that overrides the hostname sent in SMTP HELO/EHLO. It plumbs the setting through configs/feature/__init__.py (MailConfig), the api, docker and integration-test env examples, and docker-compose's x-shared-env. In libs/smtp.py, SMTPClient.send() also collapses the TLS branching into a ternary that picks SMTP or SMTP_SSL, passes local_hostname to the constructor, and replaces the opportunistic-TLS ehlo(self.server) calls with ehlo(local_host).\n\nThe config plumbing is consistent across every env file. The problem is in the SMTP client. When the override is unset, local_host is \"\", so the opportunistic STARTTLS path now sends the machine's FQDN in EHLO instead of the SMTP server name the original code deliberately sent. That changes wire behavior for every existing deployment that doesn't set the new variable, which the PR description never mentions. The unit tests only assert that local_hostname=ANY is passed, so neither the override nor the changed EHLO identity is exercised.",
+  "verdict": "request_changes",
+  "verdictRationale": "The main issue is a silent default-behavior change: with SMTP_LOCAL_HOSTNAME unset, opportunistic-TLS sessions now identify themselves with the local FQDN rather than the server name, which the original code intentionally did. That should be fixed so the default path is unchanged. The new override itself is also untested. The remaining items are readability and nits.",
+  "architecture": {
+   "overview": "Email is sent by the SMTPClient class in api/libs/smtp.py, which is constructed from mail-sending tasks (see api/tests/unit_tests/tasks/test_mail_send_task.py for the call pattern). Its connection settings come from the MailConfig pydantic settings block in api/configs/feature/__init__.py, which is read through the global dify_config object. Operators set those values through environment variables, which docker/docker-compose.yaml forwards into the api and worker containers via the x-shared-env anchor.\n\nThis PR adds one optional setting, SMTP_LOCAL_HOSTNAME, that is read at send time and passed to smtplib as local_hostname, which controls the HELO/EHLO identity. It also changes how SMTPClient.send() chooses between smtplib.SMTP and smtplib.SMTP_SSL and what it sends during the opportunistic STARTTLS handshake. Because the variable is empty by default, the default code path is the one that changes.",
+   "steps": [
+    "Entry point: mail-sending code constructs SMTPClient(server, port, username, password, _from, use_tls, opportunistic_tls) and calls send(mail). Settings come from dify_config.MAIL_* values and environment variables.",
+    "Configuration: MailConfig in api/configs/feature/__init__.py gains SMTP_LOCAL_HOSTNAME (str | None, default None). The matching variable is added to api/.env.example, api/tests/integration_tests/.env.example, docker/.env.example, and docker/docker-compose.yaml x-shared-env, so the value reaches the containers.",
+    "Client selection: send() picks SMTP_SSL only when use_tls is true and opportunistic_tls is false. Otherwise it uses SMTP, passing local_hostname=local_host or None to the constructor. Opportunistic STARTTLS calls ehlo, starttls, and ehlo again, all with local_host.",
+    "Behavior change: the base code sent ehlo(self.server) in the opportunistic path. The head sends ehlo(local_host), and local_host is an empty string when the override is unset. smtplib then falls back to its own local_hostname (the machine FQDN), so the EHLO identity changes for default configurations.",
+    "Tests: the existing SMTP tests change their assert_called_once_with to local_hostname=ANY. They confirm the kwarg is present but not what value is passed, and no test sets SMTP_LOCAL_HOSTNAME to check that the override reaches both the constructor and the EHLO."
+   ],
+   "diagrams": [
+    {
+     "title": "SMTP configuration and send path",
+     "kind": "flowchart",
+     "description": "How the new SMTP_LOCAL_HOSTNAME setting flows from environment to the smtplib connection. Shows the default-empty fallback path.",
+     "mermaid": "flowchart LR\n  ENV[\"Env var SMTP_LOCAL_HOSTNAME\"] --> COMPOSE[\"docker-compose x-shared-env\"]\n  COMPOSE --> CFG[\"MailConfig.SMTP_LOCAL_HOSTNAME in configs/feature/__init__.py\"]\n  CFG --> DC[\"dify_config\"]\n  DC --> SEND[\"SMTPClient.send in libs/smtp.py\"]\n  SEND --> PICK{\"use_tls and not opportunistic?\"}\n  PICK -- yes --> SSL[\"smtplib.SMTP_SSL with local_hostname\"]\n  PICK -- no --> PLAIN[\"smtplib.SMTP with local_hostname\"]\n  PLAIN --> OPP{\"use_tls and opportunistic?\"}\n  OPP -- yes --> EHLO[\"ehlo(local_host), starttls, ehlo(local_host)\"]\n  OPP -- no --> LOGIN[\"login if credentials set\"]\n  EHLO --> LOGIN\n  SSL --> LOGIN\n  LOGIN --> MAIL[\"sendmail then quit\"]"
+    },
+    {
+     "title": "Opportunistic STARTTLS handshake (head)",
+     "kind": "sequence",
+     "description": "The EHLO identity sent in the opportunistic STARTTLS path. With the override unset, the identity is now the local hostname rather than the server name the base code sent.",
+     "mermaid": "sequenceDiagram\n  participant C as SMTPClient.send\n  participant L as smtplib.SMTP\n  participant S as SMTP server\n  C->>L: connect(server, port, local_hostname or None)\n  L->>S: TCP connect\n  C->>L: ehlo(local_host)\n  L->>S: EHLO with override, or local FQDN when unset\n  S-->>L: 250 capabilities incl STARTTLS\n  C->>L: starttls()\n  L->>S: STARTTLS\n  S-->>L: 220 ready\n  C->>L: ehlo(local_host)\n  L->>S: EHLO again after TLS\n  C->>L: login then sendmail then quit"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Opportunistic TLS EHLO identity silently changes for default configs",
+    "severity": "high",
+    "category": "correctness",
+    "body": "With `SMTP_LOCAL_HOSTNAME` unset, `local_host` is `\"\"`, and `smtp.ehlo(local_host)` falls back to `smtplib`'s `self.local_hostname`, which is the machine FQDN. The base code deliberately sent `ehlo(self.server)` (\"HELO domain name as the server address\") both before and after STARTTLS. Every existing deployment using opportunistic TLS therefore starts presenting a different HELO/EHLO identity after this upgrade, with no config change on their side. Some relays and spam filters check the HELO name, so this can cause rejections.\n\n::diff{file=\"api/libs/smtp.py\" lines=\"33-36\"}\n\n::callout{type=\"warning\"}\nThe default path should be behavior-preserving. The override should only replace the server-name EHLO when it is actually set.\n\nSuggested shape:\n\n::suggestion{file=\"api/libs/smtp.py\" lines=\"33-36\"}\nif self.use_tls and self.opportunistic_tls:\n    ehlo_name = dify_config.SMTP_LOCAL_HOSTNAME or self.server\n    smtp.ehlo(ehlo_name)\n    smtp.starttls()\n    smtp.ehlo(ehlo_name)\n",
+    "files": [
+     "api/libs/smtp.py",
+     "api/configs/feature/__init__.py"
+    ],
+    "fixPrompt": "In `api/libs/smtp.py`, `SMTPClient.send()` lines 33-36 now call `smtp.ehlo(local_host)` in the opportunistic STARTTLS path, where `local_host` is `\"\"` when SMTP_LOCAL_HOSTNAME is unset. That changes the default EHLO identity from `self.server` (the original behavior, commented as the HELO domain name) to the local FQDN. Restore the default: use `dify_config.SMTP_LOCAL_HOSTNAME or self.server` as the EHLO name for both ehlo calls in that branch, and keep the `local_hostname=` constructor argument unchanged. Make sure no default-config behavior differs from the base commit.",
+    "commentAnchor": {
+     "file": "api/libs/smtp.py",
+     "lineStart": 33,
+     "lineEnd": 36
+    }
+   },
+   {
+    "title": "Hostname override is never verified by the tests",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The tests were changed from `assert_called_once_with(..., timeout=10)` to `assert_called_once_with(..., timeout=10, local_hostname=ANY)`. `ANY` matches any value, including `None`, so these assertions only confirm the kwarg exists. Nothing checks that `SMTP_LOCAL_HOSTNAME` is actually used: not in the constructor, not in the opportunistic `ehlo` calls, and not the default fallback. The default-behavior regression above passes these tests unnoticed. The PR checklist says a test was added for each change, but the new feature has no test that sets the config.\n\n::diff{file=\"api/tests/unit_tests/libs/test_smtp_client.py\" lines=\"20-20\"}\n\nAdd tests that patch `dify_config.SMTP_LOCAL_HOSTNAME` (or the `libs.smtp.dify_config` attribute) to a concrete value and assert that value reaches `SMTP(..., local_hostname=\"relay.internal\")` and the `ehlo` calls in opportunistic mode. Add a companion test with the setting empty or None that asserts the default EHLO name is unchanged.",
+    "files": [
+     "api/tests/unit_tests/libs/test_smtp_client.py",
+     "api/tests/unit_tests/tasks/test_mail_send_task.py",
+     "api/libs/smtp.py"
+    ],
+    "fixPrompt": "In `api/tests/unit_tests/libs/test_smtp_client.py`, the updated assertions at line 20 (and the matching ones at lines 41, and in `api/tests/unit_tests/tasks/test_mail_send_task.py`) use `local_hostname=ANY`, which accepts any value. Add tests that patch `libs.smtp.dify_config.SMTP_LOCAL_HOSTNAME` to a concrete value such as `relay.internal`, then assert that value is passed as `local_hostname=` to the SMTP constructor and used in both `ehlo` calls in the opportunistic STARTTLS path. Add a second test with the setting unset that asserts the default EHLO name equals the SMTP server name, matching the base behavior. Follow the existing `@patch(\"libs.smtp.smtplib.SMTP\")` style in this file.",
+    "commentAnchor": {
+     "file": "api/tests/unit_tests/libs/test_smtp_client.py",
+     "lineStart": 20,
+     "lineEnd": 20
+    }
+   },
+   {
+    "title": "Unrelated TLS branch refactor hides control flow",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The TLS branching was rewritten as a parenthesized conditional expression selecting the class, followed by an `assert smtp is not None` used only to narrow the type for mypy. This refactor is not needed for the feature. The original explicit if/elif/else made each mode's connection and EHLO steps easy to read. The new form is harder to follow, and the assert is stripped under `python -O`. Keep the original branching and only add `local_hostname=` to each constructor call, or build the class and kwargs explicitly.\n\n::diff{file=\"api/libs/smtp.py\" lines=\"27-32\"}\n\nAlso, the empty-string normalization is doubled: `local_host = ... or \"\"` and then `local_host or None` in the constructor call. One `local_hostname = dify_config.SMTP_LOCAL_HOSTNAME or None` value would be enough, since `ehlo(None)` already falls back to the local hostname.",
+    "files": [
+     "api/libs/smtp.py"
+    ],
+    "fixPrompt": "In `api/libs/smtp.py`, `SMTPClient.send()` lines 27-32 replace the original if/else connection branching with a parenthesized ternary that selects the SMTP class, plus an `assert smtp is not None` to narrow the type. Restore the explicit if/elif/else structure from the base commit (keep the three constructors separate) and only add `local_hostname=` to each. Compute the hostname once as `local_hostname = dify_config.SMTP_LOCAL_HOSTNAME or None` and reuse it, instead of normalizing to `\"\"` and then back to `None`. Remove the assert. Keep the change focused on the new setting.",
+    "commentAnchor": {
+     "file": "api/libs/smtp.py",
+     "lineStart": 27,
+     "lineEnd": 32
+    }
+   },
+   {
+    "title": "Trailing blank line added to api/.env.example",
+    "severity": "low",
+    "category": "style",
+    "body": "The diff appends an empty line after `SANDBOX_EXPIRED_RECORDS_RETENTION_DAYS=30`, so the file now ends with a blank line (line 718 is empty). It is harmless, but it is unrelated to the feature and creates a trailing-whitespace/EOF diff noise that linters and other env examples in the repo don't carry.\n\n::diff{file=\"api/.env.example\" lines=\"715-718\"}\n\nRemove the trailing empty line so the file ends at the last `SANDBOX_...` entry.",
+    "files": [
+     "api/.env.example"
+    ],
+    "fixPrompt": "In `api/.env.example`, the PR added an extra empty line at the end of the file after `SANDBOX_EXPIRED_RECORDS_RETENTION_DAYS=30` (line 717, followed by empty line 718). Remove that trailing blank line so the file ends with a single newline after the last entry, matching the base file's ending.",
+    "commentAnchor": {
+     "file": "api/.env.example",
+     "lineStart": 717,
+     "lineEnd": 718
+    }
+   },
+   {
+    "title": "New SMTP_LOCAL_HOSTNAME setting is wired consistently across all env surfaces",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The new variable is added everywhere the existing SMTP_* settings appear: `MailConfig` in `api/configs/feature/__init__.py` (typed `str | None` with a default of `None` and a clear description), `api/.env.example`, `api/tests/integration_tests/.env.example`, `docker/.env.example`, and `docker/docker-compose.yaml` `x-shared-env`. An empty value from the environment is handled by `or None`, so an unset-but-present variable does not send an empty HELO name. This is the right pattern for an operator-facing override.\n\n::diff{file=\"docker/docker-compose.yaml\" lines=\"425-428\"}",
+    "files": [
+     "api/configs/feature/__init__.py",
+     "docker/docker-compose.yaml",
+     "docker/.env.example",
+     "api/tests/integration_tests/.env.example"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":6,\"title\":\"Code Review Bench PR #30975 - feat: allow pass hostname in docker env\",\"author\":\"\",\"baseSha\":\"2b1c59db20af13caf17e8cae397f15c470ca0055\",\"headSha\":\"6facade85c2723292b4d8585dfa587921059a5b7\"},\"summary\":\"The PR adds an optional SMTP_LOCAL_HOSTNAME setting that overrides the hostname sent in SMTP HELO/EHLO. It plumbs the setting through configs/feature/__init__.py (MailConfig), the api, docker and integration-test env examples, and d",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

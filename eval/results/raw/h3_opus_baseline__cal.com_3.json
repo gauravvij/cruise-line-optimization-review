@@ -1,0 +1,412 @@
+{
+ "id": "cal.com#3",
+ "repo": "cal.com",
+ "num": 3,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7"
+ ],
+ "run_started_at": "2026-11-23T15:53:15.559Z",
+ "num_of_issues": 12,
+ "issues": [
+  {
+   "title": "Missing semicolons and single quotes used",
+   "description": "The rule requires using double quotes and always including semicolons, but the code uses single quotes for imports and omits semicolons after import statements and method calls",
+   "file_path": "packages/features/bookings/repositories/PrismaBookingAttendeeRepository.ts",
+   "start_line": 1,
+   "end_line": 13,
+   "problematic_code_snippet": "import type { PrismaClient } from '@calcom/prisma/client'\n\nimport type { IBookingAttendeeRepository } from '../lib/dto/IBookingAttendeeRepository'\n\nexport class PrismaBookingAttendeeRepository implements IBookingAttendeeRepository {\n  constructor(private prismaClient: PrismaClient) {}\n\n  async deleteManyByBookingId(bookingId: number): Promise<void> {\n    await this.prismaClient.attendee.deleteMany({\n      where: {\n        bookingId,\n      },\n    })\n  }\n}",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Inconsistent date filter causes missing bookings in recurring event cancellation",
+   "description": "When cancelling recurring bookings with 'allRemainingBookings' flag, the code updates bookings using 'new Date()' as the time threshold but then fetches updated bookings using 'bookingToDelete.startTime'. This creates a time window mismatch where bookings between these two timestamps will be cancelled in the database but won't be included in 'allUpdatedBookings', causing workflow reminders and calendar event cleanup to be skipped for those bookings. This leads to orphaned reminders and stale calendar events that were cancelled but never properly cleaned up.",
+   "file_path": "packages/features/bookings/lib/handleCancelBooking.ts",
+   "start_line": 497,
+   "end_line": 520,
+   "problematic_code_snippet": "    const recurringEventId = bookingToDelete.recurringEventId;\n    const gte = cancelSubsequentBookings ? bookingToDelete.startTime : new Date();\n    // Proceed to mark as cancelled all remaining recurring events instances (greater than or equal to right now)\n    await bookingRepository.updateMany({\n      where: {\n        recurringEventId,\n        startTime: {\n          gte,\n        },\n      },\n      data: {\n        status: BookingStatus.CANCELLED,\n        cancellationReason: cancellationReason,\n        cancelledBy: cancelledBy,\n      },\n    });\n    const allUpdatedBookings = await bookingRepository.findManyIncludeWorkflowRemindersAndReferences({\n      where: {\n        recurringEventId: bookingToDelete.recurringEventId,\n        startTime: {\n          gte: bookingToDelete.startTime,\n        },\n      },\n    });"
+  },
+  {
+   "title": "Missing return value breaks caller's count tracking",
+   "description": "The 'updateMany' method in BookingRepository no longer returns the Prisma update result object which contains the count of updated records. According to the IBookingRepository interface, this method should return 'Promise<{ count: number }>', but the implementation now returns 'Promise<void>'. This breaks any calling code that depends on knowing how many bookings were updated, potentially affecting audit logging, metrics, or conditional logic that needs to verify if the update affected any records.",
+   "file_path": "packages/features/bookings/repositories/BookingRepository.ts",
+   "start_line": 1502,
+   "end_line": 1507,
+   "problematic_code_snippet": "async updateMany({ where, data }: { where: BookingWhereInput; data: BookingUpdateData }) {\n    await this.prismaClient.booking.updateMany({\n      where: where,\n      data,\n    });\n  }"
+  },
+  {
+   "title": "Missing locale field causes translation failure in cancellation flow",
+   "description": "The 'userSelect' object used by UserRepository.findById (and subsequently findByIdOrThrow) no longer includes the 'locale' field. However, in handleCancelBooking.ts, the code calls 'getTranslation(organizer.locale ?? \"en\", \"common\")' which expects the locale property on the organizer object. Since locale is now undefined, the translation will always fall back to 'en' regardless of the user's actual locale preference, causing cancellation emails and notifications to be sent in the wrong language for non-English users.",
+   "file_path": "packages/features/users/repositories/UserRepository.ts",
+   "start_line": 83,
+   "end_line": 102,
+   "problematic_code_snippet": "const userSelect = {\n  id: true,\n  username: true,\n  name: true,\n  email: true,\n  emailVerified: true,\n  bio: true,\n  avatarUrl: true,\n  timeZone: true,\n  startTime: true,\n  endTime: true,\n  weekStart: true,\n  bufferTime: true,\n  hideBranding: true,\n  theme: true,\n  createdDate: true,\n  trialEndsAt: true,\n  completedOnboarding: true,\n  timeFormat: true,"
+  },
+  {
+   "title": "Repository files violate naming convention using dot-suffix pattern",
+   "description": "Three new repository files in apps/api/v2 use dot-suffix naming pattern (.repository.ts) which violates Rule #1 of the compliance rules. The rule explicitly prohibits dot-suffixes like '.repository.ts' and requires PascalCase filenames matching class names (e.g., PrismaBookingAttendeeRepository.ts). This affects code discoverability, consistency, and violates the established architectural standards documented in AGENTS.md. The files should be renamed to match the PascalCase pattern used throughout the rest of the codebase.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "import { PrismaWriteService } from \"@/modules/prisma/prisma-write.service\";\nimport { Injectable } from \"@nestjs/common\";\n\nimport { PrismaBookingAttendeeRepository as BasePrismaBookingAttendeeRepository } from \"@calcom/platform-libraries/repositories\";\n\n@Injectable()\nexport class PrismaBookingAttendeeRepository extends BasePrismaBookingAttendeeRepository {\n  constructor(private readonly dbWrite: PrismaWriteService) {\n    super(dbWrite.prisma);\n  }\n}"
+  },
+  {
+   "title": "Service file uses disallowed dot-suffix and does not match required <Entity>Service.ts naming",
+   "description": "Rule requires service files to be named in PascalCase as <Entity>Service.ts and explicitly disallows dot-suffixes like .service.ts. This service lives in booking-cancel.service.ts (kebab-case + .service.ts), which violates the convention.",
+   "file_path": "apps/api/v2/src/lib/services/booking-cancel.service.ts",
+   "start_line": 1,
+   "end_line": 25,
+   "problematic_code_snippet": "export class BookingCancelService extends BaseBookingCancelService {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository file uses disallowed .repository.ts suffix and is not PascalCase",
+   "description": "Rule requires repository filenames to be Prisma<Entity>Repository.ts (PascalCase) and disallows dot-suffixes like .repository.ts. The file name prisma-booking-attendee.repository.ts violates this requirement.",
+   "file_path": "apps/api/v2/src/lib/repositories/prisma-booking-attendee.repository.ts",
+   "start_line": 1,
+   "end_line": 10,
+   "problematic_code_snippet": "export class PrismaBookingAttendeeRepository extends BasePrismaBookingAttendeeRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository file uses disallowed .repository.ts suffix and is not PascalCase",
+   "description": "Rule requires repository filenames to be Prisma<Entity>Repository.ts (PascalCase) and disallows dot-suffixes like .repository.ts. The file name prisma-booking-reference.repository.ts violates this requirement.",
+   "file_path": "apps/api/v2/src/lib/repositories/prisma-booking-reference.repository.ts",
+   "start_line": 1,
+   "end_line": 10,
+   "problematic_code_snippet": "export class PrismaBookingReferenceRepository extends BasePrismaBookingReferenceRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository file uses disallowed .repository.ts suffix and is not PascalCase",
+   "description": "Rule requires repository filenames to be Prisma<Entity>Repository.ts (PascalCase) and disallows dot-suffixes like .repository.ts. The file name prisma-profile.repository.ts violates this requirement.",
+   "file_path": "apps/api/v2/src/lib/repositories/prisma-profile.repository.ts",
+   "start_line": 1,
+   "end_line": 10,
+   "problematic_code_snippet": "export class PrismaProfileRepository extends BasePrismaProfileRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository class/file does not follow required Prisma<Entity>Repository naming",
+   "description": "Rule requires repository classes/files to use the Prisma<Entity>Repository pattern. This modified line still declares BookingReferenceRepository (and file BookingReferenceRepository.ts), which does not match the Prisma<Entity>Repository naming convention.",
+   "file_path": "packages/features/bookingReference/repositories/BookingReferenceRepository.ts",
+   "start_line": 18,
+   "end_line": 18,
+   "problematic_code_snippet": "export class BookingReferenceRepository implements IBookingReferenceRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository class/file does not follow required Prisma<Entity>Repository naming",
+   "description": "Rule requires repository classes/files to use the Prisma<Entity>Repository pattern. This modified line still declares BookingRepository (and file BookingRepository.ts), which does not match the Prisma<Entity>Repository naming convention.",
+   "file_path": "packages/features/bookings/repositories/BookingRepository.ts",
+   "start_line": 334,
+   "end_line": 334,
+   "problematic_code_snippet": "export class BookingRepository implements IBookingRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository class/file does not follow required Prisma<Entity>Repository naming",
+   "description": "Rule requires repository classes/files to use the Prisma<Entity>Repository pattern. This modified line still declares ProfileRepository (and file ProfileRepository.ts), which does not match the Prisma<Entity>Repository naming convention.",
+   "file_path": "packages/features/profile/repositories/ProfileRepository.ts",
+   "start_line": 100,
+   "end_line": 100,
+   "problematic_code_snippet": "export class ProfileRepository implements IProfileRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "e5d60b2b4740b5dca45bdcec2acb6a6f7b57b89e",
+ "diff_chars": 50677,
+ "diff_lines": 1406,
+ "user_prompt_chars": 55033,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 101629,
+ "wall_ms": 103603,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 20,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 12.633637277,
+ "spend_post_usd": 13.128110077,
+ "cost_settled": true,
+ "cost_wait_ms": 362,
+ "cost_usd": 0.4944728000000005,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.5103056,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 40632,
+  "cache_read_input_tokens": 446468,
+  "output_tokens": 10889,
+  "output_tokens_details": {
+   "thinking_tokens": 1811
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 40632
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 7078,
+    "cache_creation_input_tokens": 849,
+    "cache_read_input_tokens": 58673,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 849,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 10889,
+   "cacheReadInputTokens": 446468,
+   "cacheCreationInputTokens": 40632,
+   "webSearchRequests": 0,
+   "costUSD": 0.5103056,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1811,
+   "cacheCreationEphemeral5mInputTokens": 40632,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/cal.com",
+   "number": 3,
+   "title": "Code Review Bench PR #24159 - chore: [Booking Cancellation Refactor - 2] Inject repositories and use them instead of Prisma in cancellation flow",
+   "author": "",
+   "baseSha": "e8a64631c3867c80379503cf94bd5cd110c98ff1",
+   "headSha": "e5d60b2b4740b5dca45bdcec2acb6a6f7b57b89e"
+  },
+  "summary": "This PR refactors `handleCancelBooking.ts` to use injected repositories (User, Booking, Profile, BookingReference, BookingAttendee) instead of calling Prisma directly. It adds DI modules and tokens for the new repositories, wires them into the API v2 Nest module, and keeps a fallback path that builds the repositories itself when `handler` is called without dependencies.\n\nThe direction is good, but the PR is presented as a pure refactor and it isn't one. Three changes alter behavior:\n- **Locale dropped:** `locale` was removed from the shared `userSelect` in `UserRepository`. Cancellation emails now always go out in English, and every other `findById`/`findByIdOrThrow` caller loses `locale` too.\n- **Recurring query widened:** the recurring-booking follow-up query changed from `gte: new Date()` to `gte: bookingToDelete.startTime`. When \"cancel all remaining\" starts from an occurrence that isn't the next upcoming one, the set of bookings that get reminder/webhook cleanup and audit events no longer matches the set that was actually cancelled.\n- **Broken DI wiring:** three new DI modules import paths that don't exist (`@calcom/prisma/prisma.module`, `@calcom/lib/server/repository/bookingReference`).\n\nOn top of that, the new `IBookingRepository` interface doesn't match its implementation. The new tests only check the handler's return value, so they would pass with all of these regressions in place.",
+  "verdict": "request_changes",
+  "verdictRationale": "Three problems should be fixed before merge: the `locale` removal changes the language of user-facing emails across the app, the `gte` change wrongly includes or skips bookings in recurring cleanup, and the DI modules import paths that don't exist. All three contradict the \"works identically\" claim, and the tests don't catch any of them.",
+  "architecture": {
+   "overview": "Before this PR, `handleCancelBooking.ts` exported a `handler` function that used the global `prisma` client for every query (user lookup, profile lookup, booking updates, attendee deletes, booking-reference soft deletes). `BookingCancelService` took a `prismaClient` but ignored it and called `handler` without passing anything. API v2 wrapped it in Nest and handed it `PrismaWriteService`.\n\nThis PR adds a `Dependencies` bag of five repositories. `handler` destructures them from an optional argument and otherwise builds them from the global `prisma`. `BookingCancelService` now takes and forwards these repositories. The repositories gain the methods the flow needs (`findFirstByUserId`, `updateManyByBookingId`, `deleteManyByBookingId`, `updateIncludeWorkflowRemindersAndReferences`, `findManyIncludeWorkflowRemindersAndReferences`). New ioctopus DI modules and tokens are added for them, and API v2 gets Nest wrappers that extend the shared repositories via `@calcom/platform-libraries/repositories`.",
+   "steps": [
+    "Entry points: `apps/web/app/api/cancel/route.ts` and `apps/api/v1/.../_delete.ts` call the default `handler` export with no dependencies, so they take the fallback path that builds repositories from the global `prisma`.",
+    "API v2: `BookingCancelModule` now provides the five Prisma*Repository Nest wrappers. Each extends the shared repository and passes `PrismaWriteService.prisma` into it.",
+    "`BookingCancelService` (shared) stores the repositories as `this.deps` and forwards them to `handler(input, this.deps)`.",
+    "Inside `handler`: `userRepository.findByIdOrThrow` loads the organizer, `profileRepository.findFirstByUserId` loads the owner profile, and the booking is cancelled through `bookingRepository.updateMany` + `findManyIncludeWorkflowRemindersAndReferences` (recurring) or `updateIncludeWorkflowRemindersAndReferences` (single). Seated events use `attendeeRepository.deleteManyByBookingId`.",
+    "Cleanup: `bookingReferenceRepository.updateManyByBookingId` soft-deletes references, and each entry in `updatedBookings` drives workflow-reminder, webhook-trigger and no-show-task deletion.",
+    "DI wiring for non-Nest consumers: `BookingCancelService.module.ts` pulls in the new `BookingAttendeeRepository.module`, `BookingReferenceRepository.module` and `users/di/Profile.module`, plus the existing Booking and User modules."
+   ],
+   "diagrams": [
+    {
+     "title": "Cancellation flow with injected repositories",
+     "kind": "flowchart",
+     "description": "How the callers reach `handler` and which repository handles each step of cancellation.",
+     "mermaid": "flowchart TD\n  Web[apps/web api/cancel route] --> Handler[handler input, deps?]\n  V1[api v1 _delete] --> Handler\n  V2[api v2 BookingCancelModule] --> Svc[BookingCancelService]\n  DIMod[BookingCancelService.module] --> Svc\n  Svc -->|this.deps| Handler\n  Handler -->|no deps| Fallback[new repos from global prisma]\n  Handler --> UserRepo[UserRepository.findByIdOrThrow]\n  Handler --> ProfileRepo[ProfileRepository.findFirstByUserId]\n  Handler --> Branch{recurring + allRemaining/subsequent?}\n  Branch -->|yes| BR1[BookingRepository.updateMany + findManyInclude...]\n  Branch -->|no| AttRepo[AttendeeRepository.deleteManyByBookingId if seated]\n  AttRepo --> BR2[BookingRepository.updateInclude...]\n  BR1 --> Updated[updatedBookings]\n  BR2 --> Updated\n  Updated --> Cleanup[delete reminders / webhook triggers / no-show tasks]\n  Handler --> RefRepo[BookingReferenceRepository.updateManyByBookingId]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Removing `locale` from shared `userSelect` breaks organizer locale everywhere",
+    "severity": "high",
+    "category": "correctness",
+    "body": "This PR removes `locale: true` from the module-level `userSelect` in `UserRepository`:\n\n::diff{file=\"packages/features/users/repositories/UserRepository.ts\" lines=\"96-104\"}\n\nThe cancellation flow now loads the organizer through `userRepository.findByIdOrThrow`, which calls `findById`, which selects `userSelect`. As a result, `organizer.locale` is always `undefined`, so these lines always fall back to English:\n\n::code{file=\"packages/features/bookings/lib/handleCancelBooking.ts\" lines=\"337-337\"}\n\n::code{file=\"packages/features/bookings/lib/handleCancelBooking.ts\" lines=\"370-370\"}\n\n::callout{type=\"warning\"}\n`userSelect` is also used at lines 177, 205, 275, 379 and 432 of `UserRepository.ts`. Every caller of those methods silently loses `locale` too. The return type also no longer contains `locale`, which can break type-checking for consumers that read it.\n\nThe old inline Prisma query selected `locale` explicitly. Put it back:\n\n::suggestion{file=\"packages/features/users/repositories/UserRepository.ts\" lines=\"100-101\"}\n  completedOnboarding: true,\n  locale: true,\n  timeFormat: true,\n\n",
+    "files": [
+     "packages/features/users/repositories/UserRepository.ts",
+     "packages/features/bookings/lib/handleCancelBooking.ts"
+    ],
+    "fixPrompt": "In `packages/features/users/repositories/UserRepository.ts`, the PR removed `locale: true` from the shared `userSelect` object (around line 100). That breaks `organizer.locale` in `packages/features/bookings/lib/handleCancelBooking.ts` (lines 337 and 370), so cancellation emails always fall back to English. It also strips `locale` from every other method that uses `userSelect`. Restore `locale: true` in `userSelect` between `completedOnboarding` and `timeFormat`. Then add an assertion to the cancellation tests that a non-English organizer locale is passed through to the email/translation.",
+    "commentAnchor": {
+     "file": "packages/features/users/repositories/UserRepository.ts",
+     "lineStart": 100,
+     "lineEnd": 101
+    }
+   },
+   {
+    "title": "Recurring query now uses `bookingToDelete.startTime` instead of now, so the cleanup set no longer matches the cancelled set",
+    "severity": "high",
+    "category": "correctness",
+    "body": "For \"cancel all remaining\", `updateMany` still filters with `gte = new Date()`. The follow-up `findMany` now filters with `gte: bookingToDelete.startTime`. Before, it used `new Date()`:\n\n::diff{file=\"packages/features/bookings/lib/handleCancelBooking.ts\" lines=\"497-521\"}\n\nWhen `allRemainingBookings` is set and `cancelSubsequentBookings` isn't, the two queries cover different ranges:\n- **`bookingToDelete` is in the past:** `findMany` returns past occurrences that were **not** cancelled. Those get deleted workflow reminders (including after-event reminders), deleted scheduled webhook triggers and no-show tasks, and `onBulkBookingsCancelled` audit events claiming they were cancelled.\n- **`bookingToDelete` is a future occurrence:** occurrences between now and its start time are cancelled by `updateMany` but skipped by `findMany`. Their reminders and webhook triggers stay alive, and they get no audit entry.\n\nThe PR describes itself as a no-behavior-change refactor. Use the same `gte` for both queries:\n\n::suggestion{file=\"packages/features/bookings/lib/handleCancelBooking.ts\" lines=\"513-520\"}\n    const allUpdatedBookings = await bookingRepository.findManyIncludeWorkflowRemindersAndReferences({\n      where: {\n        recurringEventId: bookingToDelete.recurringEventId,\n        startTime: {\n          gte,\n        },\n      },\n    });\n\n",
+    "files": [
+     "packages/features/bookings/lib/handleCancelBooking.ts"
+    ],
+    "fixPrompt": "In `packages/features/bookings/lib/handleCancelBooking.ts` around lines 497-521, the recurring-cancellation branch filters `bookingRepository.updateMany` with `gte` (`cancelSubsequentBookings ? bookingToDelete.startTime : new Date()`), but `findManyIncludeWorkflowRemindersAndReferences` now filters with `gte: bookingToDelete.startTime`. The original code used `new Date()`. Because of the mismatch, reminders, webhooks and audit events are processed for bookings that weren't cancelled, or skipped for bookings that were. Reuse the same `gte` variable in the findMany query. Add a test that cancels all remaining bookings from a non-first occurrence and asserts which bookings end up CANCELLED and which get reminder cleanup.",
+    "commentAnchor": {
+     "file": "packages/features/bookings/lib/handleCancelBooking.ts",
+     "lineStart": 513,
+     "lineEnd": 520
+    }
+   },
+   {
+    "title": "New DI modules import paths that don't exist",
+    "severity": "high",
+    "category": "correctness",
+    "body": "Three new DI modules import `moduleLoader` from `@calcom/prisma/prisma.module`, but `packages/prisma` has no such file. The existing loader lives at `@calcom/features/di/modules/Prisma`, which is what `BookingCancelService.module.ts` used before this PR.\n\n::diff{file=\"packages/features/bookings/di/BookingReferenceRepository.module.ts\" lines=\"1-4\"}\n\n`BookingReferenceRepository.module.ts` also imports `BookingReferenceRepository` from `@calcom/lib/server/repository/bookingReference`. That path doesn't exist either: the class lives in `@calcom/features/bookingReference/repositories/BookingReferenceRepository`.\n\nThe same Prisma import appears in ::file{file=\"packages/features/bookings/di/BookingAttendeeRepository.module.ts\"} and ::file{file=\"packages/features/users/di/Profile.module.ts\"}.\n\n`BookingCancelService.module.ts` imports all three modules. Type-checking will fail, and `getBookingCancelService()` will throw a module-resolution error as soon as anything uses it. Today its only call site, in `apps/web/app/api/cancel/route.ts`, is commented out, which is probably why nothing caught this.\n\n::suggestion{file=\"packages/features/bookings/di/BookingReferenceRepository.module.ts\" lines=\"3-4\"}\nimport { BookingReferenceRepository } from \"@calcom/features/bookingReference/repositories/BookingReferenceRepository\";\nimport { moduleLoader as prismaModuleLoader } from \"@calcom/features/di/modules/Prisma\";\n\n",
+    "files": [
+     "packages/features/bookings/di/BookingReferenceRepository.module.ts",
+     "packages/features/bookings/di/BookingAttendeeRepository.module.ts",
+     "packages/features/users/di/Profile.module.ts"
+    ],
+    "fixPrompt": "Three new DI modules import paths that don't exist. In `packages/features/bookings/di/BookingReferenceRepository.module.ts`, `packages/features/bookings/di/BookingAttendeeRepository.module.ts` and `packages/features/users/di/Profile.module.ts`, replace `@calcom/prisma/prisma.module` with `@calcom/features/di/modules/Prisma` (the existing prisma moduleLoader). In `BookingReferenceRepository.module.ts`, also change the class import from `@calcom/lib/server/repository/bookingReference` to `@calcom/features/bookingReference/repositories/BookingReferenceRepository`. Then run the type-checker, and add a small test that calls `getBookingCancelService()` from `BookingCancelService.container.ts` so a broken DI graph is caught.",
+    "commentAnchor": {
+     "file": "packages/features/bookings/di/BookingReferenceRepository.module.ts",
+     "lineStart": 3,
+     "lineEnd": 4
+    }
+   },
+   {
+    "title": "`IBookingRepository` contract doesn't match `BookingRepository`",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The interface says `updateMany` returns `Promise<{ count: number }>`:\n\n::code{file=\"packages/lib/server/repository/dto/IBookingRepository.ts\" lines=\"46-55\"}\n\nThe implementation `await`s the call and returns nothing, so it returns `Promise<void>`:\n\n::diff{file=\"packages/features/bookings/repositories/BookingRepository.ts\" lines=\"1502-1507\"}\n\nBecause the class declares `implements IBookingRepository`, this should be a type error. The interface also leaves out `updateIncludeWorkflowRemindersAndReferences`, which is the method the single-booking path actually calls. Meanwhile `update` is declared but never used in the cancellation flow.\n\nSeparately, `handler`'s `Dependencies` type uses the concrete classes (`BookingRepository`, `PrismaBookingAttendeeRepository`) rather than the new interfaces. That undercuts the stated goal of making the flow testable with fakes.",
+    "files": [
+     "packages/lib/server/repository/dto/IBookingRepository.ts",
+     "packages/features/bookings/repositories/BookingRepository.ts",
+     "packages/features/bookings/lib/handleCancelBooking.ts"
+    ],
+    "fixPrompt": "In `packages/features/bookings/repositories/BookingRepository.ts` (lines ~1502-1507), `updateMany` returns void, but `packages/lib/server/repository/dto/IBookingRepository.ts` (line 48) declares `Promise<{ count: number }>`. Either return the Prisma result from `updateMany` or change the interface to `Promise<void>`. Add `updateIncludeWorkflowRemindersAndReferences` to the interface, and drop `update` if nothing uses it. Also fix the indentation of `updateMany` (it starts at column 0). Optionally, change the `Dependencies` / `BookingCancelServiceDependencies` types in `packages/features/bookings/lib/handleCancelBooking.ts` to use the I*Repository interfaces instead of concrete classes.",
+    "commentAnchor": {
+     "file": "packages/features/bookings/repositories/BookingRepository.ts",
+     "lineStart": 1502,
+     "lineEnd": 1507
+    }
+   },
+   {
+    "title": "New tests only assert the return value, not database state",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "All four new tests (seated, all remaining, subsequent, reference cleanup) end with the same three assertions:\n\n::code{file=\"packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts\" lines=\"1513-1515\"}\n\n`handler` always returns `success: true` and `bookingId` once it gets past validation. Almost every step after that is wrapped in try/catch-and-log. These tests would therefore still pass if:\n- attendees weren't deleted for the seated event\n- the second recurring instance stayed ACCEPTED\n- references weren't soft-deleted\n- the `gte` regression above happened\n\nThe \"booking reference cleanup\" test never checks `deleted: true` on the references at all. Use `prismock` to check the database state after each call: booking `status`, remaining attendee count, `bookingReference.deleted`, and the status of each recurring instance.",
+    "files": [
+     "packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts"
+    ],
+    "fixPrompt": "In `packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts`, the four new tests added after line ~1056 only assert `result.success`, `onlyRemovedAttendee` and `bookingId`, so they can't catch regressions in the repository calls. After each `handleCancelBooking` call, query the mocked prisma (prismock) and assert: the seated test has no attendees left for booking 4050 and its status is CANCELLED; both recurring tests set the expected instances to CANCELLED (including an instance that should NOT be cancelled); the reference test has `deleted === true` on both references for booking 7080.",
+    "commentAnchor": {
+     "file": "packages/features/bookings/lib/handleCancelBooking/test/handleCancelBooking.test.ts",
+     "lineStart": 1513,
+     "lineEnd": 1515
+    }
+   },
+   {
+    "title": "Workflow reminder select narrowed to exactly the fields cleanup needs",
+    "severity": "info",
+    "category": "performance",
+    "body": "Replacing `workflowReminders: true` with `{ id, referenceId, method }` matches the parameter shape of `WorkflowRepository.deleteAllWorkflowReminders`, so the cleanup path still works and fetches less data. Switching the single-booking `where` to `bookingToDelete.uid` is also safe, because `bookingToDelete` was already resolved by id or uid and `uid` is unique.",
+    "files": [
+     "packages/features/bookings/repositories/BookingRepository.ts",
+     "packages/features/bookings/lib/handleCancelBooking.ts"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/cal.com\",\"number\":3,\"title\":\"Code Review Bench PR #24159 - chore: [Booking Cancellation Refactor - 2] Inject repositories and use them instead of Prisma in cancellation flow\",\"author\":\"\",\"baseSha\":\"e8a64631c3867c80379503cf94bd5cd110c98ff1\",\"headSha\":\"e5d60b2b4740b5dca45bdcec2acb6a6f7b57b89e\"},\"summary\":\"This PR refactors `handleCancelBooking.ts` to use injected repositories (User, Booking, Profile, BookingReference, BookingAttendee) instead of calling Pri",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

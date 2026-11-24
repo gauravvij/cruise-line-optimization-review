@@ -1,0 +1,229 @@
+{
+ "id": "redis#4",
+ "repo": "redis",
+ "num": 4,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:47:38.877Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Direct malloc instead of zmalloc",
+   "description": "The rule requires using zmalloc() wrapper for memory allocation, but malloc() was used directly in the cluster initialization code",
+   "file_path": "src/cluster.c",
+   "start_line": 2135,
+   "end_line": 2141,
+   "problematic_code_snippet": "/* This function is called at server startup in order to initialize cluster data\n * structures that are shared between the different cluster implementations. */\nvoid clusterCommonInit(void) {\n    server.cluster_slot_stats = malloc(CLUSTER_SLOTS*sizeof(clusterSlotStat));\n    resetClusterStats();\n    asmInit();\n}",
+   "rule_name": "Use zmalloc/zfree Wrappers Instead of Direct malloc/free"
+  },
+  {
+   "title": "Incorrect operation order causes potential data loss during cluster verification",
+   "description": "The verifyClusterConfigWithData() function executes clusterDeleteKeysInUnownedSlots() before clusterClaimUnassignedSlots(). This reverses the intended logic: the function should first claim ownership of unassigned slots that contain keys (preventing orphaned data), then delete keys from slots that are genuinely owned by other nodes. With this bug, keys in unassigned slots may be incorrectly deleted before the node has a chance to claim ownership, resulting in permanent data loss during cluster startup or recovery scenarios.",
+   "file_path": "src/cluster.c",
+   "start_line": 2209,
+   "end_line": 2212,
+   "problematic_code_snippet": "    /* Delete keys in unowned slots */\n    clusterDeleteKeysInUnownedSlots();\n    /* Take over slots that we have keys for, but are assigned to no one. */\n    clusterClaimUnassignedSlots();\n    return C_OK;"
+  },
+  {
+   "title": "ASM cron runs before cluster state update causing stale state issues",
+   "description": "The serverCron() function now calls asmCron() before clusterCron(). This is problematic because clusterCron() contains the call to clusterUpdateState() which updates the cluster's operational state (CLUSTER_OK vs CLUSTER_FAIL). ASM (Atomic Slot Migration) operations depend on having an accurate view of the cluster state to make correct migration decisions. By executing asmCron() first, migration tasks may operate on stale cluster state information from the previous iteration, potentially leading to incorrect slot migration decisions, failed migrations, or data consistency issues during cluster rebalancing operations.",
+   "file_path": "src/server.c",
+   "start_line": 1658,
+   "end_line": 1659,
+   "problematic_code_snippet": "        if (server.cluster_enabled) {\n            asmCron();\n            clusterCron();\n        }"
+  },
+  {
+   "title": "Internal helper function clusterDeleteKeysInUnownedSlots missing static declaration",
+   "description": "The function clusterDeleteKeysInUnownedSlots() is defined and used only within cluster.c (no external callers, not declared in any header file), but lacks the 'static' keyword. According to AGENTS.md Rule #7, all internal helper functions that are not part of the public API must be declared static to enforce proper encapsulation and prevent symbol pollution. This violation could lead to naming conflicts in large codebases and breaks the repository's explicit encapsulation requirements.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "void clusterDeleteKeysInUnownedSlots(void) {\n    if (clusterNodeIsSlave(getMyClusterNode())) return;\n\n    /* Check that all the slots we have keys for are assigned to us. Otherwise,\n     * delete the keys. */"
+  },
+  {
+   "title": "Non-static internal helper function exported from cluster.c",
+   "description": "`clusterDeleteKeysInUnownedSlots()` is introduced as a file-local helper and is only used within `src/cluster.c` (called by `verifyClusterConfigWithData()`), but it is declared without `static`, unnecessarily exporting the symbol outside this compilation unit. Per the rule, internal helper functions must be declared `static`.",
+   "file_path": "src/cluster.c",
+   "start_line": 2143,
+   "end_line": 2176,
+   "problematic_code_snippet": "void clusterDeleteKeysInUnownedSlots(void) {\n    if (clusterNodeIsSlave(getMyClusterNode())) return;\n\n    /* Check that all the slots we have keys for are assigned to us. Otherwise,\n     * delete the keys. */\n    for (int i = 0; i < CLUSTER_SLOTS; i++) {\n        /* Skip if: no keys in the slot, it's our slot, or we are importing it. */\n        if (!countKeysInSlot(i) ||\n            clusterIsMySlot(i) ||\n            getImportingSlotSource(i))\n        {\n            continue;\n        }\n        ...\n        clusterDelKeysInSlot(i, 0);\n    }\n}",
+   "rule_name": "Rule 7: Internal Helper Functions Must Be Declared Static"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "865827b49d7b7125377d812a06d3d0a0ce4ff860",
+ "diff_chars": 13138,
+ "diff_lines": 316,
+ "user_prompt_chars": 14132,
+ "exit_code": 1,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 122687,
+ "wall_ms": 124786,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 9,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 22,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 9
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.956502496,
+ "spend_post_usd": 7.994536356,
+ "cost_settled": true,
+ "cost_wait_ms": 344,
+ "cost_usd": 0.03803386000000053,
+ "cost_flag": null,
+ "subtype": "error_max_structured_output_retries",
+ "is_error": true,
+ "num_turns": 10,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.025917534999999995,
+ "usage": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 39880,
+  "cache_read_input_tokens": 300316,
+  "output_tokens": 28121,
+  "output_tokens_details": {
+   "thinking_tokens": 5957
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 39880
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 33274,
+   "cacheReadInputTokens": 359211,
+   "cacheCreationInputTokens": 45493,
+   "webSearchRequests": 0,
+   "costUSD": 0.025917534999999995,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 6571,
+   "cacheCreationEphemeral5mInputTokens": 45493,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": null,
+ "result_text_head": null,
+ "schema_valid": false,
+ "schema_errors": [
+  "structured_output missing"
+ ],
+ "n_findings": 0
+}

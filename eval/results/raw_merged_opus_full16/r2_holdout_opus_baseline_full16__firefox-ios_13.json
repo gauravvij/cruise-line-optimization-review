@@ -1,0 +1,274 @@
+{
+ "id": "firefox-ios#13",
+ "repo": "firefox-ios",
+ "num": 13,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "r2_holdout_opus_baseline_retry",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T19:09:16.427Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Test method missing test prefix",
+   "description": "The rule requires test methods to start with 'test' prefix, but the method 'verifyBookmarksShareNormalWebsiteReminders' does not follow this naming convention",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift",
+   "start_line": 47,
+   "end_line": 59,
+   "problematic_code_snippet": "    // https://mozilla.testrail.io/index.php?/cases/view/2864380\n    func verifyBookmarksShareNormalWebsiteReminders() {\n        app.launch()\n        if #available(iOS 17, *) {\n            longPressBookmarkAndReachShareOptions(option: \"Reminders\")\n            // The URL of the website is added in a new reminder\n            waitForElementsToExist(\n                [\n                    app.navigationBars[\"Reminders\"],\n                    app.links.elementContainingText(url_1)\n                ]\n            )\n        }\n    }",
+   "rule_name": "Test Classes Must Use XCTest Framework with Proper Structure"
+  },
+  {
+   "title": "Incorrect logical operator in tearDown causing theme reset to be skipped for all iPad tests",
+   "description": "The tearDown method uses OR (||) instead of AND (&&) when checking if the test should skip theme reset. This causes the theme reset to be skipped for ALL tests running on iPad devices, not just the testSelectBottomPlacement test. The original intent was to skip theme reset only when BOTH conditions are true (the test is testSelectBottomPlacement AND it's running on iPad), but the current code skips it when EITHER condition is true. This will leave the theme in Dark mode after any test runs on iPad, potentially affecting subsequent tests that expect Light theme.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift",
+   "start_line": 27,
+   "end_line": 35,
+   "problematic_code_snippet": "    override func tearDown() async throws {\n        if #available(iOS 17.0, *) {\n            if self.name.contains(\"testSelectBottomPlacement\") || iPad() {\n                // Toolbar option not available for iPad, so the theme is not changed there.\n                return\n            } else {\n                switchThemeToDarkOrLight(theme: \"Light\")\n            }\n        }"
+  },
+  {
+   "title": "Insufficient timeout for paste permission dialog causing test flakiness",
+   "description": "The timeout for the 'Allow Paste' permission dialog button was reduced from 1.5 seconds to 0.5 seconds. This is too short for the iOS permission dialog to appear and be interactable, especially on slower devices or under load. The tapIfExists method waits for the element to exist within the specified timeout before attempting to tap it. A 0.5 second timeout may cause the test to miss the permission dialog entirely, preventing the paste action from completing and causing subsequent assertions to fail when the URL is not populated in the address bar.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/BaseTestCase.swift",
+   "start_line": 468,
+   "end_line": 473,
+   "problematic_code_snippet": "        urlBar.pressWithRetry(duration: 2.0, element: pasteAction)\n        mozWaitForElementToExist(app.tables[\"Context Menu\"])\n        pasteAction.waitAndTap()\n        springboard.buttons[\"Allow Paste\"].tapIfExists(timeout: 0.5)\n        mozWaitForElementToExist(urlBar)\n        mozWaitForValueContains(urlBar, value: url)"
+  },
+  {
+   "title": "Long-press duration too short to trigger context menu in bookmark sharing test",
+   "description": "The pressWithRetry duration was reduced from 1.5 seconds to 0.5 seconds for the long-press gesture on the bookmark item. According to the pressWithRetry implementation, the method performs a long press and expects the specified element (contextMenu) to appear. A 0.5 second press duration is typically insufficient for iOS to recognize a long-press gesture and display the context menu - iOS generally requires at least 1.0-1.5 seconds for long-press recognition. This will cause the context menu to fail to appear, making the subsequent call to tap the share button fail since the contextMenu element won't exist.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift",
+   "start_line": 243,
+   "end_line": 249,
+   "problematic_code_snippet": "        waitForTabsButton()\n        navigator.goto(LibraryPanel_Bookmarks)\n        // Long-press on a bookmarked website\n        let contextMenu = app.tables[\"Context Menu\"]\n        app.tables.cells.staticTexts[\"Example Domain\"].pressWithRetry(duration: 0.5, element: contextMenu)\n        // Tap the Share button in the context menu\n        contextMenu.buttons[\"shareLarge\"].waitAndTap()"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "2c0230e32544913c5b1587a4615bbaee6563cbaf",
+ "diff_chars": 7843,
+ "diff_lines": 155,
+ "user_prompt_chars": 8770,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 70610,
+ "wall_ms": 103036,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 9,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 3.772608482,
+ "spend_post_usd": 3.772608482,
+ "cost_settled": false,
+ "cost_wait_ms": 30696,
+ "cost_usd": 0,
+ "cost_flag": "key_delta_unsettled_after_30s",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.26529800000000003,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 17268,
+  "cache_read_input_tokens": 140190,
+  "output_tokens": 7544,
+  "output_tokens_details": {
+   "thinking_tokens": 1543
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 17268
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 7544,
+   "cacheReadInputTokens": 140190,
+   "cacheCreationInputTokens": 17268,
+   "webSearchRequests": 0,
+   "costUSD": 0.26529800000000003,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1543,
+   "cacheCreationEphemeral5mInputTokens": 17268,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 13,
+   "title": "Code Review Bench PR #31184 - [MTE-5047] - auto tests improvements",
+   "author": "",
+   "baseSha": "68a9007b387d592f9459d71dd6ddd063cf9c930a",
+   "headSha": "2c0230e32544913c5b1587a4615bbaee6563cbaf"
+  },
+  "summary": "This PR cleans up the XCUITests. It deletes the long-skipped `testWhatsNewPage` and removes it from three test plans. It moves the iPad skip in `testSelectBottomPlacement` ahead of any UI interaction and has `OnboardingTests.tearDown` skip the theme reset in some cases. It also makes the bookmark long-press in `ShareLongPressTests` retry, and taps the system \"Allow Paste\" prompt in `openNewTabAndValidateURLisPaste`.\n\nTwo of the changes do more than intended. The new `tearDown` branch uses `return`, so on every iPad run, and for `testSelectBottomPlacement` on any device, it skips `app.terminate()` and `super.tearDown()` along with the theme reset. Renaming `testBookmarksShareNormalWebsiteReminders` to `verify…` doesn't fix the flaky test. XCTest only discovers methods whose names start with `test`, so the rename quietly removes it from every plan that runs `ShareLongPressTests`, including FullFunctionalTestPlan. The rest of the changes are reasonable.",
+  "verdict": "request_changes",
+  "verdictRationale": "The early `return` in `tearDown` skips app termination and the base-class teardown, and the method rename silently turns off a test that FullFunctionalTestPlan still expects to run. Both are small to fix but should be fixed before merge.",
+  "architecture": {
+   "overview": "XCUITests subclass `BaseTestCase`, which provides helpers such as `pressWithRetry`, `tapIfExists`, `switchThemeToDarkOrLight` and `openNewTabAndValidateURLisPaste`, plus a `tearDown` that terminates the app. Each `.xctestplan` file picks which test methods run, using `skippedTests` lists. XCTest itself only discovers methods whose names start with `test`.\n\nThis PR changes three suites. `OnboardingTests` now decides per test (and per device) whether to reset the theme in `tearDown`, and checks for iPad before doing anything in `testSelectBottomPlacement`. `ShareLongPressTests` now long-presses bookmarks with `pressWithRetry`, and one of its tests is renamed so XCTest no longer finds it. `BaseTestCase`'s paste helper now handles the iOS paste-permission alert through the global `springboard` app. The dead `testWhatsNewPage` and its test-plan entries are removed.",
+   "steps": [
+    "Start with the test plans (`AccessibilityTestPlan`, `Smoketest`, `TAESmokeTestPlan`): they drop the `testWhatsNewPage()` entries. FullFunctionalTestPlan runs `ShareLongPressTests` and most of `OnboardingTests` without a skip list.",
+    "`BaseTestCase.swift`: `tearDown` terminates the app. `openNewTabAndValidateURLisPaste` now also taps `springboard.buttons[\"Allow Paste\"]` if the alert appears.",
+    "`OnboardingTests.tearDown`: now branches on `self.name` and `iPad()`. It either returns early or calls `switchThemeToDarkOrLight`, then terminates the app and calls `super.tearDown()`.",
+    "`OnboardingTests.testSelectBottomPlacement`: the iPad `XCTSkipIf` check now runs before the Terms of Service tap.",
+    "`ShareLongPressTests.longPressBookmarkAndReachShareOptions`: long-presses with `pressWithRetry(duration: 0.5, element: contextMenu)` instead of a single 1.0s press. `testBookmarksShareNormalWebsiteReminders` is renamed to `verifyBookmarksShareNormalWebsiteReminders`."
+   ],
+   "diagrams": [
+    {
+     "title": "OnboardingTests tearDown flow after this PR",
+     "kind": "flowchart",
+     "description": "Shows the decision path through the modified OnboardingTests.tearDown.",
+     "mermaid": "flowchart TD\n  A[tearDown] --> B{iOS 17+?}\n  B -- no --> T[app.terminate]\n  B -- yes --> C{name contains testSelectBottomPlacement OR iPad?}\n  C -- yes --> R[return]\n  C -- no --> D[switchThemeToDarkOrLight Light]\n  D --> T\n  T --> S[BaseTestCase.tearDown]\n  S --> X[XCTestCase.tearDown]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Early `return` in tearDown skips `app.terminate()` and `super.tearDown()`",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The new branch is supposed to skip only the theme reset, but `return` exits the whole `tearDown`:\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift\" lines=\"27-37\"}\n\nOn iOS 17+, that means:\n- **Every** `OnboardingTests` test on iPad skips `app.terminate()` and `BaseTestCase.tearDown()`, not just `testSelectBottomPlacement`.\n- `testSelectBottomPlacement` skips them on iPhone too.\n\nThe app stays running into the next test, and any cleanup added to `BaseTestCase.tearDown` later will silently not run for these cases. FullFunctionalTestPlan runs most of `OnboardingTests`, so this applies on iPad CI.\n\nThe comment is also misleading. It talks about the toolbar option on iPad, but the condition skips the theme reset for every iPad test, including `testFirstRunTourDarkMode`, which leaves the app in Dark.\n\n::suggestion{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift\" lines=\"27-37\"}\n        let skipThemeReset = name.contains(\"testSelectBottomPlacement\") || iPad()\n        if #available(iOS 17.0, *), !skipThemeReset {\n            switchThemeToDarkOrLight(theme: \"Light\")\n        }\n        app.terminate()\n        try await super.tearDown()\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift`, `tearDown()` (lines 27-37) uses `return` when the test is `testSelectBottomPlacement` or the device is an iPad. That skips `app.terminate()` and `try await super.tearDown()`. Restructure it so only the `switchThemeToDarkOrLight(theme: \"Light\")` call is conditional, and `app.terminate()` and `super.tearDown()` always run. Also fix the comment so it says why the theme reset is skipped for each condition (bottom toolbar placement, and iPad).",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift",
+     "lineStart": 27,
+     "lineEnd": 37
+    }
+   },
+   {
+    "title": "Renaming to `verify…` silently disables testBookmarksShareNormalWebsiteReminders",
+    "severity": "high",
+    "category": "correctness",
+    "body": "XCTest only discovers instance methods whose names start with `test`. Renaming this method removes it from every run:\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift\" lines=\"46-58\"}\n\n- FullFunctionalTestPlan doesn't skip `ShareLongPressTests`, so this case (TestRail 2864380) silently drops out of that plan. Nothing reports it as skipped.\n- `AccessibilityTestPlan.xctestplan` line 371 still lists `ShareLongPressTests/testBookmarksShareNormalWebsiteReminders()`, which now points to a method that doesn't exist.\n- The method is now dead code that nothing calls.\n\nThe PR describes this as an attempt to fix flakiness. If the goal is to stop running it for now, use `throw XCTSkip(\"…reason/ticket…\")` so it stays visible in reports. Otherwise keep the `test` prefix and rely on the new `pressWithRetry` change.",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift",
+     "firefox-ios/firefox-ios-tests/Tests/AccessibilityTestPlan.xctestplan"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift` line 47, `testBookmarksShareNormalWebsiteReminders` was renamed to `verifyBookmarksShareNormalWebsiteReminders`. XCTest no longer discovers it, so it silently stops running in FullFunctionalTestPlan, and `AccessibilityTestPlan.xctestplan` (line ~371) now references a method that doesn't exist. Restore the `test` prefix. If the test must be disabled because it's flaky, make the method `throws` and add `throw XCTSkip(\"<reason + ticket>\")` at the top so the skip shows up in test reports.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift",
+     "lineStart": 47,
+     "lineEnd": 47
+    }
+   },
+   {
+    "title": "Awkward `XCTSkipIf` with a hard-coded `true` inside an `if`",
+    "severity": "low",
+    "category": "style",
+    "body": "Wrapping `XCTSkipIf(true, …)` in `if iPad()` is a roundabout way to write an unconditional skip:\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift\" lines=\"349-352\"}\n\n::suggestion{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift\" lines=\"349-352\"}\n        try XCTSkipIf(iPad(), \"Toolbar option not available for iPad\")\n\nMoving the skip before the Terms of Service tap is a good change. Only the shape of the check needs simplifying.",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift` lines 349-352, replace the `if iPad() { let shouldSkipTest = true; try XCTSkipIf(shouldSkipTest, ...) }` block with a single `try XCTSkipIf(iPad(), \"Toolbar option not available for iPad\")` at the same position, the start of `testSelectBottomPlacement`.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift",
+     "lineStart": 349,
+     "lineEnd": 352
+    }
+   },
+   {
+    "title": "0.5s timeout for the 'Allow Paste' alert may be too short to help",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The paste-permission alert is animated in after `pasteAction` is tapped. A 0.5s `tapIfExists` window can miss it on slower CI simulators:\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/BaseTestCase.swift\" lines=\"470-473\"}\n\nIf it misses, the next step, `mozWaitForValueContains(urlBar, value: url)`, fails while the alert is still on screen. That's the same flake this line was meant to prevent. `tapIfExists` returns as soon as the element appears, so raising the timeout to 2-3s only costs time when no alert is shown.",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/BaseTestCase.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/BaseTestCase.swift` line 471, `springboard.buttons[\"Allow Paste\"].tapIfExists(timeout: 0.5)` may miss the animated system paste-permission alert on slow CI simulators. Increase the timeout to around 2-3 seconds. `tapIfExists` returns early once the element exists, so the extra wait only applies when no alert appears.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/BaseTestCase.swift",
+     "lineStart": 471,
+     "lineEnd": 471
+    }
+   },
+   {
+    "title": "Retrying the bookmark long-press is a good fix for this flaky step",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Switching the single `press(forDuration: 1.0)` to `pressWithRetry(duration: 0.5, element: contextMenu)` re-presses until `Context Menu` appears. Reusing the `contextMenu` reference for the `shareLarge` tap also removes a duplicated query. The same flaky pattern is still used in `longPressTopSitesAndReachShareOptions` (`press(forDuration: 1.5)`) and could get the same treatment later.\n\n::code{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift\" lines=\"245-249\"}",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift"
+    ]
+   },
+   {
+    "title": "Dead `testWhatsNewPage` removed cleanly from code and plans",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The always-skipped test and its commented-out body are deleted, and the three test plans that referenced it are updated in the same change, so there are no stale references to it.",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift",
+     "firefox-ios/firefox-ios-tests/Tests/Smoketest.xctestplan",
+     "firefox-ios/firefox-ios-tests/Tests/TAESmokeTestPlan.xctestplan",
+     "firefox-ios/firefox-ios-tests/Tests/AccessibilityTestPlan.xctestplan"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":13,\"title\":\"Code Review Bench PR #31184 - [MTE-5047] - auto tests improvements\",\"author\":\"\",\"baseSha\":\"68a9007b387d592f9459d71dd6ddd063cf9c930a\",\"headSha\":\"2c0230e32544913c5b1587a4615bbaee6563cbaf\"},\"summary\":\"This PR cleans up the XCUITests. It deletes the long-skipped `testWhatsNewPage` and removes it from three test plans. It moves the iPad skip in `testSelectBottomPlacement` ahead of any UI interaction and has `OnboardingTests.te",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

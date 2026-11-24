@@ -1,0 +1,333 @@
+{
+ "id": "aspnetcore#10",
+ "repo": "aspnetcore",
+ "num": 10,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:07:25.770Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Method brace on same line",
+   "description": "The rule requires opening braces to appear on a new line after method declarations, but this method has its opening brace on the same line as the declaration (K&R style).",
+   "file_path": "src/Validation/src/ValidationOptions.cs",
+   "start_line": 66,
+   "end_line": 67,
+   "problematic_code_snippet": "    [Experimental(\"ASP0029\", UrlFormat = \"https://aka.ms/aspnet/analyzer/{0}\")]\n    public bool TryGetValidatableParameterInfo(ParameterInfo parameterInfo, [NotNullWhen(true)] out IValidatableInfo? validatableInfo) {\n        foreach (var resolver in Resolvers)",
+   "rule_name": "Opening Braces Must Be on New Line (Allman Style)"
+  },
+  {
+   "title": "BackgroundQueueSize incorrectly rejects zero value despite 'non-negative' contract",
+   "description": "The BackgroundQueueSize property validation was changed to reject values less than or equal to zero, but the error message states 'must be non-negative' which includes zero. According to the XML documentation, null represents no limit. While zero is semantically different from null, the validation is now inconsistent with the documented contract that explicitly states 'non-negative' (which mathematically includes zero). This prevents callers from setting a zero queue size if that was their intent, even though zero is a valid non-negative integer. The validation logic contradicts the error message, creating a confusing API contract.",
+   "file_path": "src/Logging.AzureAppServices/src/BatchingLoggerOptions.cs",
+   "start_line": 42,
+   "end_line": 53,
+   "problematic_code_snippet": "    public int? BackgroundQueueSize\n    {\n        get { return _backgroundQueueSize; }\n        set\n        {\n            if (value <= 0)\n            {\n                throw new ArgumentOutOfRangeException(nameof(value), $\"{nameof(BackgroundQueueSize)} must be non-negative.\");\n            }\n            _backgroundQueueSize = value;\n        }\n    }"
+  },
+  {
+   "title": "RetainedFileCountLimit allows zero value violating positive-only constraint",
+   "description": "The RetainedFileCountLimit property validation was changed from rejecting values <= 0 to only rejecting values < 0, which now allows zero as a valid value. However, both the XML documentation and the error message explicitly state that this must be a 'positive' value, and zero is not positive. The remarks indicate this controls maximum retained file count - a value of zero would mean no log files are retained, which could lead to complete log loss. This violates the documented API contract and creates a dangerous configuration scenario where all logs could be immediately discarded.",
+   "file_path": "src/Logging.AzureAppServices/src/AzureFileLoggerOptions.cs",
+   "start_line": 48,
+   "end_line": 59,
+   "problematic_code_snippet": "    public int? RetainedFileCountLimit\n    {\n        get { return _retainedFileCountLimit; }\n        set\n        {\n            if (value < 0)\n            {\n                throw new ArgumentOutOfRangeException(nameof(value), $\"{nameof(RetainedFileCountLimit)} must be positive.\");\n            }\n            _retainedFileCountLimit = value;\n        }\n    }"
+  },
+  {
+   "title": "Premature null assignment in TryGetValidatableTypeInfo violates out parameter semantics",
+   "description": "The validatableTypeInfo out parameter is now being set to null at the beginning of the method before iterating through resolvers, rather than after the loop when no resolver was found. While this may appear equivalent, it violates proper out parameter semantics and the contract implied by [NotNullWhen(true)]. If a resolver incorrectly returns true while leaving the out parameter unassigned or null (a buggy resolver implementation), the early null assignment would mask this contract violation. Additionally, this creates unnecessary assignment overhead since the parameter will be overwritten by successful resolvers. The original pattern of assigning null only when no resolver succeeds is more semantically correct and provides better detection of misbehaving resolvers.",
+   "file_path": "src/Validation/src/ValidationOptions.cs",
+   "start_line": 44,
+   "end_line": 56,
+   "problematic_code_snippet": "    public bool TryGetValidatableTypeInfo(Type type, [NotNullWhen(true)] out IValidatableInfo? validatableTypeInfo)\n    {\n        validatableTypeInfo = null;\n        foreach (var resolver in Resolvers)\n        {\n            if (resolver.TryGetValidatableTypeInfo(type, out validatableTypeInfo))\n            {\n                return true;\n            }\n        }\n\n        return false;\n    }"
+  },
+  {
+   "title": "Empty <returns> XML documentation on public method",
+   "description": "The public API method `AddAzureWebAppDiagnostics` includes a `<returns>` XML doc tag with no content. This results in incomplete XML documentation for a public API, violating the requirement that public APIs have complete XML documentation (including meaningful `<returns>` content when applicable).",
+   "file_path": "src/Logging.AzureAppServices/src/AzureAppServicesLoggerFactoryExtensions.cs",
+   "start_line": 21,
+   "end_line": 21,
+   "problematic_code_snippet": "/// <returns></returns>",
+   "rule_name": "Public APIs Must Have XML Documentation Comments"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "ebe838d458c2b7b30368c9ebac8f158cac516736",
+ "diff_chars": 30521,
+ "diff_lines": 609,
+ "user_prompt_chars": 31268,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 41952,
+ "wall_ms": 44118,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 12,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.699455751,
+ "spend_post_usd": 5.709040596,
+ "cost_settled": true,
+ "cost_wait_ms": 340,
+ "cost_usd": 0.009584845000000008,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.00924131,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 25098,
+  "cache_read_input_tokens": 136626,
+  "output_tokens": 9474,
+  "output_tokens_details": {
+   "thinking_tokens": 2629
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 25098
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 9474,
+   "cacheReadInputTokens": 136626,
+   "cacheCreationInputTokens": 25098,
+   "webSearchRequests": 0,
+   "costUSD": 0.00924131,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2629,
+   "cacheCreationEphemeral5mInputTokens": 25098,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 10,
+   "title": "Code Review Bench PR #64092 - Doc updates",
+   "author": "",
+   "baseSha": "8ff4fb19f219ff0b840c24fda2e6726e6b708894",
+   "headSha": "ebe838d458c2b7b30368c9ebac8f158cac516736"
+  },
+  "summary": "This PR is mostly XML doc-comment work across Polly, SqlServer caching, Logging.AzureAppServices, and Validation, aimed at the .NET API docs effort. Most edits reword summaries (\"Gets or sets…\", \"Specifies…\"), move default values into `<value>` blocks, and fix `<see langword>` and `<code language>` usage. Those are accurate and easy to verify against the code.\n\nThe PR is not doc-only, though. It changes three runtime validation setters in the Azure logging options and a small reordering in `ValidationOptions.TryGetValidatableTypeInfo`. The `RetainedFileCountLimit` change is a real regression: the setter now accepts 0, and `FileLoggerProvider` treats 0 as \"no cleanup\", so log files are never deleted. That contradicts the new \"strictly positive\" doc and the still-unchanged \"must be positive\" exception text. The `BackgroundQueueSize` change rejects 0 but keeps the message \"must be non-negative\", which is now wrong. Neither behavior change is mentioned in the PR description, and no tests cover these boundaries.",
+  "verdict": "request_changes",
+  "verdictRationale": "The `RetainedFileCountLimit` setter was loosened from `<= 0` to `< 0`, which silently lets 0 through. The provider then skips retention cleanup, so files accumulate indefinitely, and the docs now state the value must be strictly positive. That is a behavioral regression hidden inside a doc PR. The `BackgroundQueueSize` error text is also now inconsistent with its check. Both need to be fixed or reverted before merge. The remaining doc and formatting issues are minor.",
+  "architecture": {
+   "overview": "The Azure App Services logging integration is built on `BatchingLoggerProvider`, an abstract base that queues `LogMessage` entries in a bounded `BlockingCollection` and flushes them on a timer. Concrete providers (`FileLoggerProvider`, `AzureBlobLoggerProvider`) subclass it. Configuration flows in through `BatchingLoggerOptions` (queue size, batch size, flush period) and its subclasses `AzureFileLoggerOptions` and `AzureBlobLoggerOptions`. Each option is a property with a setter that validates its input before storing it. Providers read these values once in their constructors.\n\nThis PR leaves the architecture unchanged. It rewrites the XML docs for these options and changes two setter guards. The `RetainedFileCountLimit` guard moves from `<= 0` to `< 0`, and the `BackgroundQueueSize` guard moves from `< 0` to `<= 0`. In the file provider, `_maxRetainedFiles > 0` is the only path that deletes old files, so the loosened setter changes runtime cleanup behavior.",
+   "steps": [
+    "Entry point: callers configure `AzureFileLoggerOptions` / `BatchingLoggerOptions` through the options pattern. Setters validate values as they are assigned.",
+    "`BatchingLoggerProvider` reads `BackgroundQueueSize` in its constructor and builds a bounded `BlockingCollection` (or an unbounded one when the value is null).",
+    "`FileLoggerProvider` reads `RetainedFileCountLimit` and deletes files beyond that count only when the stored value is greater than 0. A stored 0 means no cleanup.",
+    "In this PR, the `RetainedFileCountLimit` setter now accepts 0, which routes into the no-cleanup branch while the docs say it must be strictly positive. The `BackgroundQueueSize` setter now rejects 0, which is consistent with `BlockingCollection`'s requirement of a positive bound, but its exception message still says 'non-negative'.",
+    "Validation (`ValidationOptions`) is separate: it walks an ordered list of resolvers. This PR only reorders the null-initialization of the out parameter and rewrites docs, which does not change behavior."
+   ],
+   "diagrams": [
+    {
+     "title": "Logging options flow into providers",
+     "kind": "flowchart",
+     "description": "Shows how the changed option setters feed the batching and file providers, with the changed guards marked on the path.",
+     "mermaid": "flowchart LR\n    Config[\"Caller options configuration\"] --> FO[\"AzureFileLoggerOptions\"]\n    Config --> BO[\"BatchingLoggerOptions\"]\n    FO -->|RetainedFileCountLimit setter: now accepts 0| FLP[\"FileLoggerProvider\"]\n    BO -->|BackgroundQueueSize setter: now rejects 0| BLP[\"BatchingLoggerProvider\"]\n    BLP -->|bounded BlockingCollection| Queue[\"Log message queue\"]\n    Queue --> Flush[\"WriteMessagesAsync flush\"]\n    FLP --> Flush\n    Flush -->|if RetainedFileCountLimit > 0| Cleanup[\"Delete files beyond limit\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "RetainedFileCountLimit now accepts 0, which disables log cleanup",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The setter was changed from `value <= 0` to `value < 0`, so 0 passes validation. `FileLoggerProvider` only prunes when `_maxRetainedFiles > 0`, so a stored 0 means files are never deleted. The XML doc just added says the value is \"strictly positive\", and the exception text still says \"must be positive\". Nothing in the PR explains why the guard was relaxed, and no tests cover this boundary.\n\n::diff{file=\"src/Logging.AzureAppServices/src/AzureFileLoggerOptions.cs\" lines=\"48-58\"}\n\n::callout{type=\"warning\"}\nThis is a runtime behavior change inside a documentation PR. Setting `RetainedFileCountLimit = 0` used to throw. Now it silently turns off retention, and log directories can grow without limit.\n\nIf the intent was to allow 0 as \"no limit\", the doc and API should say so and the provider should be explicit about it. Otherwise, the guard should go back to `<= 0`. Either way, add a boundary test for 0 and for -1 on this setter.",
+    "files": [
+     "src/Logging.AzureAppServices/src/AzureFileLoggerOptions.cs",
+     "src/Logging.AzureAppServices/src/FileLoggerProvider.cs"
+    ],
+    "fixPrompt": "In `src/Logging.AzureAppServices/src/AzureFileLoggerOptions.cs`, the `RetainedFileCountLimit` setter (around line 53) was changed from `value <= 0` to `value < 0`, so 0 is now accepted. `FileLoggerProvider.WriteMessagesAsync` (around line 76) only prunes when `_maxRetainedFiles > 0`, so 0 silently disables cleanup, while the XML doc on the property says the value is strictly positive. Restore the rejection of 0 so the setter matches its doc and the exception message, unless the team deliberately wants 0 to mean unlimited. In that case, update the doc and make the provider's behavior explicit. Add unit tests for the setter at 0, 1, and -1.",
+    "commentAnchor": {
+     "file": "src/Logging.AzureAppServices/src/AzureFileLoggerOptions.cs",
+     "lineStart": 48,
+     "lineEnd": 58
+    }
+   },
+   {
+    "title": "BackgroundQueueSize rejects 0 but the error message still says non-negative",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The setter now uses `value <= 0`, so 0 throws. This matches `BlockingCollection`, which requires a positive bound, so the change itself looks right. However, the exception text still says \"must be non-negative\", which now contradicts the check. The doc was also rewritten without noting that 0 is no longer accepted, and the change is not mentioned in the PR description.\n\n::diff{file=\"src/Logging.AzureAppServices/src/BatchingLoggerOptions.cs\" lines=\"42-53\"}\n\n::suggestion{file=\"src/Logging.AzureAppServices/src/BatchingLoggerOptions.cs\" lines=\"47-49\"}\nif (value <= 0)\n{\n    throw new ArgumentOutOfRangeException(nameof(value), $\"{nameof(BackgroundQueueSize)} must be positive.\");\n}\n\nAlso note in the doc that the value must be greater than zero, or null for no limit.",
+    "files": [
+     "src/Logging.AzureAppServices/src/BatchingLoggerOptions.cs",
+     "src/Logging.AzureAppServices/src/BatchingLoggerProvider.cs"
+    ],
+    "fixPrompt": "In `src/Logging.AzureAppServices/src/BatchingLoggerOptions.cs`, the `BackgroundQueueSize` setter (around lines 47-49) now rejects 0 (`value <= 0`), but its exception message still says \"must be non-negative\". Change the message to say the value must be positive, matching the check. Update the XML doc on the property (around lines 34-41) to say the value must be greater than zero, or null for no limit. Check that `BatchingLoggerProvider`'s constructor (around line 55-59), which passes this value to `BlockingCollection`, still gets only positive values. Add a test for 0 and a negative value.",
+    "commentAnchor": {
+     "file": "src/Logging.AzureAppServices/src/BatchingLoggerOptions.cs",
+     "lineStart": 47,
+     "lineEnd": 49
+    }
+   },
+   {
+    "title": "No tests cover the setter boundaries that were changed",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "Neither the `RetainedFileCountLimit` setter nor the `BackgroundQueueSize` setter has a test that checks the boundary value. `FileLoggerTests` and `BatchingLoggerProviderTests` only exercise valid values. A boundary test would have caught the regression in the first finding. Because the PR is mostly doc edits, these two behavior changes are easy to miss in review.\n\n::callout{type=\"info\"}\nAdd tests in `src/Logging.AzureAppServices/test/` for `RetainedFileCountLimit` at 0, 1, and -1, and for `BackgroundQueueSize` at 0, 1, and -1. Each should assert that the setter throws `ArgumentOutOfRangeException` for the invalid values and accepts the valid ones.",
+    "files": [
+     "src/Logging.AzureAppServices/test/FileLoggerTests.cs",
+     "src/Logging.AzureAppServices/test/BatchingLoggerProviderTests.cs"
+    ],
+    "fixPrompt": "Add unit tests in `src/Logging.AzureAppServices/test/` covering the boundaries of `AzureFileLoggerOptions.RetainedFileCountLimit` and `BatchingLoggerOptions.BackgroundQueueSize`. For each setter, assert that 0 and -1 throw `ArgumentOutOfRangeException` and that 1 is accepted. Put the file-logger tests near the existing ones in `FileLoggerTests.cs` and the queue-size tests near `BatchingLoggerProviderTests.cs`. Use the existing test patterns in those files.",
+    "commentAnchor": {
+     "file": "src/Logging.AzureAppServices/src/AzureFileLoggerOptions.cs",
+     "lineStart": 48,
+     "lineEnd": 58
+    }
+   },
+   {
+    "title": "Inconsistent brace placement on TryGetValidatableParameterInfo",
+    "severity": "low",
+    "category": "style",
+    "body": "The opening brace was moved onto the signature line, which is not the Allman style used everywhere else in this file and codebase. It looks like an accidental edit in a doc-focused PR.\n\n::diff{file=\"src/Validation/src/ValidationOptions.cs\" lines=\"62-67\"}\n\n::suggestion{file=\"src/Validation/src/ValidationOptions.cs\" lines=\"66-67\"}\n    public bool TryGetValidatableParameterInfo(ParameterInfo parameterInfo, [NotNullWhen(true)] out IValidatableInfo? validatableInfo)\n    {\n        foreach (var resolver in Resolvers)",
+    "files": [
+     "src/Validation/src/ValidationOptions.cs"
+    ],
+    "fixPrompt": "In `src/Validation/src/ValidationOptions.cs`, the `TryGetValidatableParameterInfo` signature (around line 66) has its opening `{` on the same line. Move it to its own line to match the Allman brace style used in the rest of the file. Make no other changes.",
+    "commentAnchor": {
+     "file": "src/Validation/src/ValidationOptions.cs",
+     "lineStart": 66,
+     "lineEnd": 67
+    }
+   },
+   {
+    "title": "Typo kept in the Polly extension summary",
+    "severity": "low",
+    "category": "style",
+    "body": "The summary reads \"Provides extensions methods\". It should be \"extension methods\". This PR touched that exact sentence, so it is a missed fix rather than something inherited.\n\n::diff{file=\"src/HttpClientFactory/Polly/src/DependencyInjection/PollyHttpClientBuilderExtensions.cs\" lines=\"13-16\"}\n\nChange \"extensions methods\" to \"extension methods\".",
+    "files": [
+     "src/HttpClientFactory/Polly/src/DependencyInjection/PollyHttpClientBuilderExtensions.cs"
+    ],
+    "fixPrompt": "In `src/HttpClientFactory/Polly/src/DependencyInjection/PollyHttpClientBuilderExtensions.cs`, the class summary (around line 14) says \"Provides extensions methods\". Change it to \"Provides extension methods\". Make no other changes.",
+    "commentAnchor": {
+     "file": "src/HttpClientFactory/Polly/src/DependencyInjection/PollyHttpClientBuilderExtensions.cs",
+     "lineStart": 14,
+     "lineEnd": 14
+    }
+   },
+   {
+    "title": "Doc rewrites add `<value>` and `<remarks>` blocks consistently",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Most of the doc changes follow one consistent pattern. Defaults move into `<value>`, and behavioral notes move into `<remarks>`. `<see langword=\"null\"/>` and `<see langword=\"false\"/>` replace bare words, and `<code language=\"csharp\">` is used on the example block. This makes the rendered API docs easier to scan and matches the output of the .NET API docs tooling.\n\n::callout{type=\"info\"}\nThe `TryGetValidatableTypeInfo` change that moves `validatableTypeInfo = null;` to the top of the method is behavior-neutral, because the out parameter is always assigned before the loop returns. The new placement is also clearer.",
+    "files": [
+     "src/Validation/src/ValidationOptions.cs",
+     "src/Validation/src/SkipValidationAttribute.cs",
+     "src/Validation/src/ValidateContext.cs",
+     "src/Logging.AzureAppServices/src/AzureBlobLoggerOptions.cs"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":10,\"title\":\"Code Review Bench PR #64092 - Doc updates\",\"author\":\"\",\"baseSha\":\"8ff4fb19f219ff0b840c24fda2e6726e6b708894\",\"headSha\":\"ebe838d458c2b7b30368c9ebac8f158cac516736\"},\"summary\":\"This PR is mostly XML doc-comment work across Polly, SqlServer caching, Logging.AzureAppServices, and Validation, aimed at the .NET API docs effort. Most edits reword summaries (\\\"Gets or sets…\\\", \\\"Specifies…\\\"), move default values into `<value>` bloc",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

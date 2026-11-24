@@ -1,0 +1,295 @@
+{
+ "id": "redis#9",
+ "repo": "redis",
+ "num": 9,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:55:38.135Z",
+ "num_of_issues": 3,
+ "issues": [
+  {
+   "title": "Helper function missing static keyword",
+   "description": "The rule requires that helper functions used only within a single source file should be declared with the 'static' keyword to limit their visibility to that compilation unit. The function addHashFieldToReply is only used within t_hash.c but is declared without 'static', making it unnecessarily visible to other compilation units.",
+   "file_path": "src/t_hash.c",
+   "start_line": 2576,
+   "end_line": 2597,
+   "problematic_code_snippet": "GetFieldRes addHashFieldToReply(client *c, kvobj *o, sds field, int hfeFlags) {\n    if (o == NULL) {\n        addReplyNull(c);\n        return GETF_NOT_FOUND;\n    }\n\n    unsigned char *vstr = NULL;\n    unsigned int vlen = UINT_MAX;\n    long long vll = LLONG_MAX;\n\n    GetFieldRes res = hashTypeGetValue(c->db, o, field, &vstr, &vlen, &vll, hfeFlags, NULL);\n    if (res == GETF_OK) {\n        if (vstr) {\n            addReplyBulkCBuffer(c, vstr, vlen);\n        } else {\n            addReplyBulkLongLong(c, vll);\n        }\n    } else {\n        addReplyNull(c);\n    }\n    return res;\n}",
+   "rule_name": "Internal Helper Functions Must Be Declared Static"
+  },
+  {
+   "title": "HINCRBYFLOAT removes field expiration time locally on master",
+   "description": "The hincrbyfloatCommand function is missing the HASH_SET_KEEP_TTL flag when calling hashTypeSet. While the replication command correctly uses KEEPTTL to preserve field TTL for replicas and AOF, the local execution on the master immediately removes any existing field expiration time. This creates an inconsistency where the field loses its TTL on the master but the replicated HSETEX command attempts to keep it. The test at line 1987 expects field f1 to retain its TTL after HINCRBYFLOAT, but this bug causes the TTL to be cleared locally.",
+   "file_path": "src/t_hash.c",
+   "start_line": 2559,
+   "end_line": 2559,
+   "problematic_code_snippet": "    char buf[MAX_LONG_DOUBLE_CHARS];\n    int len = ld2string(buf,sizeof(buf),value,LD_STR_HUMAN);\n    new = sdsnewlen(buf,len);\n    hashTypeSet(c->db, o,c->argv[2]->ptr,new,HASH_SET_TAKE_VALUE);\n    addReplyBulkCBuffer(c,buf,len);"
+  },
+  {
+   "title": "Incorrect argument count in rewriteClientCommandVector causes malformed replication",
+   "description": "The rewriteClientCommandVector call passes 6 as the argument count, but actually provides 7 arguments (HSETEX, key, KEEPTTL, FIELDS, 1, field, value). This mismatch causes the replication command to be truncated, omitting the final argument (the new field value). Replicas and AOF will receive an incomplete HSETEX command missing the field value, leading to command execution failures on replicas, replication inconsistencies, and potential data corruption. The test expects the replication stream to contain a complete HSETEX command with all arguments.",
+   "file_path": "src/t_hash.c",
+   "start_line": 2571,
+   "end_line": 2572,
+   "problematic_code_snippet": "    robj *newobj;\n    newobj = createRawStringObject(buf,len);\n    rewriteClientCommandVector(c, 6, shared.hsetex, c->argv[1], shared.keepttl,\n                        shared.fields, shared.integers[1], c->argv[2], newobj);\n    decrRefCount(newobj);"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "355e36ba625de12f9f9c633b7661930bfd640177",
+ "diff_chars": 5703,
+ "diff_lines": 128,
+ "user_prompt_chars": 7161,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 53945,
+ "wall_ms": 55973,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 8,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 7,
+ "turn_trace": {
+  "assistant_lines": 19,
+  "unique_message_ids": 7,
+  "lines_without_id": 0,
+  "tool_use_blocks": 8
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.210440311,
+ "spend_post_usd": 6.225283986,
+ "cost_settled": true,
+ "cost_wait_ms": 353,
+ "cost_usd": 0.014843674999999834,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.011061135,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 23739,
+  "cache_read_input_tokens": 224036,
+  "output_tokens": 11704,
+  "output_tokens_details": {
+   "thinking_tokens": 5669
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 23739
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 11704,
+   "cacheReadInputTokens": 224036,
+   "cacheCreationInputTokens": 23739,
+   "webSearchRequests": 0,
+   "costUSD": 0.011061135,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5669,
+   "cacheCreationEphemeral5mInputTokens": 23739,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 9,
+   "title": "Code Review Bench PR #14224 - Fix HINCRBYFLOAT removes field expiration on replica",
+   "author": "",
+   "baseSha": "5409da0922ecc8e3c07bbb0f39486426180a9958",
+   "headSha": "355e36ba625de12f9f9c633b7661930bfd640177"
+  },
+  "summary": "The PR changes HINCRBYFLOAT replication from HSET to HSETEX ... KEEPTTL so replicas keep a hash field's TTL. The replication idea is sound: rewriteClientCommandVector correctly retains the argv objects, shared.keepttl and shared.integers[1] are valid, and HSETEX KEEPTTL is the right primitive on the replica. However, the diff also drops HASH_SET_KEEP_TTL from the master-side hashTypeSet call in hincrbyfloatCommand (src/t_hash.c:2559). That is not part of the stated fix. Without that flag, hashTypeSet clears the field's TTL on the master (listpackExUpdateExpiry to HASH_LP_NO_TTL for listpacks, hfieldPersist for hashtables). The master now loses TTL on every HINCRBYFLOAT of a volatile field, which creates the same master/replica divergence the PR is meant to fix, just in the opposite direction. The existing test \"HINCRBYFLOAT - preserve expiration time of the field\" (tests/unit/type/hash-field-expire.tcl:851-857) asserts that the TTL survives and will fail. The new replication test does not catch this because it only checks TTL on the replica and never checks httl on the master after HINCRBYFLOAT.\n\nThe secondary change, making addHashFieldToReply non-static, is unrelated to the fix and has no prototype or header declaration in server.h.",
+  "verdict": "request_changes",
+  "verdictRationale": "A single-line regression on the master path breaks an existing TTL-preservation test and reintroduces the master/replica TTL divergence the PR is meant to fix. The fix is one flag restored. The replication rewrite itself looks correct once that is addressed.",
+  "architecture": {
+   "overview": "HINCRBYFLOAT computes the new value with hashTypeSet in src/t_hash.c and then rewrites the client command vector so the replication stream and AOF carry the final value rather than the increment. Before this PR the rewrite produced HSET key field value. HSET on a replica clears any field TTL, while the master keeps it, which causes divergence. Field TTL is governed by the HASH_SET_KEEP_TTL flag in hashTypeSet, which controls whether listpack and hashtable encodings keep or clear the field's expiry.\n\nThe PR switches the rewritten command to HSETEX key KEEPTTL FIELDS 1 field value, so replicas and AOF replay keep the existing TTL. It also drops HASH_SET_KEEP_TTL on the master-side write. That second change is the problem: the master now clears the TTL it is supposed to keep, so the replica is correct but the master is not.",
+   "steps": [
+    "Entry point: hincrbyfloatCommand in src/t_hash.c computes the new value, writes it with hashTypeSet, and then calls rewriteClientCommandVector so propagation emits the final value.",
+    "Master write path: hashTypeSet (src/t_hash.c ~line 940-1010) keeps the field's TTL only when HASH_SET_KEEP_TTL is passed. The PR removes that flag at src/t_hash.c:2559, which changes master behavior.",
+    "Propagation: the rewrite now emits HSETEX with KEEPTTL and the field, using shared.hsetex, shared.keepttl, shared.fields and shared.integers[1] (added or referenced in src/server.c and src/server.h).",
+    "Replica/AOF side: HSETEX KEEPTTL writes the value and preserves the existing field expiry, so replicas match the master's intended state.",
+    "Tests: a new replication-stream test in tests/unit/type/hash-field-expire.tcl checks the emitted HSETEX commands and that the replica keeps the TTL, but it does not check the master's TTL after HINCRBYFLOAT."
+   ],
+   "diagrams": [
+    {
+     "title": "HINCRBYFLOAT write and propagation path (after PR)",
+     "kind": "flowchart",
+     "description": "Shows the master write with the flag removed, and the rewritten HSETEX KEEPTTL propagated to the replica.",
+     "mermaid": "flowchart LR\n  C[Client HINCRBYFLOAT] --> F[hincrbyfloatCommand<br/>src/t_hash.c]\n  F --> S[hashTypeSet<br/>TAKE_VALUE only, no KEEP_TTL]\n  S --> M[(Master field TTL cleared)]\n  F --> R[rewriteClientCommandVector<br/>HSETEX key KEEPTTL FIELDS 1 f v]\n  R --> P[Replication stream / AOF]\n  P --> RP[Replica: HSETEX KEEPTTL keeps TTL]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Master-side HINCRBYFLOAT now clears field TTL by dropping HASH_SET_KEEP_TTL",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The diff changes the master-side write in `hincrbyfloatCommand` from `HASH_SET_TAKE_VALUE | HASH_SET_KEEP_TTL` to `HASH_SET_TAKE_VALUE`. The PR only needed to change the replicated command. Without `HASH_SET_KEEP_TTL`, `hashTypeSet` clears the field's expiry on the master: the listpack path calls `listpackExUpdateExpiry(..., HASH_LP_NO_TTL)` and the hashtable path calls `hfieldPersist`. So `HINCRBYFLOAT` on a field with a TTL now removes that TTL on the master.\n\nThis breaks the existing test `HINCRBYFLOAT - preserve expiration time of the field` (tests/unit/type/hash-field-expire.tcl:851-857), which expects the TTL to stay in the 1–20 range. It also recreates the divergence this PR is meant to fix: the master drops the TTL while the replica, which receives `HSETEX ... KEEPTTL`, keeps it.\n\n::diff{file=\"src/t_hash.c\" lines=\"2556-2579\"}\n\n::callout{type=\"warning\"}\nThe fix is to restore the flag on the master write. The replication rewrite does not need the master write to change.\n\n::suggestion{file=\"src/t_hash.c\" lines=\"2559\"}\n    hashTypeSet(c->db, o,c->argv[2]->ptr,new,HASH_SET_TAKE_VALUE | HASH_SET_KEEP_TTL);\n",
+    "files": [
+     "src/t_hash.c",
+     "tests/unit/type/hash-field-expire.tcl"
+    ],
+    "fixPrompt": "In `src/t_hash.c`, `hincrbyfloatCommand` (around line 2559), the `hashTypeSet` call was changed to pass only `HASH_SET_TAKE_VALUE`. Restore `HASH_SET_KEEP_TTL` so the master keeps the field's TTL, as `hincrbyCommand` (around line 2506) already does. Only the replicated command should change to HSETEX KEEPTTL. Then confirm the existing test `HINCRBYFLOAT - preserve expiration time of the field` in `tests/unit/type/hash-field-expire.tcl` passes.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 2559,
+     "lineEnd": 2559
+    }
+   },
+   {
+    "title": "New replication test never checks the master's TTL after HINCRBYFLOAT",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The new test runs `r -1 hincrbyfloat h1 f1 1.1` on the master and then asserts only on the replica: `assert_range [r httl h1 FIELDS 1 f1] 90 100` (replica). It never checks `r -1 httl h1 FIELDS 1 f1`. Because the replica keeps its TTL either way, the assertion would still pass even though the master has lost the TTL, which is the exact regression in the previous finding. The test can't fail in the scenario it's meant to guard against.\n\nAdd an assertion on the master side that the field's TTL is still in range after the increment, and make sure it is set before the replica-side checks.\n\n::code{file=\"tests/unit/type/hash-field-expire.tcl\" lines=\"1990-1997\"}\n\n::suggestion{file=\"tests/unit/type/hash-field-expire.tcl\" lines=\"1996\"}\n                assert_range [r -1 httl h1 FIELDS 1 f1] 90 100\n                assert_range [r httl h1 FIELDS 1 f1] 90 100\n",
+    "files": [
+     "tests/unit/type/hash-field-expire.tcl"
+    ],
+    "fixPrompt": "In `tests/unit/type/hash-field-expire.tcl`, the test `HINCRBYFLOAT command won't remove field expiration on replica` (starts around line 1960) checks the replica's TTL after `hincrbyfloat` on the master (around lines 1990-1997) but never checks the master's TTL. Add an assertion that `httl h1 FIELDS 1 f1` on the master (`r -1 httl ...`) is still in the 90-100 range after the increment, alongside the existing replica check. That way the test fails if the master loses the TTL.",
+    "commentAnchor": {
+     "file": "tests/unit/type/hash-field-expire.tcl",
+     "lineStart": 1996,
+     "lineEnd": 1996
+    }
+   },
+   {
+    "title": "addHashFieldToReply made non-static without need",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The diff removes `static` from `addHashFieldToReply` (src/t_hash.c:2576). Nothing in this change calls it from outside the file, and there is no prototype in `server.h`. This widens the symbol's linkage for no reason, and strict builds with `-Wmissing-prototypes` may warn. Unless there is a caller in another file that this PR doesn't show, revert it to `static`.\n\n::diff{file=\"src/t_hash.c\" lines=\"2576-2576\"}\n",
+    "files": [
+     "src/t_hash.c"
+    ],
+    "fixPrompt": "In `src/t_hash.c`, `addHashFieldToReply` (around line 2576) was made non-static in this PR. Nothing outside the file uses it, so restore the `static` qualifier. If another translation unit does need it, add a declaration to `src/server.h` instead.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 2576,
+     "lineEnd": 2576
+    }
+   },
+   {
+    "title": "Rewrite to HSETEX KEEPTTL is the right fix for the replica-side TTL loss",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The replication change itself is good. `rewriteClientCommandVector` increments the refcount of every argument it receives, and `c->argv[1]`, `c->argv[2]`, the shared `keepttl`, `fields`, and `hsetex` objects, and `shared.integers[1]` are all valid. `newobj` is decremented after the call, which is correct. Using `HSETEX ... KEEPTTL` on the replica preserves the field's TTL while still propagating the final computed value, so float-formatting determinism is kept. The 7.4 scope limitation in the PR description is also called out clearly.\n\n::code{file=\"src/t_hash.c\" lines=\"2566-2572\"}\n",
+    "files": [
+     "src/t_hash.c",
+     "src/server.c",
+     "src/server.h"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":9,\"title\":\"Code Review Bench PR #14224 - Fix HINCRBYFLOAT removes field expiration on replica\",\"author\":\"\",\"baseSha\":\"5409da0922ecc8e3c07bbb0f39486426180a9958\",\"headSha\":\"355e36ba625de12f9f9c633b7661930bfd640177\"},\"summary\":\"The PR changes HINCRBYFLOAT replication from HSET to HSETEX ... KEEPTTL so replicas keep a hash field's TTL. The replication idea is sound: rewriteClientCommandVector correctly retains the argv objects, shared.keepttl ",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 4
+}

@@ -1,0 +1,349 @@
+{
+ "id": "redis#3",
+ "repo": "redis",
+ "num": 3,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:50:18.970Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Direct malloc/free instead of zmalloc/zfree",
+   "description": "The rule requires using zmalloc() and zfree() wrappers for memory allocation instead of direct malloc() and free() calls outside of the zmalloc implementation",
+   "file_path": "src/cluster.c",
+   "start_line": 1109,
+   "end_line": 1124,
+   "problematic_code_snippet": "    /* Allocate temporary buffer for slot tracking */\n    int *slot_buffer = malloc(sizeof(int) * keys_result->numkeys);\n\n    for (int j = 0; j < keys_result->numkeys; j++) {\n        robj *this_key = argv[keys_result->keys[j].pos];\n        int this_slot = (int)keyHashSlot((char*)this_key->ptr, sdslen(this_key->ptr));\n        slot_buffer[j] = this_slot;\n\n        if (first_slot == INVALID_CLUSTER_SLOT)\n            first_slot = this_slot;\n        else if (first_slot != this_slot) {\n            free(slot_buffer);\n            return CLUSTER_CROSSSLOT;\n        }\n    }\n    free(slot_buffer);",
+   "rule_name": "Use zmalloc/zfree Wrappers Instead of Direct malloc/free"
+  },
+  {
+   "title": "Off-by-one error causing buffer overflow in extractSlotFromKeysResult",
+   "description": "The loop condition in extractSlotFromKeysResult uses `j <= keys_result->numkeys` instead of `j < keys_result->numkeys`, causing an off-by-one error. This results in accessing one element beyond the valid range of both the `keys_result->keys` array and the `slot_buffer` array. When numkeys is N, valid indices are 0 to N-1, but the loop accesses index N, leading to out-of-bounds memory access. This can cause crashes, memory corruption, or unpredictable behavior when processing multi-key commands in cluster mode.",
+   "file_path": "src/cluster.c",
+   "start_line": 1112,
+   "end_line": 1123,
+   "problematic_code_snippet": "    /* Allocate temporary buffer for slot tracking */\n    int *slot_buffer = malloc(sizeof(int) * keys_result->numkeys);\n\n    for (int j = 0; j <= keys_result->numkeys; j++) {\n        robj *this_key = argv[keys_result->keys[j].pos];\n        int this_slot = (int)keyHashSlot((char*)this_key->ptr, sdslen(this_key->ptr));\n        slot_buffer[j] = this_slot;"
+  },
+  {
+   "title": "Incorrect condition causes cross-slot check for keyless commands",
+   "description": "The condition was changed from `num_keys > 0` to `num_keys >= 0`, which incorrectly includes the case where num_keys equals 0. For keyless commands (num_keys == 0), the slot value may be uninitialized or contain arbitrary data from extractKeysAndSlot. The code will then spuriously check if this uninitialized slot equals CLUSTER_CROSSSLOT, potentially causing false positive cross-slot errors for legitimate keyless commands. This breaks the handling of keyless commands like PING, INFO, or SELECT in cluster mode.",
+   "file_path": "src/server.c",
+   "start_line": 4141,
+   "end_line": 4147,
+   "problematic_code_snippet": "    } else if (num_keys >= 0) {\n        /* Handle cross-slot keys: mark error and reset slot. */\n        if (pcmd->slot == CLUSTER_CROSSSLOT) {\n            pcmd->read_error = CLIENT_READ_CROSS_SLOT;\n            pcmd->slot = INVALID_CLUSTER_SLOT;\n        }\n    }"
+  },
+  {
+   "title": "Uninitialized slot value for keyless commands due to missing assignment",
+   "description": "The function extractKeysAndSlot now only sets the slot value when `num_keys > 0`, leaving the slot pointer uninitialized when num_keys is 0 (keyless commands). The caller (preprocessCommand in server.c) expects the slot to always be set by this function. For keyless commands, the slot will contain garbage data or whatever value was previously at that memory location, leading to unpredictable behavior in downstream slot validation logic and potentially causing commands to be incorrectly routed or rejected in cluster mode.",
+   "file_path": "src/db.c",
+   "start_line": 3201,
+   "end_line": 3203,
+   "problematic_code_snippet": "    if (num_keys > 0) {\n        *slot = extractSlotFromKeysResult(argv, result);\n    }\n    return num_keys;"
+  },
+  {
+   "title": "Call to extractSlotFromKeysResult without a visible prototype (implicit declaration)",
+   "description": "src/db.c now calls extractSlotFromKeysResult(), but the diff does not add a function prototype in any included header. In C99+ (as used by Redis), calling a function without a prior declaration results in an implicit function declaration diagnostic, which will fail the build when compiling with -Werror.",
+   "file_path": "src/db.c",
+   "start_line": 444,
+   "end_line": 444,
+   "problematic_code_snippet": "    /* Extract slot from the keys result. */\n    int slot = extractSlotFromKeysResult(argv, &result);",
+   "rule_name": "Rule 4: Build Must Compile Without Warnings When -Werror is Enabled"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "cfae1193e603a05cacb52b3841ff977e7cbade50",
+ "diff_chars": 10064,
+ "diff_lines": 234,
+ "user_prompt_chars": 11089,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 63834,
+ "wall_ms": 65682,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "extractSlotFromKeysResult|extractKeysAndSlot|getSlotFromCommand|GETSLOT_|CLUSTER_CROSSSLOT|INVALID_CLUSTER_SLOT"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 13,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.173139711,
+ "spend_post_usd": 6.189976886,
+ "cost_settled": true,
+ "cost_wait_ms": 320,
+ "cost_usd": 0.016837175000000038,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.01071694,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 19748,
+  "cache_read_input_tokens": 111214,
+  "output_tokens": 14271,
+  "output_tokens_details": {
+   "thinking_tokens": 6439
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 19748
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 14271,
+   "cacheReadInputTokens": 111214,
+   "cacheCreationInputTokens": 19748,
+   "webSearchRequests": 0,
+   "costUSD": 0.01071694,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 6439,
+   "cacheCreationEphemeral5mInputTokens": 19748,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 3,
+   "title": "Code Review Bench PR #14562 - Clean up lookahead-related code",
+   "author": "",
+   "baseSha": "77a250951f757ae92ec9e15ffa32105dbd5c6f2e",
+   "headSha": "cfae1193e603a05cacb52b3841ff977e7cbade50"
+  },
+  "summary": "The PR consolidates cluster slot extraction. `getSlotFromCommand()` in `db.c` now delegates to `extractSlotFromKeysResult()` in `cluster.c` instead of carrying its own loop. The cross-slot sentinel moves from `GETSLOT_CROSSSLOT` to a new `CLUSTER_CROSSSLOT` (-2), so `INVALID_CLUSTER_SLOT` (-1) now means \"no keys\" only. The `GETSLOT_*` macros are removed, and I found no remaining references to them in the repo. `preprocessCommand()` maps the cross-slot result to `CLIENT_READ_CROSS_SLOT` and resets the slot. The direction is sound, but the new loop in `extractSlotFromKeysResult()` is broken. It iterates one element past the end of `keys_result->keys`, writes past a freshly malloc'd buffer that is never read, and for single-key commands in cluster mode it hashes the command name instead of the key. As written, that very likely makes most keyed commands in cluster mode fail with a cross-slot error.\n\nBeyond the loop, the PR changes some behavior it describes as cleanup. Keyed commands in standalone mode now get `slot = -1` instead of `0`. `extractKeysAndSlot()` no longer initializes `*slot` when there are no keys, which relies on callers pre-initializing it. I did not run the cluster test suite. Existing tests such as `tests/unit/cluster/multi-slot-operations.tcl` should catch the loop bug immediately, so the author should run them before this merges.",
+  "verdict": "request_changes",
+  "verdictRationale": "The off-by-one (`j <= numkeys`) is a heap and array out-of-bounds access on the hot path for every keyed command in cluster mode. Because `keys[1]` of a fresh `GETKEYS_RESULT_INIT` is zero, a single-key command hashes `argv[0]` (the command name) and will almost always be rejected as CROSSSLOT. This must be fixed before merge. The malloc, the standalone-slot behavior change, and the `extractKeysAndSlot` out-param change should also be addressed or explicitly justified.",
+  "architecture": {
+   "overview": "Before this PR, slot extraction lived in two places. `extractSlotFromKeysResult()` in `src/cluster.c` took a parsed keys result and returned a slot, or INVALID for both no-keys and cross-slot. `getSlotFromCommand()` in `src/db.c` repeated its own key-hash loop and used `GETSLOT_NOKEYS` and `GETSLOT_CROSSSLOT` sentinels. On the request path, `preprocessCommand()` in `src/server.c` calls `extractKeysAndSlot()` in `src/db.c`, which fills a `pendingCommand` (`pcmd->slot` and `pcmd->keys_result`) before routing. Cross-slot is recorded as `CLIENT_READ_CROSS_SLOT` on `pcmd`.\n\nThe PR makes `extractSlotFromKeysResult()` the single source of slot extraction. It adds a distinct `CLUSTER_CROSSSLOT` sentinel alongside `INVALID_CLUSTER_SLOT`, and `getSlotFromCommand()` and `extractKeysAndSlot()` route through it. The `GETSLOT_*` macros are removed, and callers in `cluster_asm.c` and `cluster_slot_stats.c` switch to the new names. The core loop inside the consolidated function is where the defect sits.",
+   "steps": [
+    "Entry point: a client command enters `preprocessCommand()` in `src/server.c`, which calls `extractKeysAndSlot()` (`src/db.c`) to get the keys and an initial slot.",
+    "Key extraction: `extractKeysAndSlot()` calls `getKeysFromCommandWithSpecs()` or the channel path, then, if `num_keys > 0`, calls `extractSlotFromKeysResult()` in `src/cluster.c`. This PR changes that call so the slot is only written when keys exist.",
+    "Consolidated slot logic: `extractSlotFromKeysResult()` now returns the slot, `INVALID_CLUSTER_SLOT` for no keys or cluster disabled, or `CLUSTER_CROSSSLOT` for mixed slots. Its loop bound is wrong (see the high-severity finding) and it allocates a buffer it never reads.",
+    "Cross-slot handling: `preprocessCommand()` maps `CLUSTER_CROSSSLOT` to `read_error = CLIENT_READ_CROSS_SLOT` and resets `pcmd->slot` to `INVALID_CLUSTER_SLOT`, so downstream routing sees only valid or invalid slots.",
+    "Other consumers: `getSlotFromCommand()` now delegates to the same function and is used by `cluster_asm.c` for migration propagation and cross-slot rejection. `cluster_slot_stats.c` gates on `INVALID_CLUSTER_SLOT`, which is unchanged semantically. `networking.c` only gets a comment update."
+   ],
+   "diagrams": [
+    {
+     "kind": "flowchart",
+     "title": "Slot extraction after the PR",
+     "description": "Keyed commands flow through extractKeysAndSlot into the consolidated extractSlotFromKeysResult, which now returns CLUSTER_CROSSSLOT for mixed slots. getSlotFromCommand shares the same path.",
+     "mermaid": "flowchart LR\n  A[\"Client command\"] --> B[\"preprocessCommand (server.c)\"]\n  B --> C[\"extractKeysAndSlot (db.c)\"]\n  C --> D[\"getKeysFromCommandWithSpecs\"]\n  C -->|\"num_keys > 0\"| E[\"extractSlotFromKeysResult (cluster.c)\"]\n  E -->|\"single slot\"| F[\"pcmd->slot\"]\n  E -->|\"CLUSTER_CROSSSLOT\"| G[\"read_error = CROSS_SLOT, slot reset\"]\n  H[\"getSlotFromCommand (db.c)\"] --> E\n  H --> I[\"cluster_asm.c propagation\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Off-by-one loop reads past keys array and heap buffer, misreports single-key commands",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The consolidated loop iterates `for (int j = 0; j <= keys_result->numkeys; j++)`. That's one iteration too many, and it's the root problem here.\n\nOn the last iteration `j == numkeys`, so it reads `keys_result->keys[numkeys]`, which is past the valid range. It then writes `slot_buffer[numkeys]`, past the end of the `malloc(sizeof(int) * numkeys)` allocation. That's a heap out-of-bounds write, and ASan would flag it.\n\nThe read is also a logic bug. `GETKEYS_RESULT_INIT` zero-fills `keysbuf` past the first element, so for a single-key command `keys[1].pos == 0` and the loop hashes `argv[0]`, the command name, as a second key. Its slot almost never matches the real key's slot, so a plain single-key command in cluster mode returns `CLUSTER_CROSSSLOT` and gets rejected.\n\n::diff{file=\"src/cluster.c\" lines=\"1110-1123\"}\n\n::callout{type=\"warning\"}\nThis affects every keyed command in cluster mode, not just edge cases. Existing cluster tests should fail immediately. Please run `tests/unit/cluster/` before any further review.\n\n::suggestion{file=\"src/cluster.c\" lines=\"1107-1123\"}\n    int first_slot = INVALID_CLUSTER_SLOT;\n    for (int j = 0; j < keys_result->numkeys; j++) {\n        robj *this_key = argv[keys_result->keys[j].pos];\n        int this_slot = (int)keyHashSlot((char*)this_key->ptr, sdslen(this_key->ptr));\n        if (first_slot == INVALID_CLUSTER_SLOT)\n            first_slot = this_slot;\n        else if (first_slot != this_slot)\n            return CLUSTER_CROSSSLOT;\n    }\n    return first_slot;\n",
+    "files": [
+     "src/cluster.c"
+    ],
+    "fixPrompt": "In `src/cluster.c`, `extractSlotFromKeysResult()` (around lines 1103-1124) has an off-by-one: the loop condition `j <= keys_result->numkeys` reads `keys_result->keys[numkeys]` and writes past the heap buffer. Change the bound to `j < keys_result->numkeys` so only valid key positions are visited. Verify that single-key commands in cluster mode no longer compare against `argv[0]`. Keep the existing return contract: first slot for same-slot keys, `CLUSTER_CROSSSLOT` for mixed slots, `INVALID_CLUSTER_SLOT` for no keys or cluster disabled. Remove the `slot_buffer` allocation as part of the same change (see the related finding).",
+    "commentAnchor": {
+     "file": "src/cluster.c",
+     "lineStart": 1112,
+     "lineEnd": 1115
+    }
+   },
+   {
+    "title": "Unused heap allocation on every keyed cluster command, with no NULL check",
+    "severity": "high",
+    "category": "performance",
+    "body": "`extractSlotFromKeysResult()` now calls `malloc()` on every keyed command in cluster mode, even though `slot_buffer` is only written and never read. That's a pointless allocation and free on the hot path, and it's the main reason the loop bug above can corrupt memory.\n\nThe `malloc` result is also unchecked. The code would write through a NULL pointer on allocation failure.\n\nThere's a related latent issue. `getSlotFromCommand()` previously handled negative `numkeys` (the result of a failed key extraction) by returning NOKEYS, with no allocation. Now the `numkeys == 0` guard doesn't catch negatives, so `malloc(sizeof(int) * numkeys)` is called with a huge size_t. It fails by accident, not by design.\n\n::diff{file=\"src/cluster.c\" lines=\"1107-1123\"}\n\n::callout{type=\"perf\"}\nThe buffer serves no purpose. Removing it fixes the performance cost, the unchecked NULL, and the negative-count path in one change. If the author wants a guard for negatives, use `numkeys <= 0` in the early return.",
+    "files": [
+     "src/cluster.c"
+    ],
+    "fixPrompt": "In `src/cluster.c`, `extractSlotFromKeysResult()` allocates `slot_buffer` with malloc on every call, but the buffer is written and never read. Remove the allocation, the `slot_buffer[j] = this_slot` store, and the `free` calls. Also change the early-return guard `keys_result->numkeys == 0` to `keys_result->numkeys <= 0` so a negative count from a failed key extraction returns `INVALID_CLUSTER_SLOT` without any allocation. No new allocation should remain on this path.",
+    "commentAnchor": {
+     "file": "src/cluster.c",
+     "lineStart": 1107,
+     "lineEnd": 1110
+    }
+   },
+   {
+    "title": "Standalone keyed commands now get slot -1 instead of 0 without a stated reason",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The old `extractSlotFromKeysResult()` returned `0` when cluster mode was disabled and keys were present. The new version returns `INVALID_CLUSTER_SLOT` for `!server.cluster_enabled`, and `extractKeysAndSlot()` writes that into `pcmd->slot`.\n\nThe PR's description calls this \"more unified\", but it's a real semantic change. I checked the readers I could find: `memory_prefetch.c` already guards with `slot > 0 ? slot : 0`, and the slot-stats paths are gated on `cluster_enabled`. So I don't see a concrete breakage. Still, the change isn't mentioned, and any reader that assumes keyed commands have a slot will now see -1.\n\n::diff{file=\"src/cluster.c\" lines=\"1103-1105\"}\n\nIf the new behavior is intended, say so in the PR description. If not, keep the early return for cluster-disabled separate from the no-keys case.",
+    "files": [
+     "src/cluster.c",
+     "src/db.c"
+    ],
+    "fixPrompt": "In `src/cluster.c`, `extractSlotFromKeysResult()` now returns `INVALID_CLUSTER_SLOT` when `!server.cluster_enabled`. The old code returned 0. Confirm that no reader of `pcmd->slot` or `c->slot` in standalone mode depends on 0 (check `memory_prefetch.c`, `cluster_slot_stats.c`, and `networking.c`). If the change is intended, document it in the PR description. Otherwise restore the previous return value for the cluster-disabled case.",
+    "commentAnchor": {
+     "file": "src/cluster.c",
+     "lineStart": 1103,
+     "lineEnd": 1105
+    }
+   },
+   {
+    "title": "extractKeysAndSlot no longer initializes *slot for no-key commands",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The old code set `*slot = INVALID_CLUSTER_SLOT` unconditionally before calling the extractor. The new code only writes `*slot` when `num_keys > 0`.\n\nThe only current caller, `preprocessCommand()`, sets `pcmd->slot = INVALID_CLUSTER_SLOT` at `server.c:4110` before the call. So the code is correct today, but the function's contract now depends on each caller doing its own initialization. A future caller that passes an uninitialized `*slot` gets garbage on no-key commands.\n\n::diff{file=\"src/db.c\" lines=\"3198-3205\"}\n\nRestore the explicit initialization inside `extractKeysAndSlot()`. That keeps the function's own contract clear.",
+    "files": [
+     "src/db.c",
+     "src/server.c"
+    ],
+    "fixPrompt": "In `src/db.c`, `extractKeysAndSlot()` (around line 3185) no longer sets `*slot` when `num_keys <= 0`. Restore `*slot = INVALID_CLUSTER_SLOT;` before the `if (num_keys > 0)` block so the out-parameter is always defined, whatever the caller did beforehand. This keeps the function's contract independent of `preprocessCommand()`'s own initialization at `server.c:4110`.",
+    "commentAnchor": {
+     "file": "src/db.c",
+     "lineStart": 3198,
+     "lineEnd": 3205
+    }
+   },
+   {
+    "title": "Cosmetic: redundant else-if condition in preprocessCommand",
+    "severity": "low",
+    "category": "style",
+    "body": "The branch was changed from `num_keys > 0` to `num_keys >= 0`. After the earlier `num_keys < 0` return, that makes the `else if` equivalent to a plain `else`. The inner cross-slot check is correct, but the condition reads as if it's doing something.\n\n::diff{file=\"src/server.c\" lines=\"4138-4148\"}\n\nUse a plain `else`, or drop the condition.",
+    "files": [
+     "src/server.c"
+    ],
+    "fixPrompt": "In `src/server.c`, `preprocessCommand()` around lines 4138-4148 uses `else if (num_keys >= 0)` after an earlier `num_keys < 0` return. Replace it with a plain `else` so the code doesn't imply a separate case. The cross-slot handling inside the branch should stay the same.",
+    "commentAnchor": {
+     "file": "src/server.c",
+     "lineStart": 4140,
+     "lineEnd": 4148
+    }
+   },
+   {
+    "title": "Consolidation removes duplicated slot logic and sentinel confusion",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Good direction. Before, `getSlotFromCommand()` and `extractSlotFromKeysResult()` each had their own loop and their own cross-slot handling. Now there's one function that determines the slot, and `getSlotFromCommand()` is a thin wrapper.\n\nSplitting the cross-slot sentinel (`CLUSTER_CROSSSLOT`) from `INVALID_CLUSTER_SLOT` also removes an overloaded value. Before, `INVALID_CLUSTER_SLOT` meant both \"no keys\" and \"cross-slot\", which is why `preprocessCommand()` had to infer cross-slot from `num_keys > 0`. The new explicit sentinel makes that check direct.\n\nThe `GETSLOT_*` macros are gone, and I confirmed there are no remaining references in the repo, including `deps/` and `tests/`. The `networking.c` TODO is also replaced with a clear comment.",
+    "files": [
+     "src/cluster.c",
+     "src/db.c",
+     "src/server.c",
+     "src/cluster.h",
+     "src/cluster_asm.c"
+    ]
+   },
+   {
+    "title": "No test coverage added for the consolidated path",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The PR changes the core slot-classification logic but adds no tests. The loop bug above would have been caught by any single-key cluster command, and the existing cluster suite under `tests/unit/cluster/` covers both single-key and cross-slot behavior (for example `multi-slot-operations.tcl`).\n\nThat suggests the suite wasn't run before the PR was posted. Please run it, and consider adding a unit-level assertion that `getSlotFromCommand()` returns `CLUSTER_CROSSSLOT` for mixed-slot keys and `INVALID_CLUSTER_SLOT` for keyless commands, so the sentinel contract is tested directly.",
+    "files": [
+     "src/db.c",
+     "src/cluster.c"
+    ],
+    "fixPrompt": "Run the cluster test suite (`tests/unit/cluster/`) on this branch, focusing on `multi-slot-operations.tcl` and `slot-ownership.tcl`, which cover single-key and cross-slot commands. Fix any failures caused by `extractSlotFromKeysResult()` in `src/cluster.c`. Then add a test or assertion covering the three return cases: a slot for same-slot keys, `CLUSTER_CROSSSLOT` for mixed slots, and `INVALID_CLUSTER_SLOT` for keyless commands. Put it alongside the existing cross-slot tests in `tests/unit/cluster/`.",
+    "commentAnchor": {
+     "file": "src/db.c",
+     "lineStart": 430,
+     "lineEnd": 441
+    }
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":3,\"title\":\"Code Review Bench PR #14562 - Clean up lookahead-related code\",\"author\":\"\",\"baseSha\":\"77a250951f757ae92ec9e15ffa32105dbd5c6f2e\",\"headSha\":\"cfae1193e603a05cacb52b3841ff977e7cbade50\"},\"summary\":\"The PR consolidates cluster slot extraction. `getSlotFromCommand()` in `db.c` now delegates to `extractSlotFromKeysResult()` in `cluster.c` instead of carrying its own loop. The cross-slot sentinel moves from `GETSLOT_CROSSSLOT` to a new `",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

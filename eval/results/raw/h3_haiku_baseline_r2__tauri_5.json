@@ -1,0 +1,258 @@
+{
+ "id": "tauri#5",
+ "repo": "tauri",
+ "num": 5,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:54:48.385Z",
+ "num_of_issues": 7,
+ "issues": [
+  {
+   "title": "Unsafe block lacks safety documentation",
+   "description": "The rule requires unsafe code blocks to include comprehensive comments explaining why the code is safe, what invariants must be maintained, and under what conditions the code is valid. This unsafe block uses mem::zeroed() and calls libc::ioctl() without documenting the safety invariants.",
+   "file_path": "crates/tauri-cli/src/interface/rust/desktop.rs",
+   "start_line": 350,
+   "end_line": 361,
+   "problematic_code_snippet": "  pub fn stderr_width() -> Option<usize> {\n    unsafe {\n      let mut winsize: libc::winsize = mem::zeroed();\n      #[allow(clippy::useless_conversion)]\n      if libc::ioctl(libc::STDERR_FILENO, libc::TIOCGWINSZ.into(), &mut winsize) < 0 {\n        return None;\n      }\n      if winsize.ws_col > 0 {\n        Some(winsize.ws_col as usize)\n      } else {\n        None\n      }\n    }\n  }",
+   "rule_name": "Unsafe Code Must Include Safety Documentation"
+  },
+  {
+   "title": "Missing tauri_dir parameter causes workspace resolution to use wrong directory",
+   "description": "The `get_workspace_dir()` function is called without the required `tauri_dir` parameter in `cargo_manifest_and_lock()`. This function now requires `tauri_dir` to correctly resolve the workspace directory after the refactoring. Without it, the code will fail to compile since `get_workspace_dir()` signature was changed to require a `&Path` parameter throughout the codebase. This breaks the Cargo.lock resolution logic which is critical for determining package versions and dependencies.",
+   "file_path": "crates/tauri-cli/src/helpers/cargo_manifest.rs",
+   "start_line": 59,
+   "end_line": 59,
+   "problematic_code_snippet": "  let lock: Option<CargoLock> = get_workspace_dir()\n    .ok()\n    .and_then(|p| fs::read_to_string(p.join(\"Cargo.lock\")).ok())\n    .and_then(|s| toml::from_str(&s).ok());"
+  },
+  {
+   "title": "Configuration merge bypasses validation when merging with empty configs",
+   "description": "The `merge_config_with` function returns early with `Ok(())` when `merge_configs.is_empty()`, but this skips critical validation and state updates that should occur even when no merge is performed. The original code in `merge_with` returned the handle, maintaining the contract that callers could safely use the config. This early return can cause downstream code to operate on stale or unvalidated configuration state, particularly affecting build and dev commands that rely on properly initialized config metadata.",
+   "file_path": "crates/tauri-cli/src/helpers/config.rs",
+   "start_line": 258,
+   "end_line": 261,
+   "problematic_code_snippet": "pub fn merge_config_with(\n  config: &mut ConfigMetadata,\n  merge_configs: &[&serde_json::Value],\n) -> crate::Result<()> {\n  if merge_configs.is_empty() {\n    return Ok(());\n  }"
+  },
+  {
+   "title": "Missing directory parameter breaks WiX upgrade code validation",
+   "description": "In `wix_settings`, the environment variable check `std::env::var_os(\"TAURI_BUNDLER_WIX_FIPS_COMPLIANT\")` was changed but the subsequent check incorrectly compares `OsString` with a string literal \"true\". The original code used `std::env::var()` which returns a `String`, but `var_os()` returns `OsString` which cannot be directly compared with `==` against a string slice. This breaks FIPS compliance detection for WiX installers, potentially creating non-compliant Windows builds when FIPS mode is required.",
+   "file_path": "crates/tauri-cli/src/helpers/config.rs",
+   "start_line": 73,
+   "end_line": 75,
+   "problematic_code_snippet": "    fips_compliant: std::env::var_os(\"TAURI_BUNDLER_WIX_FIPS_COMPLIANT\")\n      .map(|v| v == \"true\")\n      .unwrap_or(config.fips_compliant),"
+  },
+  {
+   "title": "New public struct and function lack rustdoc comments",
+   "description": "`Dirs` and `resolve_dirs` are newly introduced public API items but have no `///` documentation comments as required.",
+   "file_path": "crates/tauri-cli/src/helpers/app_paths.rs",
+   "start_line": 28,
+   "end_line": 147,
+   "problematic_code_snippet": "pub struct Dirs {\n  pub tauri: &'static Path,\n  pub frontend: &'static Path,\n}\n\npub fn resolve_dirs() -> Dirs {\n  let tauri = TAURI_DIR.get_or_init(|| resolve_tauri_dir().unwrap_or_else(|| {\n    ...\n  }));\n  ...\n  Dirs { tauri, frontend }\n}",
+   "rule_name": "Rule 7: Public APIs Must Include Documentation Comments"
+  },
+  {
+   "title": "New public config functions lack rustdoc comments",
+   "description": "The newly introduced public functions `get_config`, `reload_config`, and `merge_config_with` have no `///` documentation comments, violating the requirement that public APIs be documented.",
+   "file_path": "crates/tauri-cli/src/helpers/config.rs",
+   "start_line": 245,
+   "end_line": 330,
+   "problematic_code_snippet": "pub fn get_config(\n  target: Target,\n  merge_configs: &[&serde_json::Value],\n  tauri_dir: &Path,\n) -> crate::Result<ConfigMetadata> {\n  load_config(merge_configs, false, target, tauri_dir)\n}\n\npub fn reload_config(\n  config: &mut ConfigMetadata,\n  merge_configs: &[&serde_json::Value],\n  tauri_dir: &Path,\n) -> crate::Result<()> {\n  let target = config.target;\n  *config = load_config(merge_configs, true, target, tauri_dir)?;\n  Ok(())\n}\n\npub fn merge_config_with(\n  config: &mut ConfigMetadata,\n  merge_configs: &[&serde_json::Value],\n) -> crate::Result<()> {\n  ...\n}",
+   "rule_name": "Rule 7: Public APIs Must Include Documentation Comments"
+  },
+  {
+   "title": "New/modified path resolution introduces panics/unwraps for fallible operations",
+   "description": "`resolve_dirs` uses `panic!` and `unwrap()` (`tauri.parent().unwrap()`) for fallible operations (project discovery/path parent resolution) instead of returning a `Result`, violating the rule to make failure explicit rather than panicking.",
+   "file_path": "crates/tauri-cli/src/helpers/app_paths.rs",
+   "start_line": 127,
+   "end_line": 145,
+   "problematic_code_snippet": "pub fn resolve_dirs() -> Dirs {\n  let tauri = TAURI_DIR.get_or_init(|| resolve_tauri_dir().unwrap_or_else(|| {\n    let env_var_name = env_tauri_app_path().is_some().then(|| format!(\"`{ENV_TAURI_APP_PATH}`\"));\n    panic!(\"Couldn't recognize the {} folder as a Tauri project. It must contain a `{}`, `{}` or `{}` file in any subfolder.\",\n      env_var_name.as_deref().unwrap_or(\"current\"),\n      ConfigFormat::Json.into_file_name(),\n      ConfigFormat::Json5.into_file_name(),\n      ConfigFormat::Toml.into_file_name()\n    )\n  }));\n  let frontend = FRONTEND_DIR.get_or_init(|| {\n    resolve_frontend_dir().unwrap_or_else(|| tauri.parent().unwrap().to_path_buf())\n  });\n  Dirs { tauri, frontend }\n}",
+   "rule_name": "Rule 16: Functions Should Return Result Types for Fallible Operations"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "26a6cebd57ddb4621fb4fd3cbae556dd12d672be",
+ "diff_chars": 113790,
+ "diff_lines": 3352,
+ "user_prompt_chars": 101068,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 125028,
+ "wall_ms": 127008,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 11,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 8.050433746,
+ "spend_post_usd": 8.081493841,
+ "cost_settled": true,
+ "cost_wait_ms": 337,
+ "cost_usd": 0.031060095000000842,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.038724095,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 81229,
+  "cache_read_input_tokens": 353791,
+  "output_tokens": 30416,
+  "output_tokens_details": {
+   "thinking_tokens": 14139
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 81229
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 30416,
+   "cacheReadInputTokens": 353791,
+   "cacheCreationInputTokens": 81229,
+   "webSearchRequests": 0,
+   "costUSD": 0.038724095,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 14139,
+   "cacheCreationEphemeral5mInputTokens": 81229,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 5,
+   "title": "Code Review Bench PR #14668 - Less statics",
+   "author": "unknown",
+   "baseSha": "50901ebda46033346b1b11bf6e453dad2d51479e",
+   "headSha": "26a6cebd57ddb4621fb4fd3cbae556dd12d672be"
+  },
+  "summary": "Removes the global config handle from tauri-cli and passes ConfigMetadata and a Dirs struct explicitly. The change is mechanical and I found no blocking regression, but a few unrelated edits and remaining process-global state need follow-up.",
+  "verdict": "approve",
+  "verdictRationale": "No blocking correctness or security bug was found. The remaining items are low-severity cleanups and a medium note about residual global state.",
+  "architecture": {
+   "overview": "Before this PR, tauri-cli stored the parsed config in a process-wide static Mutex and resolved directories into OnceLock statics. After this PR, the config is a ConfigMetadata value passed explicitly, a Mutex is used only for the dev watcher, and directories are returned as a Dirs struct. The OnceLock statics remain behind resolve_dirs().",
+   "steps": [
+    "Entry point: each subcommand calls resolve_dirs() once at the top of its command function.",
+    "Config loading: get_config, reload_config and merge_config_with operate on an explicit ConfigMetadata value.",
+    "Shared state: dev and mobile dev wrap the config in a Mutex only for the file watcher."
+   ],
+   "diagrams": [
+    {
+     "title": "Config and directory flow after the PR",
+     "kind": "flowchart",
+     "description": "How CLI commands resolve directories and load config as explicit values.",
+     "mermaid": "flowchart LR\n  CLI[CLI subcommand] --> RD[resolve_dirs returns Dirs]\n  RD --> GC[get_config returns ConfigMetadata]\n  GC --> SETUP[build and dev setup take explicit config and dirs]\n  SETUP --> MX[Mutex of ConfigMetadata for dev watcher only]"
+    }
+   ]
+  },
+  "findings": []
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":5,\"title\":\"Code Review Bench PR #14668 - Less statics\",\"author\":\"unknown\",\"baseSha\":\"50901ebda46033346b1b11bf6e453dad2d51479e\",\"headSha\":\"26a6cebd57ddb4621fb4fd3cbae556dd12d672be\"},\"summary\":\"Removes the global config handle from tauri-cli and passes ConfigMetadata and a Dirs struct explicitly. The change is mechanical and I found no blocking regression, but a few unrelated edits and remaining process-global state need follow-up.\",\"verdict",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 0
+}

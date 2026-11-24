@@ -1,0 +1,386 @@
+{
+ "id": "prefect#7",
+ "repo": "prefect",
+ "num": 7,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T08:12:06.988Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Logger uses direct logging.getLogger",
+   "description": "The rule requires logger instances to be created using the pattern `logger: \"logging.Logger\" = get_logger(\"module_name\")` but this code uses direct `logging.getLogger()` call without proper type annotation or using the standard get_logger utility",
+   "file_path": "src/prefect/server/events/triggers.py",
+   "start_line": 71,
+   "end_line": 73,
+   "problematic_code_snippet": "import logging\n\nlogger = logging.getLogger(__name__)",
+   "rule_name": "Logger Instances Must Follow Standard Initialization Pattern"
+  },
+  {
+   "title": "Advisory lock uses non-deterministic hash breaking concurrency control",
+   "description": "The advisory lock key generation uses Python's hash() function on the trigger ID string, which is non-deterministic across different Python processes due to hash randomization. This means different workers evaluating the same trigger will acquire different advisory locks, defeating the entire purpose of serializing concurrent evaluations. The original implementation correctly used int(trigger.id) to ensure all workers use the same lock key for a given trigger. This bug reintroduces the race condition that the PR was designed to fix, allowing multiple workers to fire the compound trigger concurrently.",
+   "file_path": "src/prefect/server/events/models/composite_trigger_child_firing.py",
+   "start_line": 38,
+   "end_line": 45,
+   "problematic_code_snippet": "    if dialect.name == \"postgresql\":\n        # Use the trigger's UUID as the lock key\n        # pg_advisory_xact_lock takes a bigint, so we use the UUID's int representation\n        # truncated to fit (collision is extremely unlikely and benign)\n        lock_key = hash(str(trigger.id)) % (2**63)\n        await session.execute(\n            sa.text(\"SELECT pg_advisory_xact_lock(:key)\"), {\"key\": lock_key}\n        )"
+  },
+  {
+   "title": "Race detection compares lengths instead of ID sets allowing double-firing",
+   "description": "The race detection logic compares only the count of deleted IDs rather than verifying the exact set of IDs match. This comparison using len(deleted_ids) != len(firing_ids) will incorrectly pass when a worker deletes the same number of firings but with different IDs than expected. For example, if firing_ids is {A, B} but deleted_ids is {C, D}, both have length 2 so the check passes and the trigger fires incorrectly. The correct implementation should use set equality (deleted_ids != firing_ids) to ensure the exact same firings were claimed, preventing spurious trigger firings when workers race.",
+   "file_path": "src/prefect/server/events/triggers.py",
+   "start_line": 390,
+   "end_line": 396,
+   "problematic_code_snippet": "        # Clear by firing id, and only proceed if we won the race to claim them.\n        # This prevents double-firing when multiple workers evaluate concurrently.\n        deleted_ids = await clear_child_firings(\n            session, trigger, firing_ids=list(firing_ids)\n        )\n\n        if len(deleted_ids) != len(firing_ids):"
+  },
+  {
+   "title": "clear_child_firings returns wrong ID field breaking race detection",
+   "description": "The DELETE...RETURNING statement returns child_trigger_id instead of child_firing_id, causing a critical type mismatch in the race detection logic. The caller in triggers.py expects firing IDs (specific instances of firings) but receives trigger IDs (the template/definition). Since firing_ids contains UUIDs of specific firing instances while deleted_ids contains trigger template IDs, the comparison deleted_ids != firing_ids will always evaluate to true, causing the system to incorrectly believe it lost the race and skip all legitimate trigger firings. This breaks the entire compound trigger firing mechanism.",
+   "file_path": "src/prefect/server/events/models/composite_trigger_child_firing.py",
+   "start_line": 147,
+   "end_line": 157,
+   "problematic_code_snippet": "    result = await session.execute(\n        sa.delete(db.CompositeTriggerChildFiring)\n        .filter(\n            db.CompositeTriggerChildFiring.automation_id == trigger.automation.id,\n            db.CompositeTriggerChildFiring.parent_trigger_id == trigger.id,\n            db.CompositeTriggerChildFiring.child_firing_id.in_(firing_ids),\n        )\n        .returning(db.CompositeTriggerChildFiring.child_trigger_id)\n    )\n\n    return set(result.scalars().all())"
+  },
+  {
+   "title": "Modified test file is in a non-mirroring directory structure",
+   "description": "Rule requires tests to mirror the source directory structure. The source module under test is `src/prefect/server/events/triggers.py` (relative path `server/events/triggers.py`), but this PR adds/updates tests in `tests/events/server/triggers/test_composite_triggers.py`, which does not mirror the source path (it is `events/server/triggers/...` instead of `server/events/...`).",
+   "file_path": "tests/events/server/triggers/test_composite_triggers.py",
+   "start_line": 1629,
+   "end_line": 1632,
+   "problematic_code_snippet": "diff --git a/tests/events/server/triggers/test_composite_triggers.py b/tests/events/server/triggers/test_composite_triggers.py\n@@\n+class TestCompoundTriggerConcurrency:\n+    \"\"\"Tests for concurrent child trigger evaluation race condition fix.\"\"\"",
+   "rule_name": "Test Files Must Mirror Source Directory Structure"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect",
+ "head_sha": "8c360ef80fc9a49274b60a7473f761ff484b6ca7",
+ "diff_chars": 11057,
+ "diff_lines": 280,
+ "user_prompt_chars": 14472,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 107318,
+ "wall_ms": 109672,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect/src/prefect/server/events/models/composite_trigger_child_firing.py"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect/src/prefect/server/events/triggers.py"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 7,
+ "turn_trace": {
+  "assistant_lines": 23,
+  "unique_message_ids": 7,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.940500621,
+ "spend_post_usd": 6.957917666,
+ "cost_settled": true,
+ "cost_wait_ms": 362,
+ "cost_usd": 0.017417045000000186,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.018342235,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 32473,
+  "cache_read_input_tokens": 273671,
+  "output_tokens": 23090,
+  "output_tokens_details": {
+   "thinking_tokens": 12404
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 32473
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 23090,
+   "cacheReadInputTokens": 273671,
+   "cacheCreationInputTokens": 32473,
+   "webSearchRequests": 0,
+   "costUSD": 0.018342235,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 12404,
+   "cacheCreationEphemeral5mInputTokens": 32473,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/prefect",
+   "number": 7,
+   "title": "Code Review Bench PR #20106 - fix: resolve race condition in compound trigger evaluation",
+   "author": "",
+   "baseSha": "86468ecca046b412392bacb5f576d7bed77f7fe0",
+   "headSha": "8c360ef80fc9a49274b60a7473f761ff484b6ca7"
+  },
+  "summary": "This PR tries to fix two races in compound (composite) trigger evaluation. The first is a never-fire race: two child firings commit in separate transactions and each only sees its own row under READ COMMITTED. The fix adds a transaction-scoped PostgreSQL advisory lock (`acquire_composite_trigger_lock`) taken in `evaluate_composite_trigger` before the upsert and read. The second is a double-fire race: `clear_child_firings` now uses `DELETE ... RETURNING`, and the caller only fires if it deleted every expected firing. The direction is sound. The implementation has one critical defect that defeats the first fix: the advisory lock key comes from Python's salted `hash()`, so it differs between server processes and the lock does not serialize across them.\n\nBeyond that, there are several correctness and quality problems. The `clear_child_firings` docstring says it returns child_firing_ids, but it returns child_trigger_ids, and the caller only compares lengths. A partial claim returns early after the DELETE has already been committed, which drops firings silently. The new tests run on SQLite by default, where the lock is a no-op, so they probably can't catch a regression. The PR also makes an unrelated logging change that leaves an unused `get_logger` import (an F401 lint failure) and drops Prefect's logger setup.",
+  "verdict": "request_changes",
+  "verdictRationale": "The advisory lock key is computed with `hash(str(trigger.id))`. Python randomizes string hashes per process, so two server processes compute different keys for the same trigger and the lock doesn't serialize them. That leaves the never-firing race open in any multi-process deployment, which is the main thing this PR claims to fix. The unused `get_logger` import and the unrelated logging change will also fail lint and need to be reverted. The rest (docstring mismatch, partial-claim handling, weak tests) should be addressed before merge.",
+  "architecture": {
+   "overview": "Compound triggers are evaluated reactively. `reactive_evaluation` opens a transactional session (`automations_session(begin_transaction=True)`) for each matching child trigger event and passes the firing to `evaluate_composite_trigger`. That function keeps child firings in the `CompositeTriggerChildFiring` table, upserts the current child firing, reads back all child firings for the parent, and fires the parent once `ready_to_fire` is satisfied. Before this PR, nothing serialized concurrent evaluations of the same parent, and the claim step was a plain DELETE that did not report what it removed.\n\nThe PR adds two pieces. First, a PostgreSQL transaction-scoped advisory lock keyed on the parent trigger, taken before any read or write of child firings, so concurrent evaluations of one compound trigger run one at a time. Second, `clear_child_firings` now returns the rows it actually deleted via `DELETE ... RETURNING`, and the caller only fires the parent when the deleted set matches the expected firings. The lock key derivation is the weak point, and the claim check's comparison and its partial-failure path need tightening.",
+   "steps": [
+    "Entry point: `reactive_evaluation` in `src/prefect/server/events/triggers.py` opens one transactional session per matching child trigger event.",
+    "`evaluate_composite_trigger` handles the `num_expected_firings == 1` shortcut first. Multi-child compound triggers then go through the new lock acquisition in `composite_trigger_child_firing.py`.",
+    "The advisory lock is taken before `clear_old_child_firings`, `upsert_child_firing`, and `get_child_firings`, so the read-modify-read sequence is serialized per parent trigger on PostgreSQL. SQLite skips the lock.",
+    "Claim step: `clear_child_firings` now runs `DELETE ... RETURNING child_trigger_id` and returns a set. The caller compares its size to the expected firing count and returns early on a mismatch instead of calling `fire`.",
+    "Side change: the module logger in `triggers.py` was switched from `prefect.logging.get_logger` to `logging.getLogger`, and the old import was left behind unused."
+   ],
+   "diagrams": [
+    {
+     "title": "Composite trigger evaluation with advisory lock and claim",
+     "kind": "flowchart",
+     "description": "Shows the path from a child event to a parent fire, including the new lock acquisition and the DELETE ... RETURNING claim check.",
+     "mermaid": "flowchart TD\n    A[reactive_evaluation: child event] --> B[automations_session begin_transaction]\n    B --> C[evaluate_composite_trigger]\n    C --> D{num_expected_firings == 1?}\n    D -- yes --> F[fire parent]\n    D -- no --> E[acquire_composite_trigger_lock: pg_advisory_xact_lock]\n    E --> G[clear_old_child_firings when within set]\n    G --> H[upsert_child_firing]\n    H --> I[get_child_firings]\n    I --> J{current firing still present?}\n    J -- no --> Z[return: superseded]\n    J -- yes --> K{ready_to_fire?}\n    K -- no --> Z2[return: waiting]\n    K -- yes --> L[clear_child_firings: DELETE RETURNING]\n    L --> M{deleted count == expected?}\n    M -- no --> Z3[return: another worker claimed]\n    M -- yes --> F"
+    },
+    {
+     "title": "Two workers evaluating the same compound trigger",
+     "kind": "sequence",
+     "description": "Shows how the advisory lock is meant to serialize two child events, and where the claim check decides which worker fires.",
+     "mermaid": "sequenceDiagram\n    participant WA as Worker A\n    participant WB as Worker B\n    participant DB as PostgreSQL\n    WA->>DB: BEGIN; pg_advisory_xact_lock(key)\n    WB->>DB: BEGIN; pg_advisory_xact_lock(key) (blocks)\n    WA->>DB: upsert child firing A, select child firings\n    WA->>DB: DELETE ... RETURNING (claim A and B)\n    WA->>DB: COMMIT (lock released)\n    DB-->>WB: lock acquired\n    WB->>DB: upsert child firing B, select child firings\n    WB->>DB: DELETE ... RETURNING (0 rows, already claimed)\n    WB->>DB: COMMIT, skip fire"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Advisory lock key uses salted hash(), so it differs across server processes",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`acquire_composite_trigger_lock` derives the lock key with `hash(str(trigger.id)) % (2**63)`. Python randomizes string hashes per process (PYTHONHASHSEED), so two API or service processes that evaluate the same compound trigger compute different keys. `pg_advisory_xact_lock` then doesn't serialize them, and the never-firing race this PR is meant to fix stays open. I checked this by running the expression in two separate Python processes: they printed different values for the same string.\n\nThe key also has to be stable across processes and restarts, so a deterministic derivation is required. `UUID.int` is already a 128-bit integer. Masking it to 63 bits gives a stable bigint key.\n\n::diff{file=\"src/prefect/server/events/models/composite_trigger_child_firing.py\" lines=\"38-45\"}\n\n::suggestion{file=\"src/prefect/server/events/models/composite_trigger_child_firing.py\" lines=\"42-42\"}\nlock_key = trigger.id.int & ((1 << 63) - 1)\n\nAdd a regression test that asserts the derived key is equal across two calls in separate processes, or just pins the value for a fixed UUID.",
+    "files": [
+     "src/prefect/server/events/models/composite_trigger_child_firing.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/models/composite_trigger_child_firing.py`, `acquire_composite_trigger_lock` (around lines 38-45) computes the advisory lock key with Python's `hash(str(trigger.id))`. String hashes are randomized per process, so different server processes take different locks and the fix does not serialize them. Replace it with a deterministic derivation from the UUID, for example masking `trigger.id.int` to 63 bits so it fits PostgreSQL's signed bigint. Keep the `pg_advisory_xact_lock` call and the PostgreSQL-only branch unchanged. Also correct the comment above it, which describes the key derivation.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/models/composite_trigger_child_firing.py",
+     "lineStart": 38,
+     "lineEnd": 45
+    }
+   },
+   {
+    "title": "Partial claim commits deletions and silently drops firings",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The claim check runs `clear_child_firings` first, which executes a DELETE. If the deleted count does not match, the code returns without firing. The session then commits, so any rows this worker did delete stay deleted and the parent never fires for them.\n\nA concrete path: `firing_ids = {A, B}`. Between the read and the DELETE, another evaluation upserts B to a new firing B2. The DELETE then removes only A. The check sees 1 != 2 and returns, and the transaction commits with A gone and B2 still present. The parent can no longer be satisfied. The lock should prevent this, but the lock is currently broken (see the hash finding), and the early return does not undo its own DELETE.\n\nThe mismatch branch should either roll back the claim (raise and let the transaction roll back, or use a SAVEPOINT) or make the claim all-or-nothing before any row is removed. A test that forces a partial delete would cover this branch, which has no coverage today.\n\n::diff{file=\"src/prefect/server/events/triggers.py\" lines=\"390-410\"}",
+    "files": [
+     "src/prefect/server/events/triggers.py",
+     "src/prefect/server/events/models/composite_trigger_child_firing.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/triggers.py` `evaluate_composite_trigger` (around lines 390-410), the `len(deleted_ids) != len(firing_ids)` branch returns after `clear_child_firings` has already deleted some rows in the same transaction. Those deletions get committed and the parent never fires, so firings are lost. Make the mismatch path undo the claim: raise inside the transaction so it rolls back, or wrap the claim in a SAVEPOINT (`session.begin_nested()`) and roll it back on mismatch. Keep the debug log. Add a test that forces a partial delete and asserts that no child firings are lost.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/triggers.py",
+     "lineStart": 390,
+     "lineEnd": 410
+    }
+   },
+   {
+    "title": "clear_child_firings docstring contradicts return value; caller compares only sizes",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The docstring says the function returns \"the set of child_firing_ids that were successfully deleted\". The code returns `child_trigger_id` values, via `.returning(db.CompositeTriggerChildFiring.child_trigger_id)`. The caller compares `len(deleted_ids)` to `len(firing_ids)`, which is a weaker check than comparing identities. For example, a deleted row for a different child could mask a missing one, and the log's `expected_firing_ids` and `deleted_firing_ids` fields are labeled as firing ids but hold trigger ids.\n\nReturn the `child_firing_id` values, which match the `firing_ids` the caller passes in. Then the caller can compare sets, which is what the docstring promises.\n\n::diff{file=\"src/prefect/server/events/models/composite_trigger_child_firing.py\" lines=\"134-157\"}\n\n::suggestion{file=\"src/prefect/server/events/models/composite_trigger_child_firing.py\" lines=\"154-157\"}\n.returning(db.CompositeTriggerChildFiring.child_firing_id)\n)\n\nreturn set(result.scalars().all())",
+    "files": [
+     "src/prefect/server/events/models/composite_trigger_child_firing.py",
+     "src/prefect/server/events/triggers.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/models/composite_trigger_child_firing.py`, `clear_child_firings` (around lines 134-157) returns `child_trigger_id` values, but its docstring says it returns the deleted `child_firing_id` values. Change the `.returning(...)` column to `child_firing_id` so the return matches the documented contract. Then in `src/prefect/server/events/triggers.py` (around line 396), compare the returned set to `firing_ids` directly, not just their lengths. Check that the existing test `test_clear_child_firings` in `tests/events/server/models/test_composite_trigger_child_firing.py` still passes.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/models/composite_trigger_child_firing.py",
+     "lineStart": 140,
+     "lineEnd": 157
+    }
+   },
+   {
+    "title": "New concurrency tests cannot detect a regression on the default test DB",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The test suite's default database is SQLite (`tests/conftest.py` builds `sqlite+aiosqlite` unless configured otherwise). On SQLite, `acquire_composite_trigger_lock` does nothing, so the lock path is not exercised. The comment in that function says \"SQLite also serializes writes ... so the race condition is less likely\", but that is a hand-wave, not something the tests check.\n\nThe two new tests use `asyncio.gather` on two `reactive_evaluation` calls and assert `act` is called once. I haven't run them with the fix reverted, so I can't say whether they pass on the unfixed code, but nothing here shows they would fail. Neither test covers the new mismatch branch in `evaluate_composite_trigger`, and nothing checks the new `clear_child_firings` return value.\n\nTo make these tests meaningful, run the concurrency tests against PostgreSQL (CI already has a postgres job), check that they fail without the fix, and add a direct test for the mismatch branch.\n\n::diff{file=\"tests/events/server/triggers/test_composite_triggers.py\" lines=\"1674-1711\"}",
+    "files": [
+     "tests/events/server/triggers/test_composite_triggers.py"
+    ],
+    "fixPrompt": "In `tests/events/server/triggers/test_composite_triggers.py`, the new `TestCompoundTriggerConcurrency` tests (around lines 1674-1711) run on the default SQLite test DB, where the advisory lock is a no-op, so they may pass with or without the fix. Mark the concurrency tests so they run against PostgreSQL (follow how other tests in the repo skip or require Postgres), and confirm they fail when the fix is reverted. Add a direct unit test in `tests/events/server/models/test_composite_trigger_child_firing.py` that calls `clear_child_firings` with a firing id already deleted and asserts the returned set is smaller than the expected set.",
+    "commentAnchor": {
+     "file": "tests/events/server/triggers/test_composite_triggers.py",
+     "lineStart": 1674,
+     "lineEnd": 1711
+    }
+   },
+   {
+    "title": "Unrelated logger change leaves unused get_logger import and drops Prefect logging setup",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "This PR changes the module logger in `triggers.py` from `get_logger(__name__)` to `logging.getLogger(__name__)`. That change is not part of the race fix. It leaves `from prefect.logging import get_logger` on line 27 with no remaining uses, which fails ruff's F401 check. It also moves `import logging` below the `if TYPE_CHECKING:` block, which breaks the import ordering the project's isort/ruff config expects.\n\nThe Prefect logger wrapper that `get_logger` returns is what the rest of this module uses, so this change drops it for this module only. The debug and info calls in this file pass `extra=`, which the Prefect logger handles consistently with the other log lines here.\n\nRevert the logger change so the diff only touches the race fix. If the change was intended, remove the old import and place `import logging` with the other stdlib imports.\n\n::diff{file=\"src/prefect/server/events/triggers.py\" lines=\"68-73\"}",
+    "files": [
+     "src/prefect/server/events/triggers.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/triggers.py`, this PR switched the module logger from `get_logger(__name__)` to `logging.getLogger(__name__)` (around lines 68-73) and moved `import logging` below the `if TYPE_CHECKING:` block. Revert that change so `logger = get_logger(__name__)` stays as it was, and keep the `from prefect.logging import get_logger` import. This PR should only add the lock and claim-check changes. If the switch is intentional, remove the now-unused `get_logger` import (line 27) and put `import logging` with the stdlib imports at the top of the file.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/triggers.py",
+     "lineStart": 68,
+     "lineEnd": 73
+    }
+   },
+   {
+    "title": "Lock-function comment describes a key derivation the code does not implement",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The comment says the lock key is \"the UUID's int representation truncated to fit\", but the code computes `hash(str(trigger.id))`. The comment and the code disagree, which is how the salted-hash bug went unnoticed. Once the key is switched to `trigger.id.int` with a mask (see the critical finding), the comment should describe that expression. The paragraph on the SQLite branch should also be reworded or removed, since the claim that SQLite \"serializes writes\" so the race is \"less likely\" is not verified anywhere.\n\n::diff{file=\"src/prefect/server/events/models/composite_trigger_child_firing.py\" lines=\"39-47\"}",
+    "files": [
+     "src/prefect/server/events/models/composite_trigger_child_firing.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/models/composite_trigger_child_firing.py`, the comment inside `acquire_composite_trigger_lock` (around lines 39-41) says the lock key is the UUID's int representation truncated to fit, but the code uses `hash(str(trigger.id))`. Update the comment so it matches the deterministic key derivation chosen in the fix for the hash bug. Also reword the SQLite comment (around lines 46-47), which makes an unverified claim that SQLite's write serialization makes the race less likely. Say only that the advisory lock is PostgreSQL-only.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/models/composite_trigger_child_firing.py",
+     "lineStart": 39,
+     "lineEnd": 47
+    }
+   },
+   {
+    "title": "Near-duplicate concurrency tests",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`test_concurrent_child_firings_still_triggers_parent` sets up the same automation, sends the same two events via `asyncio.gather`, and asserts the same `act.assert_called_once()`. The only difference is the trigger-id assertion, which the first test also makes. The second test adds no coverage, and it doubles the time and the flakiness surface of the suite. Merge the two into one test, or make the second one check a different property, such as the event order or the case where only one child fires.\n\n::diff{file=\"tests/events/server/triggers/test_composite_triggers.py\" lines=\"1713-1747\"}",
+    "files": [
+     "tests/events/server/triggers/test_composite_triggers.py"
+    ],
+    "fixPrompt": "In `tests/events/server/triggers/test_composite_triggers.py`, `test_concurrent_child_firings_still_triggers_parent` (around lines 1713-1747) duplicates `test_compound_trigger_does_not_double_fire_when_children_race` (around lines 1674-1711): same fixture, same two events via `asyncio.gather`, same `assert_called_once`. Remove it, or change it to test a different property, such as that a single child event does not fire the parent. Keep the regression coverage in the first test.",
+    "commentAnchor": {
+     "file": "tests/events/server/triggers/test_composite_triggers.py",
+     "lineStart": 1713,
+     "lineEnd": 1747
+    }
+   },
+   {
+    "title": "Lock before read and upsert, and DELETE RETURNING as the claim",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The overall shape is right. The advisory lock is taken before `clear_old_child_firings`, `upsert_child_firing`, and the read, so the whole read-modify-read sequence runs under one lock per parent trigger. `reactive_evaluation` already runs each evaluation in `begin_transaction=True`, so `pg_advisory_xact_lock` is released on commit or rollback as intended. Using `DELETE ... RETURNING` as the claim is a standard way to make the winner unambiguous. The `num_expected_firings == 1` shortcut correctly skips the lock because it never reads or writes child firings.\n\n::code{file=\"src/prefect/server/events/triggers.py\" lines=\"349-352\"}",
+    "files": [
+     "src/prefect/server/events/triggers.py",
+     "src/prefect/server/events/models/composite_trigger_child_firing.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/prefect\",\"number\":7,\"title\":\"Code Review Bench PR #20106 - fix: resolve race condition in compound trigger evaluation\",\"author\":\"\",\"baseSha\":\"86468ecca046b412392bacb5f576d7bed77f7fe0\",\"headSha\":\"8c360ef80fc9a49274b60a7473f761ff484b6ca7\"},\"summary\":\"This PR tries to fix two races in compound (composite) trigger evaluation. The first is a never-fire race: two child firings commit in separate transactions and each only sees its own row under READ COMMITTED. ",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 8
+}

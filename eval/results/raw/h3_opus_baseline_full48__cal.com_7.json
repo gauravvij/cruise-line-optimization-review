@@ -1,0 +1,284 @@
+{
+ "id": "cal.com#7",
+ "repo": "cal.com",
+ "num": 7,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_final16",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#9",
+  "prefect#12",
+  "redis#8",
+  "redis#9",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-23T17:52:26.660Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Repository filename and class name mismatch",
+   "description": "The rule requires that repository filenames match their exported class names. The file is named 'SelectedCalendarRepository.ts' but exports a class named 'PrismaSelectedCalendarRepository', creating a mismatch.",
+   "file_path": "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+   "start_line": 5,
+   "end_line": 6,
+   "problematic_code_snippet": "export class PrismaSelectedCalendarRepository implements ISelectedCalendarRepository {\n  constructor(private prismaClient: PrismaClient) {}",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Generic calendar suffix filtering includes disabled providers",
+   "description": "The getGenericCalendarSuffixes() method uses Object.keys(GENERIC_CALENDAR_SUFFIXES) to iterate over all providers defined in the constant, including office365_calendar. However, getProviders() only returns ['google_calendar'], meaning Office365 is not actually enabled. This causes the subscription system to filter out Office365 calendar suffixes even when Office365 calendars shouldn't be processed at all. The filtering should only include suffixes for enabled providers by using this.getProviders() as in the original implementation.",
+   "file_path": "packages/features/calendar-subscription/adapters/AdaptersFactory.ts",
+   "start_line": 67,
+   "end_line": 70,
+   "problematic_code_snippet": "  getGenericCalendarSuffixes(): string[] {\n    return Object.keys(GENERIC_CALENDAR_SUFFIXES).flatMap(\n      (provider) => GENERIC_CALENDAR_SUFFIXES[provider as CalendarSubscriptionProvider]\n    );\n  }"
+  },
+  {
+   "title": "Empty suffix array incorrectly bypasses generic calendar filtering",
+   "description": "The filtering logic adds a length check (genericCalendarSuffixes?.length) that treats an empty array as falsy, setting AND to undefined instead of an empty array. In Prisma, AND: undefined means no filtering, while AND: [] also means no filtering but with different semantics. More critically, this breaks the filtering for providers like office365_calendar that have an empty suffix list in GENERIC_CALENDAR_SUFFIXES. The double optional chaining (?. used twice) is redundant and the length check changes the behavior from the intended design where empty arrays should still be processed.",
+   "file_path": "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+   "start_line": 41,
+   "end_line": 47,
+   "problematic_code_snippet": "        AND: genericCalendarSuffixes?.length\n          ? genericCalendarSuffixes?.map((suffix) => ({\n              NOT: { externalId: { endsWith: suffix } },\n            }))\n          : undefined,"
+  },
+  {
+   "title": "Incomplete class rename breaks all imports and causes runtime failures",
+   "description": "The class was renamed from SelectedCalendarRepository to PrismaSelectedCalendarRepository (line 5) without providing a backward-compatible export alias. This breaks all existing code that imports this class. The test file within this PR (SelectedCalendarRepository.test.ts:2,50,53) still imports and instantiates the old class name, causing test failures. Production code in apps/web/app/api/cron/calendar-subscriptions/route.ts:41 and apps/web/app/api/webhooks/calendar-subscription/[provider]/route.ts:61 also use 'new SelectedCalendarRepository(prisma)' which will fail at runtime with a TypeError indicating SelectedCalendarRepository is not a constructor.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "export class PrismaSelectedCalendarRepository implements ISelectedCalendarRepository {\n  constructor(private prismaClient: PrismaClient) {}"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "41aeb830d5bbf59e0ee4ebe437d5f15b6cc30bb6",
+ "diff_chars": 10364,
+ "diff_lines": 254,
+ "user_prompt_chars": 13398,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 61453,
+ "wall_ms": 64199,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 4,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 8,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 4
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 23.409763171,
+ "spend_post_usd": 23.604240571,
+ "cost_settled": true,
+ "cost_wait_ms": 326,
+ "cost_usd": 0.1944773999999967,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.2269586,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 14849,
+  "cache_read_input_tokens": 110308,
+  "output_tokens": 6531,
+  "output_tokens_details": {
+   "thinking_tokens": 676
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 14849
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5406,
+    "cache_creation_input_tokens": 1077,
+    "cache_read_input_tokens": 32662,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 1077,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 6531,
+   "cacheReadInputTokens": 110308,
+   "cacheCreationInputTokens": 14849,
+   "webSearchRequests": 0,
+   "costUSD": 0.2269586,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 676,
+   "cacheCreationEphemeral5mInputTokens": 14849,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/cal.com",
+   "number": 7,
+   "title": "Code Review Bench PR #26774 - feat: CalendarCache - filter generic calendars from subscription batch",
+   "author": "",
+   "baseSha": "ec774232602d3ff92b8d972f6391e0f5d4e51024",
+   "headSha": "41aeb830d5bbf59e0ee4ebe437d5f15b6cc30bb6"
+  },
+  "summary": "This PR stops the calendar-subscription cron from picking up Google's \"generic\" calendars (holidays, contacts, imported, resource). It adds a `GENERIC_CALENDAR_SUFFIXES` map and a `getGenericCalendarSuffixes()` method to the adapter factory. `CalendarSubscriptionService.checkForNewSubscriptions` passes those suffixes to `findNextSubscriptionBatch`, and the repository turns each one into `AND: [{ NOT: { externalId: { endsWith } } }]`. The filter itself is correct: `externalId` is non-nullable, and `AND: undefined` is ignored by Prisma.\n\nThe PR also renames the exported class `SelectedCalendarRepository` to `PrismaSelectedCalendarRepository` without updating anything that uses it. Two production routes (the calendar-subscriptions cron and the calendar-subscription webhook) and the repository's own test file still import and construct `SelectedCalendarRepository` from this module. That breaks the type-check and build, and the tests the description says prove the change will fail to run. There's also a product question: `@group.calendar.google.com` covers user-created secondary calendars as well as shared ones.",
+  "verdict": "request_changes",
+  "verdictRationale": "The class rename isn't mentioned in the description, and it breaks the imports in two production API routes and the repository's test file, so the build fails. The filtering logic is sound once that's fixed.",
+  "architecture": {
+   "overview": "The calendar-subscription feature uses a cron route (`/api/cron/calendar-subscriptions`) that builds a `CalendarSubscriptionService` from a `DefaultAdapterFactory`, a feature-flag repository and a `SelectedCalendarRepository`. `checkForNewSubscriptions` gets the teams that have the cache feature enabled. It then asks the repository for up to 100 selected calendars on the supported providers that have never been subscribed or whose channel has expired, and calls `subscribe()` on each one.\n\nThis PR makes the adapter factory the single place that lists generic-calendar `externalId` suffixes for each provider. The service passes the combined list to the repository, which excludes matching rows with Prisma `NOT endsWith` clauses. In the same change, the Prisma repository class is renamed to `PrismaSelectedCalendarRepository`.",
+   "steps": [
+    "Start at `apps/web/app/api/cron/calendar-subscriptions/route.ts`: it constructs the service with `DefaultAdapterFactory` and the selected-calendar repository.",
+    "`AdaptersFactory.ts` now exports `GENERIC_CALENDAR_SUFFIXES` (Google: group.v, group, import, resource; Office 365: empty) and `getGenericCalendarSuffixes()`, which flattens the suffixes for all providers.",
+    "`CalendarSubscriptionService.checkForNewSubscriptions` passes `genericCalendarSuffixes` along with `integrations` and `teamIds` to `findNextSubscriptionBatch`.",
+    "`SelectedCalendarRepository.ts` adds an `AND` array of `NOT externalId endsWith <suffix>` clauses, or `undefined` when the list is empty, and renames the class to `PrismaSelectedCalendarRepository`.",
+    "The interface and the unit tests are updated to match the new optional parameter."
+   ],
+   "diagrams": [
+    {
+     "title": "Subscription batch selection with generic-calendar filter",
+     "kind": "flowchart",
+     "description": "How the cron job's batch query now gets its exclusion suffixes from the adapter factory.",
+     "mermaid": "flowchart LR\n  Cron[cron/calendar-subscriptions route] --> Svc[CalendarSubscriptionService.checkForNewSubscriptions]\n  Svc --> FR[featuresRepository.getTeamsWithFeatureEnabled]\n  Svc --> AF[DefaultAdapterFactory]\n  AF -->|getProviders| Svc\n  AF -->|getGenericCalendarSuffixes| Svc\n  Svc --> Repo[SelectedCalendarRepository.findNextSubscriptionBatch]\n  Repo -->|where AND NOT endsWith| DB[(SelectedCalendar)]\n  Repo --> Svc\n  Svc --> Sub[subscribe id]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Renaming the class to `PrismaSelectedCalendarRepository` breaks existing imports in two routes and the test",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The exported class was renamed, but nothing that uses it was updated:\n\n::diff{file=\"packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts\" lines=\"5-5\"}\n\nThese files still import `SelectedCalendarRepository` from `@calcom/features/selectedCalendar/repositories/SelectedCalendarRepository`:\n\n- ::file{file=\"apps/web/app/api/cron/calendar-subscriptions/route.ts\"} (lines 11 and 41, `new SelectedCalendarRepository(prisma)`)\n- ::file{file=\"apps/web/app/api/webhooks/calendar-subscription/[provider]/route.ts\"} (lines 14 and 61)\n- ::file{file=\"packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts\"} (lines 3 and 53)\n\n::callout{type=\"warning\"}\nThe import resolves to `undefined`, so TypeScript fails the build. If it somehow ships, `new SelectedCalendarRepository(prisma)` throws `TypeError: ... is not a constructor` on every cron run and on every incoming calendar webhook. The repository test file breaks the same way, so none of the new tests actually run.\n\nThe rename isn't mentioned in the PR description and doesn't relate to the feature. The simplest fix is to revert it:\n\n::suggestion{file=\"packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts\" lines=\"5-5\"}\nexport class SelectedCalendarRepository implements ISelectedCalendarRepository {\n\n",
+    "files": [
+     "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+     "apps/web/app/api/cron/calendar-subscriptions/route.ts",
+     "apps/web/app/api/webhooks/calendar-subscription/[provider]/route.ts",
+     "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts"
+    ],
+    "fixPrompt": "In `packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts` line 5, the class was renamed from `SelectedCalendarRepository` to `PrismaSelectedCalendarRepository`, but `apps/web/app/api/cron/calendar-subscriptions/route.ts`, `apps/web/app/api/webhooks/calendar-subscription/[provider]/route.ts`, and `packages/features/selectedCalendar/repositories/SelectedCalendarRepository.test.ts` still import and instantiate `SelectedCalendarRepository`. The rename is unrelated to this feature, so revert the class name to `SelectedCalendarRepository`. If the rename is intentional, update every import and `new` call instead, and grep the repo to confirm nothing else imports the old name from this module. Then run the type-check and the repository tests.",
+    "commentAnchor": {
+     "file": "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+     "lineStart": 5,
+     "lineEnd": 5
+    }
+   },
+   {
+    "title": "`@group.calendar.google.com` also matches user-created secondary calendars",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "Google gives `@group.calendar.google.com` IDs to every non-primary calendar a user creates, such as a \"Work\" or \"Side project\" calendar, as well as to calendars shared with the user. These are often the personal calendars people pick for conflict checking, which is what the cache is meant to speed up.\n\n::diff{file=\"packages/features/calendar-subscription/adapters/AdaptersFactory.ts\" lines=\"12-20\"}\n\nWith this suffix in the list, those calendars are never subscribed and never cached. Availability for them falls back to live fetches without any signal. Holidays and contacts use `@group.v.calendar.google.com`, while import and resource calendars have their own suffixes. Please confirm that excluding all `@group.calendar.google.com` calendars is intended. If it isn't, drop this entry or explain in the code comment why these calendars must be skipped (for example, if watch channels can't be created on them).",
+    "files": [
+     "packages/features/calendar-subscription/adapters/AdaptersFactory.ts"
+    ],
+    "fixPrompt": "In `packages/features/calendar-subscription/adapters/AdaptersFactory.ts` lines 12-20, `GENERIC_CALENDAR_SUFFIXES.google_calendar` includes `@group.calendar.google.com`. Google also uses that suffix for user-created secondary calendars, so they would never be subscribed or cached. Check whether that's intended. If not, remove the entry and keep `@group.v.calendar.google.com`, `@import.calendar.google.com` and `@resource.calendar.google.com`, then update the test fixtures in `CalendarSubscriptionService.test.ts`. If it is intended, extend the doc comment to explain why secondary or shared calendars are excluded.",
+    "commentAnchor": {
+     "file": "packages/features/calendar-subscription/adapters/AdaptersFactory.ts",
+     "lineStart": 12,
+     "lineEnd": 20
+    }
+   },
+   {
+    "title": "Redundant optional chaining, and suffixes include providers outside `getProviders()`",
+    "severity": "low",
+    "category": "style",
+    "body": "Inside the truthy branch, `genericCalendarSuffixes` is already known to be non-empty, so the second `?.` does nothing:\n\n::diff{file=\"packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts\" lines=\"41-45\"}\n\n::suggestion{file=\"packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts\" lines=\"41-45\"}\n        AND: genericCalendarSuffixes?.length\n          ? genericCalendarSuffixes.map((suffix) => ({\n              NOT: { externalId: { endsWith: suffix } },\n            }))\n          : undefined,\n\nSeparately, `getGenericCalendarSuffixes()` flattens the suffixes for *all* providers, including ones `getProviders()` doesn't currently return. This is harmless today, but `Object.values(GENERIC_CALENDAR_SUFFIXES).flat()` would be simpler than `Object.keys` plus a cast. Deriving the list from `getProviders()` would keep the two methods consistent.",
+    "files": [
+     "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+     "packages/features/calendar-subscription/adapters/AdaptersFactory.ts"
+    ],
+    "fixPrompt": "In `packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts` lines 41-45, remove the redundant `?.` in `genericCalendarSuffixes?.map` because the ternary already checks `.length`. In `packages/features/calendar-subscription/adapters/AdaptersFactory.ts` `getGenericCalendarSuffixes()` (around line 67), consider replacing `Object.keys(...).flatMap` with a cast by `this.getProviders().flatMap((p) => GENERIC_CALENDAR_SUFFIXES[p])` so the suffixes line up with the enabled providers.",
+    "commentAnchor": {
+     "file": "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+     "lineStart": 41,
+     "lineEnd": 45
+    }
+   },
+   {
+    "title": "`DefaultAdapterFactory.getGenericCalendarSuffixes()` has no direct test",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The service tests mock `getGenericCalendarSuffixes`, so the real flattening logic in `DefaultAdapterFactory` is never exercised. Both the service tests and the actual constant hard-code the same four strings, which means changing the constant wouldn't break any test.\n\n::diff{file=\"packages/features/calendar-subscription/adapters/AdaptersFactory.ts\" lines=\"61-71\"}\n\nA small test that calls `new DefaultAdapterFactory().getGenericCalendarSuffixes()` and compares the result to `GENERIC_CALENDAR_SUFFIXES` would cover it. The service test could also import the constant instead of repeating the literals.",
+    "files": [
+     "packages/features/calendar-subscription/adapters/AdaptersFactory.ts",
+     "packages/features/calendar-subscription/lib/__tests__/CalendarSubscriptionService.test.ts"
+    ],
+    "fixPrompt": "Add a unit test for `DefaultAdapterFactory.getGenericCalendarSuffixes()` in `packages/features/calendar-subscription/adapters/AdaptersFactory.ts` (lines 61-71) that checks it returns the flattened values of `GENERIC_CALENDAR_SUFFIXES`. In `packages/features/calendar-subscription/lib/__tests__/CalendarSubscriptionService.test.ts`, replace the four repeated suffix arrays with a single shared constant, or import `GENERIC_CALENDAR_SUFFIXES.google_calendar`.",
+    "commentAnchor": {
+     "file": "packages/features/calendar-subscription/adapters/AdaptersFactory.ts",
+     "lineStart": 61,
+     "lineEnd": 71
+    }
+   },
+   {
+    "title": "The filter is safe at the query level",
+    "severity": "info",
+    "category": "correctness",
+    "body": "`SelectedCalendar.externalId` is a non-nullable `String`, so `NOT endsWith` won't silently drop rows where the value is NULL. Prisma ignores `AND: undefined`, so callers that don't pass suffixes get exactly the old behavior. The new repository test checks the generated `where` clause directly. Filtering in the query also stops these calendars from being picked up again on every cron run, since a failed `subscribe()` never sets `syncSubscribedAt` and they would otherwise come back each time.",
+    "files": [
+     "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/cal.com\",\"number\":7,\"title\":\"Code Review Bench PR #26774 - feat: CalendarCache - filter generic calendars from subscription batch\",\"author\":\"\",\"baseSha\":\"ec774232602d3ff92b8d972f6391e0f5d4e51024\",\"headSha\":\"41aeb830d5bbf59e0ee4ebe437d5f15b6cc30bb6\"},\"summary\":\"This PR stops the calendar-subscription cron from picking up Google's \\\"generic\\\" calendars (holidays, contacts, imported, resource). It adds a `GENERIC_CALENDAR_SUFFIXES` map and a `getGenericCalen",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

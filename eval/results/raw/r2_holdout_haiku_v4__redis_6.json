@@ -1,0 +1,339 @@
+{
+ "id": "redis#6",
+ "repo": "redis",
+ "num": 6,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:34:50.684Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Missing tri-license header in version.h",
+   "description": "The rule requires that every .c and .h file in the src/ directory contains a copyright header with the text 'Licensed under your choice of (a) the Redis Source Available License 2.0 (RSALv2); or (b) the Server Side Public License v1 (SSPLv1); or (c) the GNU Affero General Public License v3 (AGPLv3)', but src/version.h lacks this required tri-license header",
+   "file_path": "src/version.h",
+   "start_line": 1,
+   "end_line": 3,
+   "problematic_code_snippet": "/* Version information */\n#define REDIS_VERSION \"8.2.1\"\n#define REDIS_VERSION_NUM 0x00080201",
+   "rule_name": "All Source Files Must Include Tri-License Header"
+  },
+  {
+   "title": "Active defragmentation incorrectly forced ON after replication sync",
+   "description": "The code saves the original active_defrag_enabled value but then unconditionally sets it to 1 instead of restoring the original value. This means if active defragmentation was disabled before the replication sync (orig_active_defrag = 0), it will be incorrectly enabled after emptyData() completes. This breaks the intended behavior of preserving the user's defragmentation configuration and can cause unexpected performance degradation or memory operations on replicas that should not have defragmentation running.",
+   "file_path": "src/replication.c",
+   "start_line": 1956,
+   "end_line": 1962,
+   "problematic_code_snippet": "    int orig_active_defrag = server.active_defrag_enabled;\n    server.active_defrag_enabled = 0;\n\n    emptyData(-1, empty_db_flags, replicationEmptyDbCallback);\n\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = 1;"
+  },
+  {
+   "title": "Stream entries incorrectly marked as referenced when cgroups_ref is NULL",
+   "description": "When cgroups_ref is NULL (which occurs after DEBUG RELOAD with empty PEL), the function returns 1 indicating the entry IS referenced, when it should return 0 indicating it is NOT referenced. This inverted logic prevents XADD/XTRIM operations with the ACKED strategy from correctly deleting entries that have been fully acknowledged by all consumer groups. The result is a memory leak where stream entries accumulate unnecessarily because they are incorrectly protected from deletion even though no consumer group has them in their pending entry list.",
+   "file_path": "src/t_stream.c",
+   "start_line": 2707,
+   "end_line": 2711,
+   "problematic_code_snippet": "    /* Check if the message is in any consumer group's PEL */\n    if (!s->cgroups_ref) return 1;\n    unsigned char buf[sizeof(streamID)];\n    streamEncodeID(buf, id);\n    return raxFind(s->cgroups_ref, buf, sizeof(streamID), NULL);"
+  },
+  {
+   "title": "Inverted reply discard logic causes test infrastructure failure",
+   "description": "The condition for discarding replies is inverted - replies are discarded when count is NOT a multiple of frequency (!=), rather than when it IS a multiple (==). This causes the test to read and discard replies at the wrong times, leading to a buffer overflow of unread replies. The discard_replies_every helper is called throughout the test suite after batches of Redis commands to prevent reply buffer buildup. With this bug, replies accumulate in the buffer instead of being cleared, causing test hangs or failures when the client tries to send new commands with a full reply buffer.",
+   "file_path": "tests/unit/memefficiency.tcl",
+   "start_line": 70,
+   "end_line": 75,
+   "problematic_code_snippet": "    proc discard_replies_every {rd count frequency discard_num} {\n        if {$count % $frequency != 0} {\n            for {set k 0} {$k < $discard_num} {incr k} {\n                $rd read ; # Discard replies\n            }\n        }\n    }"
+  },
+  {
+   "title": "Unused local variable triggers -Werror build failure",
+   "description": "The newly introduced local variable `orig_active_defrag` is never used, which will trigger an `-Wunused-variable` warning. With `-Werror`, this becomes a compilation error, violating the rule that the build must compile cleanly with warnings treated as errors.",
+   "file_path": "src/replication.c",
+   "start_line": 1956,
+   "end_line": 1963,
+   "problematic_code_snippet": "    int orig_active_defrag = server.active_defrag_enabled;\n    server.active_defrag_enabled = 0;\n\n    emptyData(-1, empty_db_flags, replicationEmptyDbCallback);\n\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = 1;",
+   "rule_name": "Build Must Compile Without Warnings When -Werror is Enabled"
+  },
+  {
+   "title": "Header file lacks required double-underscore include guard",
+   "description": "`src/version.h` does not define any include guard, violating the requirement that header files use standardized double-underscore include guards (e.g., `#ifndef __VERSION_H__` / `#define __VERSION_H__` / `#endif`).",
+   "file_path": "src/version.h",
+   "start_line": 1,
+   "end_line": 3,
+   "problematic_code_snippet": "/* Version information */\n#define REDIS_VERSION \"8.2.1\"\n#define REDIS_VERSION_NUM 0x00080201",
+   "rule_name": "Header Files Must Use Double-Underscore Include Guards"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "3d3ed35ce84585af8d0d2998eb5c8cd557412788",
+ "diff_chars": 11201,
+ "diff_lines": 282,
+ "user_prompt_chars": 12243,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 87623,
+ "wall_ms": 89572,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 17,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.552237652,
+ "spend_post_usd": 0.569764087,
+ "cost_settled": true,
+ "cost_wait_ms": 340,
+ "cost_usd": 0.017526435000000062,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.016720585000000003,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 31277,
+  "cache_read_input_tokens": 210926,
+  "output_tokens": 21401,
+  "output_tokens_details": {
+   "thinking_tokens": 7438
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 31277
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 21401,
+   "cacheReadInputTokens": 210926,
+   "cacheCreationInputTokens": 31277,
+   "webSearchRequests": 0,
+   "costUSD": 0.016720585000000003,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 7438,
+   "cacheCreationEphemeral5mInputTokens": 31277,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 6,
+   "title": "Code Review Bench PR #14283 - Redis 8.2.1",
+   "author": "",
+   "baseSha": "a5747eb95a1e431747989a531ed5bfe5a3df19e1",
+   "headSha": "3d3ed35ce84585af8d0d2998eb5c8cd557412788"
+  },
+  "summary": "This is the Redis 8.2.1 patch release, bundling three fixes and a release-notes/version bump. It has three functional changes: (1) during a replica's full-sync database flush, active defrag is turned off so it cannot touch a half-emptied dataset; (2) `streamEntryIsReferenced()` gets a NULL guard for `cgroups_ref` to stop a crash after RDB load; (3) the defrag regression test is refactored to use a new `discard_replies_every` helper, plus a new test for the flush case.\n\nThe replication change has a real bug: the code saves `orig_active_defrag` and then restores `server.active_defrag_enabled = 1` instead of the saved value. Any replica with `activedefrag no` will have defrag silently switched on after its first full sync. The stream guard fixes the crash but returns \"referenced\" (1) for a state that means \"no PEL entries\", so `XADD/XTRIM ... ACKED` can no longer trim entries that were delivered and acknowledged after a reload. The new stream test's final assertion should fail as a result. The test helper `discard_replies_every` in `memefficiency.tcl` has an inverted condition (`!=` instead of `==`), which makes the existing defrag tests block forever reading replies that were never sent. Overall the PR is not mergeable as-is.",
+  "verdict": "request_changes",
+  "verdictRationale": "Three defects should block merge: the replication flag restore ignores the saved value and changes user config, the stream NULL guard returns the wrong answer and breaks ACKED trimming, and the test helper's inverted condition will hang the defrag test suite. The rest are lower-severity test and release-notes issues.",
+  "architecture": {
+   "overview": "Redis keeps active defragmentation controlled by a single global flag, `server.active_defrag_enabled`, which the defrag timer checks each tick (`activeDefragTimeProc` in src/defrag.c stops a running cycle if the flag is cleared). On the replica side, `rdbLoadEmptyDbFunc()` in src/replication.c flushes the old dataset with `emptyData()` before loading the master's RDB, and calls `replicationEmptyDbCallback()`, which calls `processEventsWhileBlocked()`. That lets timers, including defrag, run mid-flush. Streams track consumer-group pending entries in two indexes: `cgroups` (groups) and `cgroups_ref` (message ID to groups that hold it in their PEL). `streamEntryIsReferenced()` consults both to decide whether `ACKED` trimming can delete an entry.\n\nThis PR touches three of those seams. It wraps the flush in a defrag-disable/restore pair, adds a NULL guard in front of the `cgroups_ref` lookup, and adds regression tests for both. It also updates the release notes and version string. The flush wrapper's restore step does not put back the value it saved, and the stream guard's return value contradicts how the rest of the function treats an empty PEL.",
+   "steps": [
+    "Entry point: a replica receives a full-sync RDB, and `rdbLoadEmptyDbFunc()` in src/replication.c calls `emptyData()` to flush the old data. Defrag can run during the flush because `replicationEmptyDbCallback()` processes events while blocked.",
+    "Change 1: the PR sets `server.active_defrag_enabled = 0` before the flush and restores it afterwards. Because `activeDefragTimeProc` checks this flag, an in-flight cycle is stopped on its next tick. The restore step is the broken part: it writes 1 instead of the saved value.",
+    "Change 2: `streamEntryIsReferenced()` in src/t_stream.c is called by `ACKED` trimming in `XADD`/`XTRIM`/`XDELEX`. The PR adds `if (!s->cgroups_ref) return 1;`, which prevents the NULL dereference in `raxFind`. Its effect on trimming is what needs checking.",
+    "Change 3: a new test in tests/unit/type/stream.tcl runs `DEBUG RELOAD` twice and expects `ACKED` trimming to work after the PEL has emptied. In the flow the test describes, the first reload leaves `cgroups_ref` NULL, so the guard's return value determines the outcome.",
+    "Change 4: tests/unit/memefficiency.tcl gets a `discard_replies_every` helper and a new flush-vs-defrag test. The helper is shared by several existing defrag tests, so its condition errors affect the whole defrag suite.",
+    "Housekeeping: `version.h` moves to 8.2.1 and the release notes gain an 8.2.1 section. The notes also list #14240, which is not part of this PR's description."
+   ],
+   "diagrams": [
+    {
+     "title": "Replica full-sync flush with defrag gating",
+     "kind": "flowchart",
+     "description": "Shows where the PR disables and restores the defrag flag around the replica database flush, and where the defrag timer checks it.",
+     "mermaid": "flowchart TD\n    A[Master sends RDB] --> B[rdbLoadEmptyDbFunc in replication.c]\n    B --> C[Save orig_active_defrag]\n    C --> D[Set active_defrag_enabled = 0]\n    D --> E[emptyData with replicationEmptyDbCallback]\n    E --> F[processEventsWhileBlocked]\n    F --> G[activeDefragTimeProc in defrag.c]\n    G -->|flag is 0| H[endDefragCycle]\n    E --> I[Restore active_defrag_enabled = 1]\n    I --> J[Load RDB into empty db]"
+    },
+    {
+     "title": "ACKED trim decision in streamEntryIsReferenced",
+     "kind": "flowchart",
+     "description": "Traces how the new NULL guard sits inside the reference check used by ACKED trimming.",
+     "mermaid": "flowchart LR\n    A[XADD or XTRIM ACKED] --> B[streamEntryIsReferenced]\n    B --> C{cgroups empty?}\n    C -->|yes| D[return 0: deletable]\n    C -->|no| E{id after min last_id?}\n    E -->|yes| F[return 1: not yet read]\n    E -->|no| G{cgroups_ref NULL?}\n    G -->|yes, PR adds| H[return 1: referenced]\n    G -->|no| I[raxFind in cgroups_ref]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Defrag flag restored to 1 instead of the saved value",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The flush wrapper saves `orig_active_defrag`, sets the flag to 0, and then restores it to `1`. The saved value is never read. A replica configured with `activedefrag no` will have defrag turned on after its first full sync, which the operator did not ask for. The restore should write back the saved value.\n\n::diff{file=\"src/replication.c\" lines=\"1949-1965\"}\n\n::callout{type=\"warning\"}\nThe unused `orig_active_defrag` also triggers `-Wunused-but-set-variable` under the `-Wall` flags in src/Makefile.\n\n::suggestion{file=\"src/replication.c\" lines=\"1961-1962\"}\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = orig_active_defrag;",
+    "files": [
+     "src/replication.c"
+    ],
+    "fixPrompt": "In `src/replication.c`, `rdbLoadEmptyDbFunc()` saves `orig_active_defrag` (around line 1956) but restores `server.active_defrag_enabled = 1` (around line 1962). Change the restore to write back the saved `orig_active_defrag` value so that a replica with `activedefrag no` keeps defrag disabled after a full sync. Keep the disable step before `emptyData()` unchanged.",
+    "commentAnchor": {
+     "file": "src/replication.c",
+     "lineStart": 1961,
+     "lineEnd": 1962
+    }
+   },
+   {
+    "title": "NULL cgroups_ref guard returns 'referenced' and blocks ACKED trimming",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`streamEntryIsReferenced()` returns 0 when no entry is in any PEL, which is the correct answer for `ACKED` trimming. The new guard `if (!s->cgroups_ref) return 1;` returns 1 instead. `cgroups_ref` is NULL whenever no PEL entries exist, for example after a `DEBUG RELOAD` with an empty PEL, which is exactly the case the new test describes. Once that happens, every entry that a group has already delivered and acknowledged is treated as referenced. `XADD ... MAXLEN ... ACKED` and `XTRIM ... ACKED` then stop removing those entries, which silently changes trimming behavior.\n\nThe new test in tests/unit/type/stream.tcl expects `XLEN` to be 2 after the last `ACKED` add. Tracing it: after the second reload the PEL is empty, so `cgroups_ref` is NULL. When `1-0` is trimmed, it passes the `min_cgroup_last_id` check, reaches the guard, and returns 1, so it is kept. `XLEN` becomes 3, and the assertion fails.\n\nThe right value is 0: a NULL `cgroups_ref` means no PEL holds the entry.\n\n::diff{file=\"src/t_stream.c\" lines=\"2704-2711\"}\n\n::callout{type=\"warning\"}\nThe crash fix is correct in intent. The return value is the bug.\n\n::suggestion{file=\"src/t_stream.c\" lines=\"2708-2708\"}\n    if (!s->cgroups_ref) return 0;",
+    "files": [
+     "src/t_stream.c",
+     "tests/unit/type/stream.tcl"
+    ],
+    "fixPrompt": "In `src/t_stream.c`, `streamEntryIsReferenced()` (around line 2708) adds `if (!s->cgroups_ref) return 1;` to avoid a NULL dereference. Change it to `return 0`. A NULL `cgroups_ref` means no consumer group PEL holds the message, so the entry is not referenced and `ACKED` trimming may delete it. Also confirm that `tests/unit/type/stream.tcl` (the test starting near line 247, last assertion near line 271) passes with this change. Keep the existing `cgroups` empty and min-last-id checks as they are.",
+    "commentAnchor": {
+     "file": "src/t_stream.c",
+     "lineStart": 2708,
+     "lineEnd": 2708
+    }
+   },
+   {
+    "title": "Inverted condition in discard_replies_every helper hangs the defrag tests",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The new helper drains replies only when `$count % $frequency != 0`, which is the opposite of the original `if {$count % 10000 == 0}` logic it replaces. It reads 10000 replies on every iteration except every 10000th, while the client has only sent one command per iteration. The deferring client's `read` will block waiting for replies that never arrive. Every call site that uses this helper (the existing defrag tests and the new flush test) will hang, and the replies that do exist will not be drained on the right boundary.\n\n::diff{file=\"tests/unit/memefficiency.tcl\" lines=\"70-76\"}\n\n::suggestion{file=\"tests/unit/memefficiency.tcl\" lines=\"71-71\"}\n        if {$count % $frequency == 0} {",
+    "files": [
+     "tests/unit/memefficiency.tcl"
+    ],
+    "fixPrompt": "In `tests/unit/memefficiency.tcl`, the `discard_replies_every` proc (around lines 70-76) uses `if {$count % $frequency != 0}`. It must be `== 0` to match the original inline `if {$count % 10000 == 0}` pattern it replaces at each call site. Fix the comparison only. Callers pass `(rd, count, 10000, N)` and should not need changes.",
+    "commentAnchor": {
+     "file": "tests/unit/memefficiency.tcl",
+     "lineStart": 70,
+     "lineEnd": 76
+    }
+   },
+   {
+    "title": "Replica flush test passes vacuously when defrag is unavailable",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The new test wraps the whole scenario in `if {[$replica config get activedefrag] eq \"activedefrag yes\"}`. If `config set activedefrag yes` fails (for example on a non-jemalloc build), the `catch` swallows the error and the test passes without asserting anything. The existing tests in the same file gate on `string match {*jemalloc*} [s mem_allocator]` and `r debug mallctl arenas.page` in `test_active_defrag`. This one does not, so it never fails in that case.\n\nThe test also never verifies the flush-time behavior directly. The `wait_for_defrag_stop` and `dbsize == 0` checks run only inside that branch.\n\n::diff{file=\"tests/unit/memefficiency.tcl\" lines=\"982-983\"}\n\n::suggestion{file=\"tests/unit/memefficiency.tcl\" lines=\"982-983\"}\n                # Defrag is only testable on jemalloc builds, so skip explicitly otherwise.\n                if {![string match {*jemalloc*} [$replica info memory]]} { return }\n                $replica config set activedefrag yes",
+    "files": [
+     "tests/unit/memefficiency.tcl"
+    ],
+    "fixPrompt": "In `tests/unit/memefficiency.tcl`, the new test 'Active defrag can't be triggered during replicaof database flush' (starting near line 945) skips silently when `config set activedefrag yes` fails (around line 982-983). Gate the test on jemalloc the same way `test_active_defrag` does (`string match {*jemalloc*} [s mem_allocator]`, or use `tags`/skip logic), and assert that the config set succeeded instead of swallowing the error with `catch`.",
+    "commentAnchor": {
+     "file": "tests/unit/memefficiency.tcl",
+     "lineStart": 982,
+     "lineEnd": 983
+    }
+   },
+   {
+    "title": "Release notes list #14240, which is not in this PR",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The 8.2.1 release notes list `#14240 INFO KEYSIZES ...`, but the PR description covers only #14274, #14276, the RediSearch fixes, and the LeanVec/LVQ change. #14240 is not part of this diff and does not appear in its description. The notes should match what the release actually ships, so either this entry should be removed or the PR description should say why it is included.\n\n::diff{file=\"00-RELEASENOTES\" lines=\"22-40\"}",
+    "files": [
+     "00-RELEASENOTES"
+    ],
+    "fixPrompt": "In `00-RELEASENOTES`, the new 8.2.1 section (around lines 22-40) lists `#14240 INFO KEYSIZES ...`, which is not part of this PR's described changes. Confirm with the release owner whether #14240 belongs in 8.2.1. If it does not, remove that bullet. If it does, add the corresponding change to the PR description. Keep the `#Qn` prefix convention that the legend defines.",
+    "commentAnchor": {
+     "file": "00-RELEASENOTES",
+     "lineStart": 22,
+     "lineEnd": 40
+    }
+   },
+   {
+    "title": "Version bump and release notes are consistent",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "`src/version.h` moves from 8.2.0 to 8.2.1 with the matching `REDIS_VERSION_NUM` of `0x00080201`, and the release notes gain a new 8.2.1 section above the 8.2 GA entry, using the same format and urgency levels defined at the top of the file. The added comment line in `version.h` is harmless. The `#Q` prefixes match the legend.",
+    "files": [
+     "src/version.h",
+     "00-RELEASENOTES"
+    ]
+   },
+   {
+    "title": "Stream regression test targets the crash path",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The new test in tests/unit/type/stream.tcl exercises the exact state that caused the crash: an entry is read, the server is reloaded, and `ACKED` trimming runs against the rebuilt reference index. It also covers the empty-PEL reload. The bug is in the return value, not in the choice of scenario, so once the guard is fixed this test should be a useful regression guard. The XACK index extraction (`lindex` nesting) is correct for the `XREADGROUP` reply shape.",
+    "files": [
+     "tests/unit/type/stream.tcl"
+    ]
+   },
+   {
+    "title": "Flush-time defrag disable covers the synchronous path",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Disabling `active_defrag_enabled` around `emptyData()` works for the synchronous flush because `replicationEmptyDbCallback()` runs `processEventsWhileBlocked()`. That lets `activeDefragTimeProc` see the cleared flag and call `endDefragCycle(0)`. The approach is sound once the restore step uses the saved value. Note that with `repl_slave_lazy_flush` (`EMPTYDB_ASYNC`), the callback may run after the flag is restored, so the protection does not hold on that path. This is a trade-off worth a comment, not a blocker.",
+    "files": [
+     "src/replication.c"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":6,\"title\":\"Code Review Bench PR #14283 - Redis 8.2.1\",\"author\":\"\",\"baseSha\":\"a5747eb95a1e431747989a531ed5bfe5a3df19e1\",\"headSha\":\"3d3ed35ce84585af8d0d2998eb5c8cd557412788\"},\"summary\":\"This is the Redis 8.2.1 patch release, bundling three fixes and a release-notes/version bump. It has three functional changes: (1) during a replica's full-sync database flush, active defrag is turned off so it cannot touch a half-emptied dataset; (2) `streamE",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 8
+}

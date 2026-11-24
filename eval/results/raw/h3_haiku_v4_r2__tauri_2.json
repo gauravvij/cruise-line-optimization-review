@@ -1,0 +1,368 @@
+{
+ "id": "tauri#2",
+ "repo": "tauri",
+ "num": 2,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T11:13:43.716Z",
+ "num_of_issues": 7,
+ "issues": [
+  {
+   "title": "Manual error trait implementation used",
+   "description": "The rule requires all custom error types to use #[derive(thiserror::Error)] with appropriate #[error(...)] attributes for descriptive error messages, but FileWriteError manually implements Display and Error traits instead",
+   "file_path": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+   "start_line": 285,
+   "end_line": 307,
+   "problematic_code_snippet": "#[derive(Debug)]\nenum FileWriteError {\n  Write(std::io::Error),\n  Permissions(std::io::Error),\n}\n\nimpl std::fmt::Display for FileWriteError {\n  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n    match self {\n      FileWriteError::Write(e) => write!(f, \"Failed to write file: {}\", e),\n      FileWriteError::Permissions(e) => write!(f, \"Failed to set permissions: {}\", e),\n    }\n  }\n}\n\nimpl std::error::Error for FileWriteError {\n  fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {\n    match self {\n      FileWriteError::Write(e) => Some(e),\n      FileWriteError::Permissions(e) => Some(e),\n    }\n  }\n}",
+   "rule_name": "Error Types Must Use thiserror for Structured Error Handling"
+  },
+  {
+   "title": "Inverted existence check prevents GTK plugin installation",
+   "description": "The condition for writing the GTK plugin script was changed from `if !gtk.exists()` to `if gtk.exists()`, inverting the logic. This causes the plugin to only be written when it already exists, and to be skipped when it doesn't exist - the opposite of the intended behavior. Applications using GTK will fail to bundle correctly on systems where the plugin hasn't been previously cached, as the required linuxdeploy-plugin-gtk.sh script won't be created. This breaks the PR's main purpose of inlining the GTK plugin to avoid download failures.",
+   "file_path": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+   "start_line": 242,
+   "end_line": 246,
+   "problematic_code_snippet": "  let gtk = tools_path.join(\"linuxdeploy-plugin-gtk.sh\");\n  if gtk.exists() {\n    let data = include_bytes!(\"./linuxdeploy-plugin-gtk.sh\");\n    write_and_make_executable(&gtk, data)?;\n  }"
+  },
+  {
+   "title": "File permissions set before file creation causes failure",
+   "description": "In the `write_and_make_executable` function, the order of operations was reversed - `fs::set_permissions` is now called before `fs::write`. This attempts to set Unix permissions on a file that doesn't exist yet, which will fail with a \"file not found\" error. Every call to this function will fail, breaking the entire bundling process for AppImage. All tools (AppRun, linuxdeploy, GTK plugin, GStreamer plugin) that rely on this function to be written and made executable will fail to be prepared, making AppImage bundling completely non-functional.",
+   "file_path": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+   "start_line": 309,
+   "end_line": 316,
+   "problematic_code_snippet": "fn write_and_make_executable(path: &Path, data: &[u8]) -> Result<(), FileWriteError> {\n  use std::os::unix::fs::PermissionsExt;\n\n  fs::set_permissions(path, fs::Permissions::from_mode(0o770)).map_err(FileWriteError::Permissions)?;\n  fs::write(path, data).map_err(FileWriteError::Write)?;\n\n  Ok(())\n}"
+  },
+  {
+   "title": "Architecture mapping bypassed in linuxdeploy download URL",
+   "description": "The download URL for linuxdeploy now uses the raw `arch` variable instead of `linuxdeploy_arch`, bypassing the critical i686→i383 architecture translation that happens on line 235. When building for i686 architecture, the code will attempt to download from a URL containing \"i686\" instead of \"i383\", which will fail because the binary is not available at that URL. This breaks AppImage bundling specifically for 32-bit x86 systems, an architecture that requires special handling in the tauri-apps binary releases repository.",
+   "file_path": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+   "start_line": 235,
+   "end_line": 240,
+   "problematic_code_snippet": "  let linuxdeploy_arch = if arch == \"i686\" { \"i383\" } else { arch };\n  let linuxdeploy = tools_path.join(format!(\"linuxdeploy-{linuxdeploy_arch}.AppImage\"));\n  if !linuxdeploy.exists() {\n    let data = download(&format!(\"https://github.com/tauri-apps/binary-releases/releases/download/linuxdeploy/linuxdeploy-{arch}.AppImage\"))?;\n    write_and_make_executable(&linuxdeploy, &data)?;\n  }"
+  },
+  {
+   "title": "Missing From<FileWriteError> implementation causes compilation failure",
+   "description": "The write_and_make_executable function now returns Result<(), FileWriteError> instead of std::io::Result<()>, but there is no From<FileWriteError> implementation for the crate::Error type. All five call sites in prepare_tools use the ? operator which requires this conversion. The crate's Error enum has #[from] for io::Error but not for FileWriteError. This will cause compilation to fail with 'the trait From<FileWriteError> is not implemented for Error' at lines 232, 239, 245, 251, and 259, making the entire AppImage bundling functionality fail to compile.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "// Custom error type for file operations\n#[derive(Debug)]\nenum FileWriteError {\n  Write(std::io::Error),\n  Permissions(std::io::Error),\n}\n\n// ... Display and Error impls ...\n\nfn write_and_make_executable(path: &Path, data: &[u8]) -> Result<(), FileWriteError> {\n  use std::os::unix::fs::PermissionsExt;\n\n  fs::set_permissions(path, fs::Permissions::from_mode(0o770)).map_err(FileWriteError::Permissions)?;\n  fs::write(path, data).map_err(FileWriteError::Write)?;\n\n  Ok(())\n}"
+  },
+  {
+   "title": "New shell script does not follow 2-space indentation (EditorConfig)",
+   "description": "EditorConfig requires 2-space indentation across source files, but this newly added script uses 4-space indentation (e.g., inside conditionals and case arms).",
+   "file_path": "crates/tauri-bundler/src/bundle/linux/appimage/linuxdeploy-plugin-gstreamer.sh",
+   "start_line": 7,
+   "end_line": 10,
+   "problematic_code_snippet": "if [ \"$DEBUG\" != \"\" ]; then\n    set -x\nfi",
+   "rule_name": "Rule 6: All Source Files Must Follow EditorConfig Standards"
+  },
+  {
+   "title": "New shell script does not follow 2-space indentation (EditorConfig)",
+   "description": "EditorConfig requires 2-space indentation across source files, but this newly added script uses 4-space indentation in multiple blocks (e.g., the DEBUG conditional, functions, loops, and case arms).",
+   "file_path": "crates/tauri-bundler/src/bundle/linux/appimage/linuxdeploy-plugin-gtk.sh",
+   "start_line": 11,
+   "end_line": 15,
+   "problematic_code_snippet": "if [ \"$DEBUG\" != \"\" ]; then\n    set -x\n    verbose=\"--verbose\"\nfi",
+   "rule_name": "Rule 6: All Source Files Must Follow EditorConfig Standards"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "2fe07c92a3a31f447668ef4ac66ba1e15c784a05",
+ "diff_chars": 22141,
+ "diff_lines": 604,
+ "user_prompt_chars": 23076,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 61934,
+ "wall_ms": 64446,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 11,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 8.886486241,
+ "spend_post_usd": 8.898175416,
+ "cost_settled": true,
+ "cost_wait_ms": 375,
+ "cost_usd": 0.011689175000000773,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.01199809,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 28578,
+  "cache_read_input_tokens": 183184,
+  "output_tokens": 13186,
+  "output_tokens_details": {
+   "thinking_tokens": 5875
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 28578
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 13186,
+   "cacheReadInputTokens": 183184,
+   "cacheCreationInputTokens": 28578,
+   "webSearchRequests": 0,
+   "costUSD": 0.01199809,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5875,
+   "cacheCreationEphemeral5mInputTokens": 28578,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 2,
+   "title": "Code Review Bench PR #14390 - fix(bundler): inline linuxdeploy plugin scripts",
+   "author": "",
+   "baseSha": "86b375cfa54e23f13971dcd21d308ec07bd79d5b",
+   "headSha": "2fe07c92a3a31f447668ef4ac66ba1e15c784a05"
+  },
+  "summary": "The PR stops the Linux AppImage bundler from downloading the GTK and GStreamer linuxdeploy plugin scripts from raw.githubusercontent.com, which GitHub has been rate-limiting with 429 errors. It moves `appimage.rs` to `appimage/mod.rs`, vendors both scripts next to it, and embeds them with `include_bytes!`. It also reorders `write_and_make_executable` to take `&[u8]` and to return a new `FileWriteError` type that distinguishes write from permission failures.\n\nThe motivation is sound and the embedding approach removes a network failure mode. However, the head commit does not compile and would fail on a clean tools directory even if it did. The GTK install guard is inverted, and the i686 linuxdeploy download URL has changed without explanation. I would not merge this as it stands.",
+  "verdict": "request_changes",
+  "verdictRationale": "The `?` on `write_and_make_executable` in `prepare_tools` needs `From<FileWriteError> for crate::Error`, which does not exist, so the crate will not build. Even with that fixed, `set_permissions` runs before the file is created and fails with ENOENT on first use. The GTK guard is also inverted, so the GTK plugin is never installed on a fresh tools directory. Those three need fixing before merge.",
+  "architecture": {
+   "overview": "Before this PR, `prepare_tools` in the AppImage bundler fetched four helper artifacts on first use: the AppRun launcher, the linuxdeploy AppImage, and the GTK and GStreamer linuxdeploy plugin shell scripts from `raw.githubusercontent.com`. Each was cached in a tools directory and skipped if present. The AppImage plugin was an optional download that linuxdeploy could replace with a built-in version.\n\nThe PR changes only the two plugin scripts. They are now vendored as `linuxdeploy-plugin-gtk.sh` and `linuxdeploy-plugin-gstreamer.sh` inside a new `appimage/` directory and embedded at compile time with `include_bytes!`. The AppRun and linuxdeploy downloads remain network fetches from `tauri-apps/binary-releases`, and the AppImage plugin download is unchanged. `write_and_make_executable` is changed to take a byte slice and to return a typed error.",
+   "steps": [
+    "Entry point: `prepare_tools` in `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs` populates the tools directory before linuxdeploy runs.",
+    "AppRun and linuxdeploy are still downloaded from `tauri-apps/binary-releases`. The linuxdeploy URL now uses `arch` rather than `linuxdeploy_arch`, so the i686 mapping to `i383` applies only to the local filename.",
+    "The GTK and GStreamer plugin scripts are no longer downloaded from `raw.githubusercontent.com`. They are compiled into the bundler binary from the sibling `.sh` files and written with `write_and_make_executable`.",
+    "`write_and_make_executable` now sets mode 0770 before writing, and returns `FileWriteError::Permissions` or `FileWriteError::Write` on failure. The call sites rely on `?` converting that error into `crate::Error`.",
+    "The AppImage plugin download and the `dd` ELF-marker patch are unchanged."
+   ],
+   "diagrams": [
+    {
+     "kind": "flowchart",
+     "title": "prepare_tools artifact sources after this PR",
+     "description": "Shows which tool artifacts still come from the network and which are now embedded in the bundler binary.",
+     "mermaid": "flowchart LR\n  A[prepare_tools] --> B[AppRun download]\n  A --> C[linuxdeploy AppImage download]\n  A --> D[include_bytes gtk.sh]\n  A --> E[include_bytes gstreamer.sh]\n  A --> F[AppImage plugin download, optional]\n  B --> G[write_and_make_executable]\n  C --> G\n  D --> G\n  E --> G\n  F --> G\n  G --> H[tools_path cache]"
+    },
+    {
+     "kind": "sequence",
+     "title": "Bundler first-run tool setup",
+     "description": "Shows the network calls that remain after the PR and the embedded scripts that no longer hit GitHub.",
+     "mermaid": "sequenceDiagram\n  participant Bundler as prepare_tools\n  participant BR as binary-releases (GitHub)\n  participant Disk as tools_path\n  Bundler->>BR: GET AppRun-arch\n  BR-->>Bundler: AppRun bytes\n  Bundler->>Disk: write_and_make_executable AppRun\n  Bundler->>BR: GET linuxdeploy-arch.AppImage\n  BR-->>Bundler: AppImage bytes\n  Bundler->>Disk: write_and_make_executable linuxdeploy\n  Bundler->>Disk: write_and_make_executable gtk.sh (embedded)\n  Bundler->>Disk: write_and_make_executable gstreamer.sh (embedded)"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Crate does not compile: no From<FileWriteError> for crate::Error",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The three call sites in `prepare_tools` use `write_and_make_executable(...)?`, which returns `Result<(), FileWriteError>`, inside a function returning `crate::Result`. That requires `From<FileWriteError> for crate::Error`. The `Error` enum in `crates/tauri-bundler/src/error.rs` has `#[from]` only for `io::Error`, `anyhow::Error`, and other concrete types, so the conversion does not exist and the `?` will not compile.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"229-241\"}\n\n::callout{type=\"warning\"}\nThe simplest fix is to derive `thiserror::Error` on `FileWriteError` and add a `#[from]`-style variant on `crate::Error`, or to have `write_and_make_executable` return `crate::Result` and map the errors with `Context`. The existing `Error::Fs { context, path, error }` variant is the natural place for path-aware permission and write errors.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"309-313\"}",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "crates/tauri-bundler/src/error.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs`, `write_and_make_executable` returns `Result<(), FileWriteError>`, but its callers in `prepare_tools` (around lines 232, 239, 245, 251, 259) use `?` inside a function that returns `crate::Result`. There is no `From<FileWriteError> for crate::Error`, so the crate does not compile. Make the error path compile without a new conversion: either change `write_and_make_executable` to return `crate::Result<()>` and wrap I/O failures in the existing `Error::Fs { context, path, error }` variant, or add the missing `From` impl in `crates/tauri-bundler/src/error.rs`. Match how other bundler helpers report fs errors.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "lineStart": 232,
+     "lineEnd": 232
+    }
+   },
+   {
+    "title": "set_permissions runs before the file exists, so first-time writes fail",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The PR swaps the order in `write_and_make_executable` so `fs::set_permissions` runs before `fs::write`. `set_permissions` follows the path, so it fails with ENOENT when the file has not been created yet. Every first-run call, meaning every `!exists()` branch in `prepare_tools` on a fresh tools directory, will now return `FileWriteError::Permissions` and abort the bundle. The original write-then-chmod order was correct.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"309-316\"}\n\n::callout{type=\"warning\"}\nThe error variant is also misleading here. The failure is a missing file, not a permission problem, so the message would send a user looking in the wrong place.",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs`, `write_and_make_executable` (around line 309) calls `fs::set_permissions` before `fs::write`. For a path that does not yet exist, `set_permissions` returns ENOENT, so first-time tool setup always fails. Restore the original order: write the file first, then set mode 0o770. Keep the `FileWriteError::Write` and `FileWriteError::Permissions` mapping so each step reports its own failure.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "lineStart": 312,
+     "lineEnd": 313
+    }
+   },
+   {
+    "title": "GTK plugin guard is inverted, so the GTK plugin is never installed",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The GTK branch was changed from `if !gtk.exists()` to `if gtk.exists()`. On a clean tools directory the file does not exist, so the embedded script is never written. linuxdeploy then runs without the GTK plugin, and the AppImage is built without GTK resources, schemas, and modules. On later runs the file exists, so the bundled copy is overwritten on every build. The result is that the first build and later builds produce different AppImages.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"242-247\"}\n\nThe GStreamer branch keeps `!gstreamer.exists()`, so the two branches are now inconsistent.",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs` around line 243, the GTK plugin block reads `if gtk.exists() {`. That is inverted. Change it to `if !gtk.exists() {` to match the GStreamer block a few lines below and the original behaviour.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "lineStart": 243,
+     "lineEnd": 246
+    }
+   },
+   {
+    "title": "linuxdeploy download URL silently changes its i686 asset name",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The original code mapped `i686` to `i383` and used that name for both the local filename and the download URL. The PR keeps the local name on `linuxdeploy_arch` but builds the URL from `arch`. For `i686`, the fetch now requests `linuxdeploy-i686.AppImage` where it previously requested `linuxdeploy-i383.AppImage`. The PR description does not mention this, and nothing in the diff shows that the release asset was renamed. If the asset is still named `i383`, 32-bit builds will fail to download linuxdeploy.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"235-240\"}\n\nI haven't checked the binary-releases asset list, so this is a question for the author rather than a confirmed break.",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs` around lines 235-239, the linuxdeploy download URL was changed from `linuxdeploy-{linuxdeploy_arch}.AppImage` to `linuxdeploy-{arch}.AppImage`. This makes i686 request a different asset name than before. Confirm the actual asset name in the tauri-apps/binary-releases `linuxdeploy` release. If it is still `i383`, restore `{linuxdeploy_arch}` in the URL. If the rename is intentional, say so in the PR description and keep the local filename consistent with the URL.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "lineStart": 238,
+     "lineEnd": 238
+    }
+   },
+   {
+    "title": "Vendored plugin scripts are unpinned, and cached copies never refresh",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The two scripts are snapshots of upstream `master` with no version, commit hash, or checksum recorded in the repo. Upstream fixes will no longer reach users unless someone manually re-vendors the files. Because the GStreamer branch still checks `!exists()`, any user who already has a cached `linuxdeploy-plugin-gstreamer.sh` from the old download will keep that older copy and never get the embedded version. The GTK branch overwrites every time, so the two plugins now behave differently across runs.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"248-252\"}\n\nThe trade-off is worth stating in the PR. Embedding removes the network dependency, but it also removes automatic updates.",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "crates/tauri-bundler/src/bundle/linux/appimage/linuxdeploy-plugin-gstreamer.sh",
+     "crates/tauri-bundler/src/bundle/linux/appimage/linuxdeploy-plugin-gtk.sh"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs`, the GStreamer plugin is written only when missing, so a cached script downloaded before this change is never replaced. The GTK plugin is rewritten on every run. Pick one policy for both embedded scripts, probably always rewriting them so the embedded copy wins. Also record the upstream source commit for the two vendored `.sh` files in a header comment or in the PR description so future re-vendoring is traceable.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "lineStart": 248,
+     "lineEnd": 252
+    }
+   },
+   {
+    "title": "Hand-rolled error type duplicates thiserror boilerplate",
+    "severity": "low",
+    "category": "style",
+    "body": "`FileWriteError` is written out by hand with a manual `Display` impl and a manual `source()` impl. The `tauri-bundler` crate already depends on `thiserror` (the `Error` enum uses `thiserror::Error as DeriveError`). Deriving the trait would remove about 20 lines and keep the messages in attributes next to the variants. The project already uses this pattern elsewhere in the same crate.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/linux/appimage/mod.rs\" lines=\"283-307\"}",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/linux/appimage/mod.rs`, replace the hand-written `Display` and `std::error::Error` impls for `FileWriteError` (around lines 283-307) with `#[derive(thiserror::Error)]` and `#[error(...)]` attributes on the two variants, using `#[source]` for the wrapped `io::Error`. Keep the same message text. Use the same derive style as `crates/tauri-bundler/src/error.rs`. This should also be done together with the `From` fix for the compile error.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs",
+     "lineStart": 283,
+     "lineEnd": 307
+    }
+   },
+   {
+    "title": "Removing the network fetch eliminates the 429 failure mode",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The main motivation holds. The GTK and GStreamer scripts no longer depend on `raw.githubusercontent.com`, which is the endpoint that has been returning 429 responses. The `include_bytes!` paths are correct after the move because they are resolved relative to the source file, and both scripts were moved into the same `appimage/` directory. Moving `write_and_make_executable` to take `&[u8]` also avoids moving the `Vec` at each call site, and the `&data` changes are consistent.",
+    "files": [
+     "crates/tauri-bundler/src/bundle/linux/appimage/mod.rs"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":2,\"title\":\"Code Review Bench PR #14390 - fix(bundler): inline linuxdeploy plugin scripts\",\"author\":\"\",\"baseSha\":\"86b375cfa54e23f13971dcd21d308ec07bd79d5b\",\"headSha\":\"2fe07c92a3a31f447668ef4ac66ba1e15c784a05\"},\"summary\":\"The PR stops the Linux AppImage bundler from downloading the GTK and GStreamer linuxdeploy plugin scripts from raw.githubusercontent.com, which GitHub has been rate-limiting with 429 errors. It moves `appimage.rs` to `appim",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

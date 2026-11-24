@@ -1,0 +1,294 @@
+{
+ "id": "Ghost#6",
+ "repo": "Ghost",
+ "num": 6,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:16:16.176Z",
+ "num_of_issues": 3,
+ "issues": [
+  {
+   "title": "Variable declared using var keyword",
+   "description": "The rule requires all variable declarations to use let (for reassignable variables) or const (for constants), never var. The code uses var to declare the member variable.",
+   "file_path": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+   "start_line": 340,
+   "end_line": 340,
+   "problematic_code_snippet": "        const context = options && options.context || {};\n        const source = this._resolveContextSource(context);\n        const eventData = _.pick(data, ['created_at']);\n\n        const memberAddOptions = {...(options || {}), withRelated};\n        var member;\n        if (config.get('memberWelcomeEmailTestInbox') && WELCOME_EMAIL_SOURCES.includes(source)) {",
+   "rule_name": "Code Must Use let or const Instead of var"
+  },
+  {
+   "title": "Job scheduler will never schedule on first invocation",
+   "description": "The condition `hasScheduled.processOutbox && !process.env.NODE_ENV.startsWith('test')` is incorrect - it checks if the job is already scheduled before scheduling it, creating a logical impossibility. The job will never be scheduled on the first call since `hasScheduled.processOutbox` starts as `false`. This should be `!hasScheduled.processOutbox` to schedule the job when it hasn't been scheduled yet. This breaks the welcome email processing functionality entirely, as the background job that processes the outbox entries will never be registered.",
+   "file_path": "ghost/core/core/server/services/member-welcome-emails/jobs/index.js",
+   "start_line": 15,
+   "end_line": 15,
+   "problematic_code_snippet": "    async scheduleMemberWelcomeEmailJob() {\n        if (!config.get('memberWelcomeEmailTestInbox')) {\n            return false;\n        }\n\n        if (hasScheduled.processOutbox && !process.env.NODE_ENV.startsWith('test')) {\n            jobsService.addJob({\n                at: '0 */5 * * * *',\n                job: path.resolve(__dirname, 'process-outbox.js'),\n                name: 'process-member-welcome-emails'\n            });"
+  },
+  {
+   "title": "Incorrect logical operator allows unwanted welcome email triggers",
+   "description": "The condition uses OR (`||`) instead of AND (`&&`) when checking whether to create welcome email outbox entries. This means welcome emails will be triggered if EITHER the config is set OR the source is 'member', instead of requiring BOTH conditions. This causes two problems: (1) welcome emails are sent even when the feature is disabled (config not set) as long as source is 'member', and (2) welcome emails are sent for disallowed sources (like 'import' or 'admin') when the config is set. The correct logic should require both the feature to be enabled AND the source to be in the allowed list.",
+   "file_path": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+   "start_line": 342,
+   "end_line": 342,
+   "problematic_code_snippet": "        const memberAddOptions = {...(options || {}), withRelated};\n        var member;\n        const welcomeEmailConfig = config.get('memberWelcomeEmailTestInbox');\n        if (welcomeEmailConfig || WELCOME_EMAIL_SOURCES.includes(source)) {\n            const runMemberCreation = async (transacting) => {\n                const newMember = await this._Member.add({\n                    ...memberData,\n                    ...memberStatusData,\n                    labels\n                }, {...memberAddOptions, transacting});"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "bde2541dfa90eabb728889eff3441d156b8597e6",
+ "diff_chars": 11045,
+ "diff_lines": 232,
+ "user_prompt_chars": 12422,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 76339,
+ "wall_ms": 79328,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 8,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 18,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 8
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.356180642,
+ "spend_post_usd": 0.366537852,
+ "cost_settled": true,
+ "cost_wait_ms": 580,
+ "cost_usd": 0.010357210000000006,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.0141414,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 34180,
+  "cache_read_input_tokens": 162340,
+  "output_tokens": 16489,
+  "output_tokens_details": {
+   "thinking_tokens": 8183
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 34180
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 16489,
+   "cacheReadInputTokens": 162340,
+   "cacheCreationInputTokens": 34180,
+   "webSearchRequests": 0,
+   "costUSD": 0.0141414,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 8183,
+   "cacheCreationEphemeral5mInputTokens": 34180,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 6,
+   "title": "Code Review Bench PR #25465 - Changed member welcome email job to run based on config",
+   "author": "unknown",
+   "baseSha": "d3ce72300221daab0de12d34da30f2e3b371ad83",
+   "headSha": "bde2541dfa90eabb728889eff3441d156b8597e6"
+  },
+  "summary": "The PR replaces the `welcomeEmails` labs-flag gate with a check on the `memberWelcomeEmailTestInbox` config key, in two places: the scheduler that starts the welcome-email outbox worker (`member-welcome-emails/jobs/index.js`) and the member-creation path that writes outbox rows (`MemberRepository.create`). The stated goal is to let a stress test run at higher volume against an internal test inbox, while leaving self-hosted instances untouched. The unit and integration tests are migrated from labs stubs to config stubs.\n\nThe intent is sound, but two of the three logic changes are wrong. The scheduler guard was flipped, so the worker job is never registered in any environment. The outbox gate in `MemberRepository.create` uses `||` where the original used `&&`, so outbox rows are written for every default-context member even when the config is empty, and for import, admin and API creates whenever the config is set. That contradicts the PR's own self-hosted guarantee, and at least five of the new or updated tests assert the behaviour that this change breaks. I could not run the suite here (no `node_modules`), so those test failures come from tracing `_resolveContextSource`, which returns `'member'` when no context is passed.",
+  "verdict": "request_changes",
+  "verdictRationale": "Two logic inversions block the change. The scheduler guard is negated, so the welcome-email worker never starts, which defeats the whole feature. The member-creation guard uses `||` instead of `&&`, which writes outbox rows on self-hosted instances with an empty config and on import/admin/API creates when the config is set, and breaks the tests that assert the opposite. Both are one-character fixes, but they need to land before merge and the tests should be re-run.",
+  "architecture": {
+   "overview": "Member creation goes through `MemberRepository.create`, which decides whether to write a `MemberCreatedEvent` row to the `outbox` table in the same transaction as the member insert. Before this PR that decision required the `welcomeEmails` labs flag and a source of `member`. A separate path, `member-welcome-emails/index.js`, calls `scheduleMemberWelcomeEmailJob` at boot. That function registers a recurring job (every 5 minutes) that runs `process-outbox.js` to drain pending outbox rows and send the welcome emails.\n\nThe PR makes both checks depend on `config.get('memberWelcomeEmailTestInbox')` instead of the labs flag, so the feature is turned on by config and not per-site lab toggle. The intent is that without the config, nothing is scheduled and no outbox rows are written. As written, the scheduler guard is negated so the job is never registered, and the creation guard uses `||`, so outbox rows are written whenever the config is set or the source is `member`.",
+   "steps": [
+    "Entry point at boot: `member-welcome-emails/index.js` calls `jobs.scheduleMemberWelcomeEmailJob()`. The PR changes this function to gate on the config key, and it negates the `hasScheduled` check, so the job is never added.",
+    "Entry point at write time: `MemberRepository.create` resolves a `source` from the request context (`member` by default, `import`, `admin`, `api`, `system`). The PR replaces the labs check with a config read, but the combined condition is `config || source is member`, which is not the same gate as before.",
+    "When the outbox branch runs, the member insert and the outbox insert share one transaction. This keeps the outbox row consistent with the member row, which is the right design for this feature.",
+    "Consumer side: `process-outbox.js` drains pending rows and calls `send-member-welcome-email.js`, which reads the same config key for the recipient. Nothing in the worker changed in this PR.",
+    "Tests: the unit tests stub `config.get` with `sinon`, and the integration tests call `configUtils.set` with `configUtils.restore()` in `afterEach`. The config migration is consistent, but the assertions that cover the broken `||` gate will fail."
+   ],
+   "diagrams": [
+    {
+     "title": "Welcome email gating after this PR",
+     "kind": "flowchart",
+     "description": "Shows the two gates added by this PR: the boot-time scheduler and the per-create outbox write. Both now read memberWelcomeEmailTestInbox.",
+     "mermaid": "flowchart TD\n    Boot[\"Service init: member-welcome-emails index.js\"] --> Sched[\"scheduleMemberWelcomeEmailJob (jobs/index.js)\"]\n    Sched --> CfgA{\"memberWelcomeEmailTestInbox set?\"}\n    CfgA -- no --> Stop1[\"return false\"]\n    CfgA -- yes --> GuardA{\"hasScheduled.processOutbox AND not test env (as written)\"}\n    GuardA -- true --> Add[\"jobsService.addJob every 5 min process-outbox.js\"]\n    GuardA -- false --> Skip[\"job never registered\"]\n\n    Req[\"Member create via MembersAPI\"] --> Repo[\"MemberRepository.create\"]\n    Repo --> Src[\"_resolveContextSource\"]\n    Src --> CfgB{\"config set OR source is member (as written)\"}\n    CfgB -- true --> Tx[\"Transaction: member insert + outbox row\"]\n    CfgB -- false --> Plain[\"Member insert only\"]\n    Tx --> Outbox[(\"outbox table, status pending\")]\n    Outbox -.-> Add"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Scheduler guard is negated, so the welcome-email job never runs",
+    "severity": "critical",
+    "category": "correctness",
+    "files": [
+     "ghost/core/core/server/services/member-welcome-emails/jobs/index.js"
+    ],
+    "body": "The guard in `scheduleMemberWelcomeEmailJob` was flipped from `!hasScheduled.processOutbox` to `hasScheduled.processOutbox`. `hasScheduled.processOutbox` starts as `false`, so the condition is always false and `jobsService.addJob` is never reached. The flag is only set to `true` inside that same block, so it can never become true either. The worker is never registered, in any environment, and no welcome emails are ever sent from the outbox.\n\n::diff{file=\"ghost/core/core/server/services/member-welcome-emails/jobs/index.js\" lines=\"8-23\"}\n\n::callout{type=\"warning\"}\nThe `NODE_ENV` test guard is also wrong in the same expression. In the original it blocked scheduling under test, and as written it does nothing useful. Fix both in the same edit.\n\n::suggestion{file=\"ghost/core/core/server/services/member-welcome-emails/jobs/index.js\" lines=\"15-15\"}\n        if (!hasScheduled.processOutbox && !process.env.NODE_ENV.startsWith('test')) {\n\n",
+    "fixPrompt": "In `ghost/core/core/server/services/member-welcome-emails/jobs/index.js`, the guard at line 15 in `scheduleMemberWelcomeEmailJob` reads `if (hasScheduled.processOutbox && !process.env.NODE_ENV.startsWith('test'))`. The leading `!` on `hasScheduled.processOutbox` was dropped, so the job is never scheduled. Restore the negation so the condition reads: do not schedule if the job is already scheduled, and do not schedule under the test environment. Keep the config check above it unchanged. Keep the rest of the function as-is, including setting `hasScheduled.processOutbox = true` inside the block. Verify with the existing scheduling behaviour in the same file.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/member-welcome-emails/jobs/index.js",
+     "lineStart": 15,
+     "lineEnd": 15
+    }
+   },
+   {
+    "title": "Outbox gate uses `||` instead of `&&`, writing welcome rows for every member and every source",
+    "severity": "high",
+    "category": "correctness",
+    "files": [
+     "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+     "ghost/core/test/integration/services/member-welcome-emails.test.js",
+     "ghost/core/test/unit/server/services/members/members-api/repositories/MemberRepository.test.js"
+    ],
+    "body": "The original gate was `labs.isSet('welcomeEmails') && WELCOME_EMAIL_SOURCES.includes(source)`. The new gate is `welcomeEmailConfig || WELCOME_EMAIL_SOURCES.includes(source)`, which is much wider than before.\n\n`_resolveContextSource` returns `'member'` whenever no context flags are set, so any default-context create takes the outbox branch even when `memberWelcomeEmailTestInbox` is empty (the shipped default in `defaults.json`). That writes an outbox row on every self-hosted install, which is the exact impact the PR says it avoids. Conversely, once the config is set, import, admin and API creates also write outbox rows, which should never happen.\n\n::diff{file=\"ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js\" lines=\"336-345\"}\n\nThe tests break under this logic. Tracing the code:\n- Integration `does NOT create outbox entry when config is not set` (lines 52-65): context is `{}`, so the source is `member`, and a row is written. The assertion expects zero.\n- Integration `does NOT create outbox entry when member is imported` (lines 67-80) and `... created by admin` (lines 82-95): the config is set, so `||` takes the branch and writes a row. Both expect zero.\n- Unit `does NOT create outbox entry when config is not set` (lines 554-569) and `does not create outbox entry for disallowed sources` (lines 571-594): same effect.\n\nSince `config.testing.json` sets the inbox, every test that creates a member through the default context now writes outbox rows as well.\n\n::suggestion{file=\"ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js\" lines=\"342-342\"}\n        if (welcomeEmailConfig && WELCOME_EMAIL_SOURCES.includes(source)) {\n\n",
+    "fixPrompt": "In `ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js` at line 342 inside `create`, the condition `welcomeEmailConfig || WELCOME_EMAIL_SOURCES.includes(source)` must be `&&`. Both checks must hold, which matches the original `labs.isSet(...) && WELCOME_EMAIL_SOURCES.includes(source)`. After the change, re-run the unit tests in `ghost/core/test/unit/server/services/members/members-api/repositories/MemberRepository.test.js` (the 'create - outbox integration' block) and the integration tests in `ghost/core/test/integration/services/member-welcome-emails.test.js`. All of them should pass, including the import, admin and not-configured cases. Also check that other integration suites that count outbox rows still pass, since `config.testing.json` enables the config for the whole test run.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+     "lineStart": 342,
+     "lineEnd": 342
+    }
+   },
+   {
+    "title": "`var` replaces `let` for `member`, inconsistent with the file",
+    "severity": "low",
+    "category": "style",
+    "files": [
+     "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js"
+    ],
+    "body": "The declaration changed from `let member;` to `var member;`. The rest of this file uses `let`/`const`, and `var` is function-scoped, which makes the reassignment inside the `if`/`else` branches harder to reason about. Nothing breaks at runtime. The change is not needed for this PR and should be reverted to keep the diff focused.\n\n::diff{file=\"ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js\" lines=\"339-342\"}\n\n",
+    "fixPrompt": "In `ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js`, line 340 declares `var member;` inside `create`. Change it back to `let member;` to match the surrounding code and the rest of the file. Make no other changes to that block.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+     "lineStart": 340,
+     "lineEnd": 340
+    }
+   },
+   {
+    "title": "`labsService` dependency is now unused in MemberRepository and still wired through",
+    "severity": "low",
+    "category": "maintainability",
+    "files": [
+     "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js"
+    ],
+    "body": "After this PR, `MemberRepository` no longer reads `this._labsService` anywhere. The constructor still accepts `labsService` and stores it at line 94. `members-api.js` and `services/members/api.js` still pass it in, and the unit tests stopped passing it, which hides the dependency from the test. Dead dependencies like this confuse readers about what the class actually needs, and they make the next person wonder whether the labs flag still gates something. Remove the parameter and its call-site wiring in the same change. Or, if the labs flag is still needed for future UI work, leave a comment saying why it is kept.\n\n::diff{file=\"ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js\" lines=\"339-343\"}\n\n",
+    "fixPrompt": "`MemberRepository` in `ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js` no longer uses `this._labsService`, which is assigned at line 94 from the constructor's `labsService` parameter. Remove the parameter and assignment if nothing else reads it. Then remove the `labsService` argument from the constructor calls in `ghost/core/core/server/services/members/members-api/members-api.js` and `ghost/core/core/server/services/members/api.js` where it is passed into `MemberRepository`. Check first that other repositories in those files still need it. Keep the change minimal.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+     "lineStart": 341,
+     "lineEnd": 341
+    }
+   },
+   {
+    "title": "Trailing whitespace in the new integration test",
+    "severity": "low",
+    "category": "style",
+    "files": [
+     "ghost/core/test/integration/services/member-welcome-emails.test.js"
+    ],
+    "body": "The line after `configUtils.set('memberWelcomeEmailTestInbox', '');` in the `does NOT create outbox entry when config is not set` test is whitespace-only. This is a small lint issue, but it is the kind of thing that leaves noise in the diff. The file also has another whitespace-only line at line 101 in the existing timestamp test, which predates this PR.\n\n::diff{file=\"ghost/core/test/integration/services/member-welcome-emails.test.js\" lines=\"52-56\"}\n\n",
+    "fixPrompt": "In `ghost/core/test/integration/services/member-welcome-emails.test.js`, the blank line after `configUtils.set('memberWelcomeEmailTestInbox', '');` at line 54 contains trailing spaces. Remove them so the line is empty. Make no other changes.",
+    "commentAnchor": {
+     "file": "ghost/core/test/integration/services/member-welcome-emails.test.js",
+     "lineStart": 53,
+     "lineEnd": 54
+    }
+   },
+   {
+    "title": "Config-based gating removes the labs-flag coupling and keeps test state isolated",
+    "severity": "info",
+    "category": "maintainability",
+    "files": [
+     "ghost/core/test/unit/server/services/members/members-api/repositories/MemberRepository.test.js",
+     "ghost/core/test/integration/services/member-welcome-emails.test.js"
+    ],
+    "body": "Two things here are done well, even though the gating logic has the bugs noted above.\n\nFirst, the tests move from stubbing a labs service to `sinon.stub(config, 'get')` in the unit suite and `configUtils.set`/`configUtils.restore()` in the integration suite. Both restore state in `afterEach` (the top-level `sinon.restore()` and `configUtils.restore()`), so one test's override cannot leak into the next. The integration test also drops an unused `sinon` import.\n\nSecond, the scheduling and creation paths now share a single config key, so turning the feature on or off is one setting, not a labs toggle per site. That is the right direction for stress testing.\n\n",
+    "commentAnchor": null
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":6,\"title\":\"Code Review Bench PR #25465 - Changed member welcome email job to run based on config\",\"author\":\"unknown\",\"baseSha\":\"d3ce72300221daab0de12d34da30f2e3b371ad83\",\"headSha\":\"bde2541dfa90eabb728889eff3441d156b8597e6\"},\"summary\":\"The PR replaces the `welcomeEmails` labs-flag gate with a check on the `memberWelcomeEmailTestInbox` config key, in two places: the scheduler that starts the welcome-email outbox worker (`member-welcome-email",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

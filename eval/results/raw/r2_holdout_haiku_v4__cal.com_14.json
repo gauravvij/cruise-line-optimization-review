@@ -1,0 +1,419 @@
+{
+ "id": "cal.com#14",
+ "repo": "cal.com",
+ "num": 14,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:23:10.754Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "Unused constant fails linting check",
+   "description": "The rule requires that all staged files pass linting checks (including Biome's noUnusedVariables rule) before commit, but an unused constant UNUSED_CONSTANT was introduced that would cause 'biome lint --error-on-warnings' to fail",
+   "file_path": "packages/features/feature-opt-in/config.ts",
+   "start_line": 4,
+   "end_line": 5,
+   "problematic_code_snippet": "// Unused import that should be caught by linting\nconst UNUSED_CONSTANT = \"this-should-be-removed\";",
+   "rule_name": "Lint Staged Files Before Commit with Error-on-Warnings Enforcement"
+  },
+  {
+   "title": "Inverted conditional logic in setUserFeatureState causes wrong branch execution",
+   "description": "The conditional check for handling the 'inherit' state has been inverted from `if (state === 'inherit')` to `if (state !== 'inherit')`. This causes the method to incorrectly pass the state without assignedBy when state is 'enabled' or 'disabled', and incorrectly attempts to access assignedBy property (which doesn't exist in the union type) when state is 'inherit', leading to runtime TypeScript errors and incorrect database operations. When users try to enable/disable a feature, the assignedBy tracking will be lost, and when they set it to inherit, the code will crash trying to access a non-existent property.",
+   "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+   "start_line": 264,
+   "end_line": 273,
+   "problematic_code_snippet": "    if (state !== \"inherit\") {\n      await this.featuresRepository.setUserFeatureState({ userId, featureId, state });\n    } else {\n      const { assignedBy } = input;\n      await this.featuresRepository.setUserFeatureState({\n        userId,\n        featureId,\n        state,\n        assignedBy: `user-${assignedBy}`,\n      });\n    }"
+  },
+  {
+   "title": "Missing await in setUserState mutation causes race condition",
+   "description": "The await keyword was removed from the featureOptInService.setUserFeatureState call in the tRPC mutation handler. This causes the mutation to return success immediately without waiting for the database operation to complete, creating a race condition where the response is sent before the state is actually persisted. Users will receive success responses even if the underlying operation fails, and subsequent reads might not reflect the changes they just made, leading to inconsistent UI state and data integrity issues.",
+   "file_path": "packages/trpc/server/routers/viewer/featureOptIn/_router.ts",
+   "start_line": 103,
+   "end_line": 108,
+   "problematic_code_snippet": "      featureOptInService.setUserFeatureState({\n        userId: ctx.user.id,\n        featureId: input.slug,\n        state: input.state,\n        assignedBy: ctx.user.id,\n      });\n\n      return { success: true };"
+  },
+  {
+   "title": "Inverted filter logic in listFeaturesForUser returns disabled features instead of enabled",
+   "description": "The filter condition in listFeaturesForUser was changed from `filter((state) => state.globalEnabled)` to `filter((state) => !state.globalEnabled)`, inverting the logic. This causes the method to return only globally disabled features instead of enabled ones. Users will see an empty or incorrect list of available features in their settings UI, as only features that are globally disabled (which should be hidden) will be shown, while actually available features will be filtered out. This breaks the entire feature opt-in UI for users.",
+   "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+   "start_line": 187,
+   "end_line": 207,
+   "problematic_code_snippet": "    const resolvedStates = await this.resolveFeatureStatesAcrossTeams({\n      userId,\n      orgId,\n      teamIds,\n      featureIds,\n    });\n\n    return featureIds.map((featureId) => resolvedStates[featureId]).filter((state) => !state.globalEnabled);"
+  },
+  {
+   "title": "Line exceeds 110-character limit",
+   "description": "This newly added line appears to exceed the 110 character line-width requirement enforced by Biome formatting rules.",
+   "file_path": "packages/trpc/server/routers/viewer/featureOptIn/_router.ts",
+   "start_line": 72,
+   "end_line": 72,
+   "problematic_code_snippet": "return featureOptInService.listFeaturesForTeam({ teamId: input.teamId, parentOrgId, scope: \"team\" });",
+   "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Line exceeds 110-character limit",
+   "description": "This union member type definition is written on a single line and exceeds the 110 character limit required by the repository's Biome formatting rules.",
+   "file_path": "packages/features/feature-opt-in/services/IFeatureOptInService.ts",
+   "start_line": 45,
+   "end_line": 45,
+   "problematic_code_snippet": "| { teamId: number; featureId: FeatureId; state: \"enabled\" | \"disabled\"; assignedBy: number; scope?: OptInFeatureScope }",
+   "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Line exceeds 110-character limit",
+   "description": "This newly added union member type definition is on a single line and exceeds the 110 character line-width limit mandated by Biome configuration.",
+   "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+   "start_line": 268,
+   "end_line": 268,
+   "problematic_code_snippet": "| { teamId: number; featureId: FeatureId; state: \"enabled\" | \"disabled\"; assignedBy: number; scope?: OptInFeatureScope }",
+   "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Line exceeds 110-character limit",
+   "description": "This added array literal is on a single line and exceeds the 110 character line-width requirement enforced by Biome formatting rules.",
+   "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.test.ts",
+   "start_line": 84,
+   "end_line": 84,
+   "problematic_code_snippet": "featureIds: [\"test-feature-1\", \"test-feature-2\", \"org-only-feature\", \"team-only-feature\", \"user-only-feature\"],",
+   "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "02f075d61b93b64c5dd196264d322a7a3884b326",
+ "diff_chars": 28357,
+ "diff_lines": 682,
+ "user_prompt_chars": 33362,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 98368,
+ "wall_ms": 100159,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 17,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.426124847,
+ "spend_post_usd": 0.440488497,
+ "cost_settled": true,
+ "cost_wait_ms": 40,
+ "cost_usd": 0.014363650000000006,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.021743945,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 53067,
+  "cache_read_input_tokens": 230257,
+  "output_tokens": 25614,
+  "output_tokens_details": {
+   "thinking_tokens": 6600
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 53067
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 25614,
+   "cacheReadInputTokens": 230257,
+   "cacheCreationInputTokens": 53067,
+   "webSearchRequests": 0,
+   "costUSD": 0.021743945,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 6600,
+   "cacheCreationEphemeral5mInputTokens": 53067,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/cal.com",
+   "number": 14,
+   "title": "Code Review Bench PR #26801 - feat: add scope configuration for feature opt-in",
+   "author": "",
+   "baseSha": "69edd0ef1b71bdb6642d6a502f1b0a2072362628",
+   "headSha": "02f075d61b93b64c5dd196264d322a7a3884b326"
+  },
+  "summary": "This PR adds an optional `scope` (`org` | `team` | `user`) to `OptInFeatureConfig` and uses it to filter opt-in features in `FeatureOptInService`, validate scope in `setUserFeatureState` / `setTeamFeatureState` (throwing `ErrorWithCode(BadRequest)`), pass scope from the tRPC router, and gate the settings-sidebar Features tabs with per-scope `HAS_*_OPT_IN_FEATURES` constants. The overall design is sound: validation lives in the service so every caller gets it, and features without `scope` remain available everywhere.\n\nHowever, the head commit has several defects that make the change unsafe to merge. `listFeaturesForUser` now keeps only globally *disabled* features (`!state.globalEnabled`). `setUserFeatureState` has its `inherit` branch inverted (`state !== \"inherit\"`), so enabled/disabled writes go to the repository without `assignedBy`. The tRPC `setUserState` mutation drops its `await`, so scope rejections and DB failures are lost and the endpoint still returns `success: true`. There is also a stray `UNUSED_CONSTANT` in `config.ts`. The unit tests are partly broken by these bugs, and the service-test mock ignores `scope`, so the filtering that the PR is about is never actually exercised.",
+  "verdict": "request_changes",
+  "verdictRationale": "Three correctness bugs sit on the core paths this PR touches: the inverted user-feature list filter, the inverted user-state write branch, and the unawaited user mutation. The user-scope unit tests (`FeatureOptInService.test.ts` lines 204-233) assert the correct behavior and will fail against this head. The scope filtering itself is untested because the mocked `getOptInFeaturesForScope` ignores its argument. These need fixing before merge.",
+  "architecture": {
+   "overview": "Opt-in features are declared in `packages/features/feature-opt-in/config.ts` as the `OPT_IN_FEATURES` allowlist. `FeatureOptInService` resolves effective state across global, org, team, and user levels, using `FeaturesRepository` for persistence. tRPC routers in `packages/trpc/server/routers/viewer/featureOptIn/_router.ts` expose these operations to the settings pages, and `SettingsLayoutAppDirClient.tsx` decides which Features tabs to show.\n\nThis PR adds a per-feature `scope` array. Read paths (`listFeaturesForUser`, `listFeaturesForTeam`) now filter by scope. Write paths (`setUserFeatureState`, `setTeamFeatureState`) reject features that aren't allowed at the caller's scope. The UI gates each Features tab on a scope-specific `HAS_*` constant. The review hinges on the user-scope read and write branches, which currently contain inverted logic.",
+   "steps": [
+    "Entry point: settings pages call the tRPC routes `listForUser`, `listForTeam`, `listForOrganization`, `setUserState`, `setTeamState`, and `setOrganizationState`. Each route passes an explicit `scope` for team and org paths.",
+    "Config layer: `config.ts` gains `OptInFeatureScope` plumbing, `getOptInFeaturesForScope`, `isFeatureAllowedForScope`, and the `HAS_USER/TEAM/ORG_OPT_IN_FEATURES` flags. These are consumed by the service and by the sidebar.",
+    "Read path: `listFeaturesForUser` now queries only user-scoped features, but its final filter is inverted (`!globalEnabled`). `listFeaturesForTeam` filters by the requested scope and defaults to `team`.",
+    "Write path: `setUserFeatureState` and `setTeamFeatureState` validate scope first and throw `ErrorWithCode(BadRequest)`. The user variant then has an inverted `inherit` branch, and the router no longer awaits it.",
+    "UI: `SettingsLayoutAppDirClient.tsx` shows the user, org, and team Features entries only when a feature exists for that scope."
+   ],
+   "diagrams": [
+    {
+     "title": "Opt-in scope flow across settings, router, service, and config",
+     "kind": "flowchart",
+     "description": "Shows how settings pages reach the service through the tRPC router, and where scope is checked on reads and writes.",
+     "mermaid": "flowchart LR\n  UI[\"SettingsLayoutAppDirClient.tsx\\nHAS_*_OPT_IN_FEATURES tabs\"] --> R[\"featureOptIn _router.ts\\nlistForUser / listForTeam / listForOrganization\"]\n  UI --> W[\"featureOptIn _router.ts\\nsetUserState / setTeamState / setOrganizationState\"]\n  R --> S[\"FeatureOptInService\\nlistFeaturesForUser / listFeaturesForTeam\"]\n  W --> V[\"FeatureOptInService\\nsetUserFeatureState / setTeamFeatureState\"]\n  S --> C[\"config.ts\\ngetOptInFeaturesForScope\"]\n  V --> A[\"config.ts\\nisFeatureAllowedForScope\"]\n  V --> E[\"ErrorWithCode BadRequest\"]\n  V --> FR[\"FeaturesRepository\\nset*FeatureState\"]\n  S --> FR"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "User-feature list filter keeps disabled features instead of enabled ones",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`listFeaturesForUser` ends with `.filter((state) => !state.globalEnabled)`. This inverts the intended filter. The docstring says it returns features that are \"globally enabled\", and the previous code used `state.globalEnabled`.\n\nWith this change, the Features page at `/settings/my-account/features` lists only features that are globally switched off, which users cannot act on. Every globally enabled opt-in feature disappears from the page.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"191-208\"}\n\n::suggestion{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"207-207\"}\nreturn featureIds.map((featureId) => resolvedStates[featureId]).filter((state) => state.globalEnabled);\n\nAlso add a unit test that covers this method. There is currently none, which is why this went unnoticed.",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts"
+    ],
+    "fixPrompt": "In `packages/features/feature-opt-in/services/FeatureOptInService.ts`, `listFeaturesForUser` (around line 207) filters with `!state.globalEnabled`. That returns only globally disabled features. Change the predicate back to `state.globalEnabled` so only globally enabled, user-scoped features are returned, matching the docstring and the previous behavior. Then add a unit test for `listFeaturesForUser` in `FeatureOptInService.test.ts` that asserts an enabled user-scoped feature is returned and a disabled one is excluded.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "lineStart": 207,
+     "lineEnd": 207
+    }
+   },
+   {
+    "title": "Inverted `inherit` check sends enabled/disabled user writes down the wrong branch",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`setUserFeatureState` now checks `if (state !== \"inherit\")`, which is inverted. The branch that passes no `assignedBy` runs for `enabled`/`disabled`, and the branch that passes `assignedBy: \"user-<id>\"` runs for `inherit`.\n\nThe `FeaturesRepository.setUserFeatureState` enabled path reads `input.assignedBy` for the upsert. Here that value is `undefined`, so the write either fails or stores a null `assignedBy`. The inherit path passes an `assignedBy` the repository ignores. The existing team variant (`setTeamFeatureState`) uses `state === \"inherit\"` correctly, so this is a regression on the user side only.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"250-275\"}\n\n::suggestion{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"264-274\"}\nif (state === \"inherit\") {\n  await this.featuresRepository.setUserFeatureState({ userId, featureId, state });\n} else {\n  const { assignedBy } = input;\n  await this.featuresRepository.setUserFeatureState({\n    userId,\n    featureId,\n    state,\n    assignedBy: `user-${assignedBy}`,\n  });\n}",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "packages/features/flags/features.repository.ts"
+    ],
+    "fixPrompt": "In `packages/features/feature-opt-in/services/FeatureOptInService.ts`, `setUserFeatureState` (around lines 264-274) uses `if (state !== \"inherit\")`, which is inverted. Swap the branches so that `inherit` calls `featuresRepository.setUserFeatureState({ userId, featureId, state })` without `assignedBy`, and `enabled`/`disabled` calls it with `assignedBy` set to `user-` followed by the assigner's id. Mirror the structure of `setTeamFeatureState` in the same file, which is correct. Keep the scope check above the branch unchanged.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "lineStart": 264,
+     "lineEnd": 274
+    }
+   },
+   {
+    "title": "Unawaited `setUserFeatureState` lets scope rejections and DB errors escape silently",
+    "severity": "high",
+    "category": "correctness",
+    "body": "In `setUserState`, the call to `featureOptInService.setUserFeatureState(...)` lost its `await`. The sibling `setTeamState` and `setOrganizationState` still await it.\n\nWithout `await`, the `ErrorWithCode(BadRequest)` thrown by the new scope check becomes an unhandled promise rejection. The mutation still returns `{ success: true }`. The client therefore gets a success response for a feature the user is not allowed to change, and it also gets success when the write fails. The scope validation this PR adds to the user path is effectively bypassed from the caller's point of view.\n\n::diff{file=\"packages/trpc/server/routers/viewer/featureOptIn/_router.ts\" lines=\"95-110\"}\n\n::suggestion{file=\"packages/trpc/server/routers/viewer/featureOptIn/_router.ts\" lines=\"103-103\"}\nawait featureOptInService.setUserFeatureState({",
+    "files": [
+     "packages/trpc/server/routers/viewer/featureOptIn/_router.ts"
+    ],
+    "fixPrompt": "In `packages/trpc/server/routers/viewer/featureOptIn/_router.ts`, the `setUserState` mutation (around line 103) calls `featureOptInService.setUserFeatureState(...)` without `await`. Add `await` so scope rejections and repository errors propagate to the client, as `setTeamState` and `setOrganizationState` already do in the same file. The mutation should still return `{ success: true }` only after the write completes.",
+    "commentAnchor": {
+     "file": "packages/trpc/server/routers/viewer/featureOptIn/_router.ts",
+     "lineStart": 103,
+     "lineEnd": 103
+    }
+   },
+   {
+    "title": "User-scope unit tests assert the correct behavior and fail against this head",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The new `setUserFeatureState` tests expect `assignedBy: \"user-2\"` for an enabled write, and no `assignedBy` for an inherit write. That is the correct behavior. The inverted branch in the implementation contradicts both expectations, so these tests will fail once the suite runs.\n\nThe PR description says the tests were added and pass. Either they were not run against this exact head, or the implementation was changed after they were. Once the implementation is fixed, these tests should pass as written.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.test.ts\" lines=\"204-233\"}\n\nThe `setTeamFeatureState` tests in the same file use the same assertion style and are consistent with the correct implementation.",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.test.ts",
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts"
+    ],
+    "fixPrompt": "Run `TZ=UTC yarn test packages/features/feature-opt-in/services/FeatureOptInService.test.ts` and confirm which `setUserFeatureState` tests fail (around lines 204-233). The failures come from the inverted `state !== \"inherit\"` check in `FeatureOptInService.ts`. Fix that check (see the related finding), then rerun. Do not change the test expectations, which already describe the intended behavior.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.test.ts",
+     "lineStart": 204,
+     "lineEnd": 233
+    }
+   },
+   {
+    "title": "Service test mock ignores `scope`, so scope filtering is never tested",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The `vi.mock(\"../config\")` factory sets `getOptInFeaturesForScope: () => mockFeatures`. The argument is discarded and every test gets all five features, whatever scope is requested.\n\nThat is why the `listFeaturesForTeam` expectations (lines 84, 119, 198) assert `featureIds: [\"test-feature-1\", \"test-feature-2\", \"org-only-feature\", \"team-only-feature\", \"user-only-feature\"]`. For a team query, the org-only and user-only features should not be queried at all. The tests lock in the wrong behavior, and they would still pass if the real filter were deleted.\n\nThe mock should use the real `getOptInFeaturesForScope` logic, or the test should assert the expected per-scope subset (for example `[\"test-feature-1\", \"test-feature-2\", \"team-only-feature\"]` for `scope: \"team\"`).\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.test.ts\" lines=\"12-28\"}",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.test.ts"
+    ],
+    "fixPrompt": "In `packages/features/feature-opt-in/services/FeatureOptInService.test.ts`, the `vi.mock(\"../config\")` factory (around lines 12-28) defines `getOptInFeaturesForScope: () => mockFeatures`, which ignores its scope argument. Change the mock to filter by scope, using the same rule as the real `getOptInFeaturesForScope` (no `scope` means all scopes; otherwise `scope.includes(scope)`). Update the `listFeaturesForTeam` expectations (around lines 84, 119, 198) so a team query asserts only team-scoped features, and add a case for org scope.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.test.ts",
+     "lineStart": 12,
+     "lineEnd": 28
+    }
+   },
+   {
+    "title": "No test covers `listFeaturesForUser` scope filtering or enabled-feature filtering",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`listFeaturesForUser` has no unit test in this PR, even though it gained a scope filter and a changed final predicate. The inverted `globalEnabled` filter from the other finding would have been caught by a single test that checks an enabled user-scoped feature is returned and an org-only feature is excluded.\n\nThe PR's own test plan says to verify that `/settings/my-account/features` shows user-scoped features only. Nothing automated backs that up.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"191-208\"}",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "packages/features/feature-opt-in/services/FeatureOptInService.test.ts"
+    ],
+    "fixPrompt": "Add `describe(\"listFeaturesForUser\")` cases to `packages/features/feature-opt-in/services/FeatureOptInService.test.ts`. Mock `getAllFeatures`, `getTeamsFeatureStates`, `getUserFeatureStates`, and the auto-opt-in lookups. Assert that the result includes only globally enabled features whose scope includes `user` (for example, excludes `org-only-feature`), and that a globally disabled user feature is excluded. Follow the existing `listFeaturesForTeam` test setup in the same file.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "lineStart": 191,
+     "lineEnd": 208
+    }
+   },
+   {
+    "title": "Integration test stubs out the scope check it should exercise",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The integration test replaces `isFeatureAllowedForScope` with `() => true` for the whole file. Its comment says scope validation is covered by unit tests, but the integration suite is also the only place that runs `setUserFeatureState` / `setTeamFeatureState` against a real database. Nothing there checks that a scope-restricted feature is rejected.\n\nThe mock also works against the production behavior: a user-scoped feature set through the database path would never hit the real check. Prefer configuring the feature with the right `scope` in a test fixture, or use a real `OPT_IN_FEATURES` entry, over stubbing the guard.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts\" lines=\"11-19\"}",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts"
+    ],
+    "fixPrompt": "In `packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts`, remove the `vi.mock(\"../config\")` block (around lines 11-19) that forces `isFeatureAllowedForScope` to return true. Instead, configure the test feature in `OPT_IN_FEATURES` (or mock `getOptInFeatureConfig`) with an explicit `scope`, so the real guard runs. Add one integration case that verifies a scope-disallowed write rejects with `ErrorCode.BadRequest` and writes nothing.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.integration-test.ts",
+     "lineStart": 11,
+     "lineEnd": 19
+    }
+   },
+   {
+    "title": "Stray `UNUSED_CONSTANT` left in config.ts",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`config.ts` declares `const UNUSED_CONSTANT = \"this-should-be-removed\";` with a comment saying linting should catch it. It is dead code that was committed by mistake. Under an `noUnusedLocals`-style lint rule it will fail CI. Remove it.\n\n::diff{file=\"packages/features/feature-opt-in/config.ts\" lines=\"1-8\"}",
+    "files": [
+     "packages/features/feature-opt-in/config.ts"
+    ],
+    "fixPrompt": "Delete the stray `// Unused import that should be caught by linting` comment and the `const UNUSED_CONSTANT = \"this-should-be-removed\";` declaration near the top of `packages/features/feature-opt-in/config.ts` (lines 4-5). Nothing references it.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/config.ts",
+     "lineStart": 4,
+     "lineEnd": 5
+    }
+   },
+   {
+    "title": "Default scope `team` is applied silently when callers omit it",
+    "severity": "low",
+    "category": "correctness",
+    "body": "`listFeaturesForTeam` and `setTeamFeatureState` both default `scope` to `\"team\"`. The router passes it explicitly today. But any future caller that forgets `scope` on the org path (for example, a new org-level endpoint) will silently validate and filter against team scope, not fail.\n\nThis is also one of the human-review checklist items. A required parameter on the service would make the choice explicit, and the default could live in the router.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"216-243\"}",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts"
+    ],
+    "fixPrompt": "In `packages/features/feature-opt-in/services/FeatureOptInService.ts`, `listFeaturesForTeam` (around line 221) and `setTeamFeatureState` (around line 288) default `scope` to `\"team\"`. Consider making `scope` required in the input types and having the tRPC routers in `_router.ts` pass it explicitly, as they already do. If the default is kept, document it clearly on the interface so an org caller cannot forget it silently.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "lineStart": 221,
+     "lineEnd": 221
+    }
+   },
+   {
+    "title": "Unused exports `ALL_SCOPES` and `HAS_OPT_IN_FEATURES` left in config",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`ALL_SCOPES` is exported but not referenced anywhere in the repo. `HAS_OPT_IN_FEATURES` is also no longer imported by the settings layout after this PR, since it switched to the per-scope flags. Both are dead exports. Keeping `ALL_SCOPES` also duplicates the `OptInFeatureScope` union, which can drift from it.\n\n::diff{file=\"packages/features/feature-opt-in/config.ts\" lines=\"16-17\"}",
+    "files": [
+     "packages/features/feature-opt-in/config.ts"
+    ],
+    "fixPrompt": "In `packages/features/feature-opt-in/config.ts`, remove the unused `ALL_SCOPES` export (line 17), since nothing references it. Decide whether `HAS_OPT_IN_FEATURES` (line 52) is still needed. If nothing imports it, delete it too. If it stays for backward compatibility, add a short comment saying so.",
+    "commentAnchor": {
+     "file": "packages/features/feature-opt-in/config.ts",
+     "lineStart": 16,
+     "lineEnd": 17
+    }
+   },
+   {
+    "title": "Scope-aware config and sidebar gating is a clean, backward-compatible design",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Putting the scope check in `FeatureOptInService` rather than in each router means every caller gets the same validation. Features with no `scope` keep working unchanged, and the sidebar only shows the Features entry when a feature exists for that level. The per-scope `HAS_*` flags keep `SettingsLayoutAppDirClient.tsx` simple.\n\n::diff{file=\"apps/web/app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx\" lines=\"78-84\"}",
+    "files": [
+     "apps/web/app/(use-page-wrapper)/settings/(settings-layout)/SettingsLayoutAppDirClient.tsx",
+     "packages/features/feature-opt-in/config.ts",
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts"
+    ]
+   },
+   {
+    "title": "Scope validation reuses the existing `ErrorWithCode`/`BadRequest` pattern",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The new guard throws `ErrorWithCode(ErrorCode.BadRequest, ...)` from `@calcom/lib/errors`, and `BadRequest` exists in `@calcom/lib/errorCodes`. This matches how other services in the codebase report client errors, and the error message names the feature and scope, which helps debugging.\n\n::diff{file=\"packages/features/feature-opt-in/services/FeatureOptInService.ts\" lines=\"282-295\"}",
+    "files": [
+     "packages/features/feature-opt-in/services/FeatureOptInService.ts"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/cal.com\",\"number\":14,\"title\":\"Code Review Bench PR #26801 - feat: add scope configuration for feature opt-in\",\"author\":\"\",\"baseSha\":\"69edd0ef1b71bdb6642d6a502f1b0a2072362628\",\"headSha\":\"02f075d61b93b64c5dd196264d322a7a3884b326\"},\"summary\":\"This PR adds an optional `scope` (`org` | `team` | `user`) to `OptInFeatureConfig` and uses it to filter opt-in features in `FeatureOptInService`, validate scope in `setUserFeatureState` / `setTeamFeatureState` (throwin",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 12
+}

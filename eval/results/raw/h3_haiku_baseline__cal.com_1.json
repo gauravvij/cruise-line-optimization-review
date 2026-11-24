@@ -1,0 +1,260 @@
+{
+ "id": "cal.com#1",
+ "repo": "cal.com",
+ "num": 1,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:08:09.889Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "Features package imports from trpc",
+   "description": "The rule requires that the features package does not import from trpc, but permission-check.service.ts imports TRPCError from @trpc/server",
+   "file_path": "packages/features/pbac/services/permission-check.service.ts",
+   "start_line": 1,
+   "end_line": 6,
+   "problematic_code_snippet": "import { FeaturesRepository } from \"@calcom/features/flags/features.repository\";\nimport { MembershipRepository } from \"@calcom/features/membership/repositories/MembershipRepository\";\nimport logger from \"@calcom/lib/logger\";\nimport prisma from \"@calcom/prisma\";\nimport type { MembershipRole } from \"@calcom/prisma/enums\";\nimport { TRPCError } from \"@trpc/server\";",
+   "rule_name": "Prevent Circular Dependencies Between Core Packages"
+  },
+  {
+   "title": "orgId parameter not propagated in getTeamIdsWithPermission",
+   "description": "The method getTeamIdsWithPermission accepts an orgId parameter to scope permission checks to a specific organization, but it fails to pass this parameter to the underlying getTeamIdsWithPermissions method. This causes organization scoping to be ignored when checking single permissions, allowing users to potentially access teams from all organizations instead of only the specified one. The bug breaks the core security feature introduced in this PR where organization-scoped permission checks were meant to restrict access based on orgId.",
+   "file_path": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+   "start_line": 211,
+   "end_line": 223,
+   "problematic_code_snippet": "async getTeamIdsWithPermission({\n  userId,\n  permission,\n  fallbackRoles,\n  orgId,\n}: {\n  userId: number;\n  permission: PermissionString;\n  fallbackRoles: MembershipRole[];\n  orgId?: number;\n}): Promise<number[]> {\n  return this.getTeamIdsWithPermissions({ userId, permissions: [permission], fallbackRoles });\n}"
+  },
+  {
+   "title": "Incomplete orgId filtering in PBAC child team query",
+   "description": "In the SQL query for getTeamsWithPBACPermissions, the WHERE clause for child teams is missing a check for child.\"parentId\" = ${orgId}. The original PR added this condition to properly scope child teams when an orgId is provided, but this implementation only checks org.\"id\" and child.\"id\", missing the case where a child team's parent should match the orgId. This causes the query to incorrectly exclude child teams whose parentId matches the specified orgId, breaking the inheritance model where organization permissions should propagate to child teams.",
+   "file_path": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+   "start_line": 301,
+   "end_line": 309,
+   "problematic_code_snippet": "SELECT DISTINCT child.\"id\"\nFROM \"Membership\" m\nINNER JOIN \"Role\" r ON m.\"customRoleId\" = r.id\nINNER JOIN \"Team\" org ON m.\"teamId\" = org.id\nINNER JOIN \"Team\" child ON child.\"parentId\" = org.id\nWHERE m.\"userId\" = ${userId}\n  AND m.\"accepted\" = true\n  AND m.\"customRoleId\" IS NOT NULL\n  AND (${orgId}::bigint IS NULL OR org.\"id\" = ${orgId} OR child.\"id\" = ${orgId})"
+  },
+  {
+   "title": "Authorization bypass when filtering multiple userIds including current user",
+   "description": "The isCurrentUser check was changed from a strict equality check (filters.userIds.length === 1 && user.id === filters.userIds[0]) to a loose inclusion check (filters.userIds.includes(user.id)). This allows a user to bypass permission checks by including their own userId in a list alongside other userIds they don't have permission to access. For example, if a user requests bookings for [ownUserId, unauthorizedUserId], the check passes even though they lack permission for the unauthorized user, allowing them to access bookings they shouldn't see.",
+   "file_path": "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+   "start_line": 143,
+   "end_line": 159,
+   "problematic_code_snippet": "if (!!filters?.userIds && filters.userIds.length > 0) {\n  const areUserIdsWithinUserOrgOrTeam = filters.userIds.every((userId) =>\n    allAccessibleUserIds.includes(userId)\n  );\n\n  const isCurrentUser = filters.userIds.includes(user.id);\n\n  //  Scope depends on `user.orgId`:\n  // - Throw an error if trying to filter by usersIds that are not within your ORG\n  // - Throw an error if trying to filter by usersIds that are not within your TEAM\n  if (!areUserIdsWithinUserOrgOrTeam && !isCurrentUser) {\n    throw new TRPCError({\n      code: \"FORBIDDEN\",\n      message: \"You do not have permissions to fetch bookings for specified userIds\",\n    });\n  }\n}"
+  },
+  {
+   "title": "Service file uses forbidden `.service.ts` suffix",
+   "description": "Rule 1 forbids dot-suffix filenames like `.service.ts`. This service lives in `permission-check.service.ts` instead of a PascalCase `<Entity>Service.ts` filename matching the class name (e.g., `PermissionCheckService.ts`).",
+   "file_path": "packages/features/pbac/services/permission-check.service.ts",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "export class PermissionCheckService {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository does not follow `Prisma<Entity>Repository` naming convention",
+   "description": "Rule 1 requires repository classes/files to follow the `Prisma<Entity>Repository.ts` pattern with matching exported class name. This repository is named `PermissionRepository` in `PermissionRepository.ts` (and not `PrismaPermissionRepository`).",
+   "file_path": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+   "start_line": 212,
+   "end_line": 212,
+   "problematic_code_snippet": "export class PermissionRepository implements IPermissionRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Line exceeds configured 110-character width",
+   "description": "Rule 3 requires Biome formatting with a 110 character line width. This newly added statement is formatted as a single long line exceeding that limit.",
+   "file_path": "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts",
+   "start_line": 1060,
+   "end_line": 1060,
+   "problematic_code_snippet": "await prisma.team.deleteMany({ where: { id: { in: [org1.id, org2.id, team1.id, team2.id] } } });",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Import line exceeds configured 110-character width",
+   "description": "Rule 3 requires Biome formatting with a 110 character line width. This import line is long enough to exceed the configured limit and should be wrapped/formatted accordingly.",
+   "file_path": "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+   "start_line": 18,
+   "end_line": 18,
+   "problematic_code_snippet": "import type { Booking, Prisma, Prisma as PrismaClientType } from \"@calcom/prisma/client\";",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "544a43bf4fd5e7e7fb086682ebd4362baf73ce14",
+ "diff_chars": 39343,
+ "diff_lines": 1059,
+ "user_prompt_chars": 42597,
+ "exit_code": 1,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 146871,
+ "wall_ms": 149476,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 19,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.709040596,
+ "spend_post_usd": 5.739512276,
+ "cost_settled": true,
+ "cost_wait_ms": 355,
+ "cost_usd": 0.03047167999999978,
+ "cost_flag": null,
+ "subtype": "error_max_structured_output_retries",
+ "is_error": true,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.03043327,
+ "usage": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 55618,
+  "cache_read_input_tokens": 393416,
+  "output_tokens": 31603,
+  "output_tokens_details": {
+   "thinking_tokens": 9094
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 55618
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 36199,
+   "cacheReadInputTokens": 467822,
+   "cacheCreationInputTokens": 61230,
+   "webSearchRequests": 0,
+   "costUSD": 0.03043327,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 9094,
+   "cacheCreationEphemeral5mInputTokens": 61230,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": null,
+ "result_text_head": null,
+ "schema_valid": false,
+ "schema_errors": [
+  "structured_output missing"
+ ],
+ "n_findings": 0
+}

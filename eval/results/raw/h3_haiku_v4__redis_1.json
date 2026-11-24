@@ -1,0 +1,457 @@
+{
+ "id": "redis#1",
+ "repo": "redis",
+ "num": 1,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T08:16:21.094Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Test function missing REDIS_TEST wrapper",
+   "description": "The rule requires that all test functions and test-specific code in source files must be enclosed within #ifdef REDIS_TEST / #endif blocks, but the validateStoredKeyConversion function is a test/validation function that exists without the required preprocessor wrapper",
+   "file_path": "src/dict.c",
+   "start_line": 101,
+   "end_line": 108,
+   "problematic_code_snippet": "/* Validate that stored-key to key conversion works correctly */\nstatic int validateStoredKeyConversion(dict *d, const void *key __stored_key) {\n    const void *extracted = dictStoredKey2Key(d, key);\n    if (d->type->keyFromStoredKey) {\n        return extracted != NULL;\n    }\n    return extracted == key;\n}",
+   "rule_name": "Test Functions Must Be Wrapped in REDIS_TEST Preprocessor Blocks"
+  },
+  {
+   "title": "Stored-key used for lookup instead of extracted key in defragmentation",
+   "description": "In activeDefragHfieldAndUpdateRef, the code extracts the lookup key from the stored-key (Entry*) using dictStoredKey2Key but then passes the original stored-key pointer to dictFindLink. After the API refactoring, dictFindLink expects a lookup key, not a stored-key. This will cause hash mismatches and comparison failures, leading to dictFindLink returning NULL when it should find the entry. The serverAssert on the next line will then trigger, crashing the server during active defragmentation of hash fields.",
+   "file_path": "src/defrag.c",
+   "start_line": 280,
+   "end_line": 281,
+   "problematic_code_snippet": "    /* Before the key is released, obtain the link to\n     * ensure we can safely access and update the key. */\n    const void *key = dictStoredKey2Key(d, ptr);\n    link = dictFindLink(d, ptr, NULL);\n    serverAssert(link);"
+  },
+  {
+   "title": "Wrong stored-key pointer used for dict lookup after keyDup",
+   "description": "In dictSetKeyAtLink when newItem is 0 and *link is NULL, the function attempts to find the link by calling dictFindLink with addedKey. However, addedKey is the result of keyDup (if keyDup is configured) or the original stored-key, and dictFindLink expects a lookup key. Additionally, after keyDup, addedKey may point to a newly allocated object with a different address than the original key in the dict, causing the lookup to fail even with pointer comparison. This will cause the assertion to fail, or worse, result in corrupted dict state if the assertion is disabled.",
+   "file_path": "src/dict.c",
+   "start_line": 913,
+   "end_line": 915,
+   "problematic_code_snippet": "    /* Setting key of existing dictEntry (newItem == 0)*/\n\n    if (*link == NULL) {\n        *link = dictFindLink(d, addedKey, NULL);\n        assert(*link != NULL);\n    }"
+  },
+  {
+   "title": "Unused local variable triggers -Werror build failure",
+   "description": "A new local variable `key` is introduced but never used. This will typically produce an `-Wunused-variable` warning, which becomes a build error under `-Werror`, violating the requirement that the build compiles cleanly with warnings treated as errors.",
+   "file_path": "src/defrag.c",
+   "start_line": 280,
+   "end_line": 281,
+   "problematic_code_snippet": "    const void *key = dictStoredKey2Key(d, ptr);\n    link = dictFindLink(d, ptr, NULL);",
+   "rule_name": "Rule 4: Build Must Compile Without Warnings When -Werror is Enabled"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "df9a4c420c01ec275a65287320eefac850407dbd",
+ "diff_chars": 33386,
+ "diff_lines": 703,
+ "user_prompt_chars": 35070,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 177378,
+ "wall_ms": 179473,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "dictUseStoredKeyApi|storedHashFunction|storedKeyCompare|useStoredKeyApi|dictCompareKV|dictHashKV|validateStoredKeyConversion|dictAddOrFind|dictSdsCompareKV|hashTypeDelete\\("
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/defrag.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/dict.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/dict.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/t_hash.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/t_hash.c"
+  },
+  {
+   "name": "Grep",
+   "detail": "hashFunction|keyCompare|keyDup|no_value|dictSdsKeyCompare|dictEntryKeyCompare|dictEntryHash|keyFromStoredKey|kvGetKey|dictSdsCompareKV"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/t_hash.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/server.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/dict.c"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/memory_prefetch.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/server.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/server.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/dict.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/defrag.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/dict.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/dict.c"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 21,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 38,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 21
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.986632726,
+ "spend_post_usd": 7.020370491,
+ "cost_settled": true,
+ "cost_wait_ms": 336,
+ "cost_usd": 0.033737765000000586,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 22,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.03522614,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 69572,
+  "cache_read_input_tokens": 487884,
+  "output_tokens": 43298,
+  "output_tokens_details": {
+   "thinking_tokens": 24439
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 69572
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 43298,
+   "cacheReadInputTokens": 487884,
+   "cacheCreationInputTokens": 69572,
+   "webSearchRequests": 0,
+   "costUSD": 0.03522614,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 24439,
+   "cacheCreationEphemeral5mInputTokens": 69572,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 1,
+   "title": "Code Review Bench PR #14646 - Replace fragile dict stored-key API with getKeyId callback",
+   "author": "unknown",
+   "baseSha": "2c2c3acc5e6b3ce873f3b22e294895ae3e159f53",
+   "headSha": "df9a4c420c01ec275a65287320eefac850407dbd"
+  },
+  "summary": "This PR removes the mutable per-dict `useStoredKeyApi` flag and the `storedHashFunction`/`storedKeyCompare` callbacks from dict. In their place it adds one `dictType.keyFromStoredKey` callback, and dict.c converts stored-key objects to lookup keys internally (`dictStoredKey2Key`). Callers in rdb.c, t_hash.c, kvstore.c, module.c and defrag.c drop their flag toggles. The dbDictType and dbExpiresDictType in server.c now use `kvGetKey`, with `dictSdsCompareKV` as the comparator.\n\nI traced the main paths and found no regression in the behaviour that ships today. Hash dicts keep identity conversion, which is valid because `Entry` begins with its sds field. The `hashTypeDelete` `isSdsField` removal is safe because only the db dict used stored mode, and `onFieldExpire` already passes the sds field. The flag-based code paths in rdb.c and t_hash.c were all paired and are now simpler. The problems are in the new code itself: two call sites in defrag.c and dictSetKeyAtLink do not apply the new conversion consistently, there is an unused helper, and no tests cover the new callback.",
+  "verdict": "request_changes",
+  "verdictRationale": "The refactor is behaviourally sound on the paths I verified, so this is not a blocker for correctness. The two medium findings are in the new code. In defrag.c the converted key is computed and then discarded, so the lookup still uses the stored key. dictSetKeyAtLink's newItem=0 path passes a stored-key object to a lookup API, which is wrong for kvobj dicts. Both should be fixed before merge. The rest are low-severity cleanups and a missing test for the new callback.",
+  "architecture": {
+   "overview": "dict stores each element in one of two forms. For no_value=1 dicts the element is a stored-key object, such as an Entry* for hash fields or a kvobj* for the keyspace. Lookup callers pass a lookup key, which is an sds. Before this PR, dict tracked whether the caller was using stored-key or lookup-key semantics through a global mutable flag, `useStoredKeyApi`, set and cleared around each call. Hash and keyspace dict types also carried paired `storedHashFunction`/`storedKeyCompare` callbacks, which the flag selected between.\n\nThis PR replaces that with one optional `keyFromStoredKey` callback on dictType. dict.c now calls `dictStoredKey2Key` wherever it reads a stored element during lookup, insert, delete, rehash, or defrag. The function is the identity when the callback is NULL. Hash dicts use the identity because `Entry` starts with its sds field, so the stored object is already a valid sds. The keyspace and expires dict types (`dbDictType`, `dbExpiresDictType`) set the callback to `kvGetKey`, which returns the sds inside the kvobj. Callers outside dict.c no longer toggle any state, and `hashTypeDelete` drops its `isSdsField` parameter.",
+   "steps": [
+    "Start at the public dict API in dict.h. `dictAdd`, `dictAddRaw`, `dictReplace` and `dictSetKeyAtLink` now annotate their key parameter with `__stored_key`, which is a no-op macro that marks the parameter as a stored-key object.",
+    "In dict.c, `dictStoredKey2Key` is the single conversion point. Lookup routines (`dictFindLinkInternal`, `dictGenericDelete`, `dictTwoPhaseUnlinkFind`, `dictFindLinkForInsert`) call it on each visited element and then compare against the lookup key with `dictGetCmpFunc`.",
+    "Insert routines (`dictAddRaw`, `dictSetKeyAtLink` with newItem=1) convert the stored key once before the bucket search, and store the original stored object in the bucket.",
+    "In server.c, the keyspace and expires dict types switch from the removed stored-key pair to `.keyFromStoredKey = kvGetKey`, and both use `dictSdsCompareKV` for comparison. Because the lookup key and stored key are now both sds at compare time, the comparator no longer needs to unpack kvobjs.",
+    "Call sites drop their flag toggles: kvstore.c `kvstoreDictAddRaw`, rdb.c dictAdd sites, t_hash.c conversion and dup helpers, and module.c `RM_HashSet`. The defrag callbacks in defrag.c are updated, but two of them still use the stored key in lookup positions (see findings)."
+   ],
+   "diagrams": [
+    {
+     "title": "dict key conversion on lookup and insert",
+     "kind": "flowchart",
+     "description": "Shows how dict.c routes every visited stored element through dictStoredKey2Key, which uses the dict type's keyFromStoredKey when set and the identity otherwise.",
+     "mermaid": "flowchart LR\n    Caller[\"Caller: dictFind / dictAddRaw / dictDelete\"] --> Api[\"dict.c: dictFindLinkInternal, dictAddRaw, dictGenericDelete\"]\n    Api --> Conv[\"dictStoredKey2Key(d, stored)\"]\n    Conv -->|\"keyFromStoredKey set (db dicts)\"| Kv[\"server.c: kvGetKey -> kvobjGetKey\"]\n    Conv -->|\"NULL (hash dicts, Entry starts with sds)\"| Id[\"identity\"]\n    Kv --> Cmp[\"dictGetCmpFunc -> dictSdsCompareKV / dictSdsKeyCompare\"]\n    Id --> Cmp\n    Api --> Hash[\"dictGetHash -> type->hashFunction\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "defrag converts the key but looks up with the stored pointer",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "In `activeDefragHfieldAndUpdateRef` the PR computes `const void *key = dictStoredKey2Key(d, ptr);` but then calls `dictFindLink(d, ptr, NULL)`, passing the stored object. The converted `key` is never used, which is also why the compiler will warn about an unused variable.\n\nToday this still works, because hfield dicts have no `keyFromStoredKey` and the conversion is the identity. The code is still wrong, though. It defeats the point of the new API: the next time someone gives a dict a non-identity `keyFromStoredKey`, this defrag path will silently search with the wrong key and hit `serverAssert(link)`.\n\n::diff{file=\"src/defrag.c\" lines=\"278-284\"}\n\n::callout{type=\"warning\"}\nThe unused `key` variable is what makes this look intentional. It is not. Use `key` in the `dictFindLink` call.\n\n::suggestion{file=\"src/defrag.c\" lines=\"280-281\"}\nconst void *key = dictStoredKey2Key(d, ptr);\nlink = dictFindLink(d, key, NULL);\n",
+    "files": [
+     "src/defrag.c",
+     "src/dict.c"
+    ],
+    "fixPrompt": "In `src/defrag.c`, `activeDefragHfieldAndUpdateRef` (around lines 274-288) computes `const void *key = dictStoredKey2Key(d, ptr);` but then calls `dictFindLink(d, ptr, NULL)` on line 281, so `key` is unused. Change the lookup to use `key` so the converted lookup key is what gets searched. Keep the existing `serverAssert(link)` and the surrounding `dictSetKeyAtLink` call. No other changes are needed.",
+    "commentAnchor": {
+     "file": "src/defrag.c",
+     "lineStart": 280,
+     "lineEnd": 281
+    }
+   },
+   {
+    "title": "dictSetKeyAtLink passes a stored-key object to dictFindLink",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "On the `newItem == 0` path with a NULL `*link`, `dictSetKeyAtLink` now calls `dictFindLink(d, addedKey, NULL)`. `addedKey` is the stored-key form, either the original object or its `keyDup` copy. `dictFindLink` expects a lookup key. The newItem=1 branch just above does the conversion correctly with `dictStoredKey2Key(d, key)`, so this branch is inconsistent with it.\n\nFor the keyspace dict, `keyDup` is NULL and `addedKey` is the kvobj. `dictFindLink` then hashes the kvobj as if it were an sds, so the bucket search misses or lands in the wrong bucket. For a dict whose `keyDup` is set, the duplicated object is passed to a lookup API in the same way. The old code had the same mistake with `key`, and the PR changed the argument without fixing the conversion.\n\nI could not find a current caller that reaches this branch, since existing callers pass a non-NULL link. It is still a latent trap in the code this PR is meant to clean up.\n\n::diff{file=\"src/dict.c\" lines=\"909-918\"}\n\n::callout{type=\"info\"}\nI could not find a current caller that passes a NULL `*link` with newItem=0, so this is latent rather than a live bug.\n\n::suggestion{file=\"src/dict.c\" lines=\"913-916\"}\n    if (*link == NULL) {\n        *link = dictFindLink(d, dictStoredKey2Key(d, addedKey), NULL);\n        assert(*link != NULL);\n    }\n",
+    "files": [
+     "src/dict.c"
+    ],
+    "fixPrompt": "In `src/dict.c`, `dictSetKeyAtLink` (around lines 911-916) calls `dictFindLink(d, addedKey, NULL)` when `newItem == 0` and `*link == NULL`. `addedKey` is in stored-key form, so pass it through `dictStoredKey2Key(d, addedKey)` before looking it up. This matches the newItem=1 branch a few lines above, which already converts with `dictStoredKey2Key`. Confirm the assert on line 915 still holds. Do not change the non-NULL link path.",
+    "commentAnchor": {
+     "file": "src/dict.c",
+     "lineStart": 913,
+     "lineEnd": 916
+    }
+   },
+   {
+    "title": "Unused validateStoredKeyConversion helper left in dict.c",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`validateStoredKeyConversion` is defined as a static function in `dict.c`, but nothing calls it. The PR leaves it in place. The compiler will warn about an unused static function (`-Wunused-function`). The build does not use `-Werror` for that warning, so it does not break the build. It is still dead code in a hot file. Its logic also does not add a check. It returns `extracted != NULL`, which is weaker than any real validation.\n\n::diff{file=\"src/dict.c\" lines=\"101-108\"}\n\nDelete the function.",
+    "files": [
+     "src/dict.c"
+    ],
+    "fixPrompt": "In `src/dict.c` (around lines 101-108), delete the static function `validateStoredKeyConversion`. Nothing calls it, and it would trigger an unused-function warning. Leave `dictStoredKey2Key` (line 97) in place, since it is used throughout the file.",
+    "commentAnchor": {
+     "file": "src/dict.c",
+     "lineStart": 101,
+     "lineEnd": 108
+    }
+   },
+   {
+    "title": "Comment claims an unverifiable compiler-inlining result",
+    "severity": "low",
+    "category": "style",
+    "body": "The new comment on `dictGetHash` says the compiler inlines it for internal calls and that this was verified with -O3. That claim cannot be checked from the code, and it does not explain why `dictGetHash` exists. Callers now get hashing with no stored-key handling, and the rest of dict.c uses `dictGetHash` directly.\n\nThe comment will go stale the next time the compiler or flags change. Describe the contract instead: the function hashes a lookup key with `type->hashFunction`.\n\n::diff{file=\"src/dict.c\" lines=\"1807-1810\"}",
+    "files": [
+     "src/dict.c"
+    ],
+    "fixPrompt": "In `src/dict.c` around line 1807, replace the comment above `dictGetHash` with one that states the contract: it hashes a lookup key using `d->type->hashFunction` and does no stored-key conversion. Remove the claim about compiler inlining and the -O3 verification.",
+    "commentAnchor": {
+     "file": "src/dict.c",
+     "lineStart": 1807,
+     "lineEnd": 1810
+    }
+   },
+   {
+    "title": "dictSdsCompareKV keeps a KV name but no longer touches kvobjs",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "After this PR, `dictSdsCompareKV` takes two sds values and never touches a kvobj. Its only difference from the existing `dictSdsKeyCompare` is the `dictCmpCache` length caching. The name still says `KV`, which suggests it unpacks a kvobj. A reader has to compare the two to see why both exist.\n\nKeep the cached variant, since it saves repeated `sdslen` on each probe, but rename it to say what it does, for example `dictSdsKeyCompareCached`. Add a one-line comment explaining why it differs from `dictSdsKeyCompare`.\n\n::diff{file=\"src/server.c\" lines=\"321-333\"}",
+    "files": [
+     "src/server.c"
+    ],
+    "fixPrompt": "In `src/server.c`, `dictSdsCompareKV` (around line 321) now compares two sds values and no longer unpacks kvobjs, so the name is misleading. Rename it to something like `dictSdsKeyCompareCached`, keep the length-caching behaviour, and update the two uses in `dbDictType` and `dbExpiresDictType` (around lines 608 and 622). Add a comment explaining why it differs from `dictSdsKeyCompare`.",
+    "commentAnchor": {
+     "file": "src/server.c",
+     "lineStart": 321,
+     "lineEnd": 333
+    }
+   },
+   {
+    "title": "Doc for keyFromStoredKey says it only applies to no_value dicts",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The comment on `keyFromStoredKey` in `dict.h` says it is \"Relevant only for no_value=1 dicts.\" The code does not enforce that. `dictStoredKey2Key` runs for every dict whose type sets the callback, and the stored-key path in `dictAddRaw` and the lookups applies no `no_value` check. The comment and the code disagree, so a future author may assume a no_value=0 dict will ignore the callback when it will not.\n\nEither drop the restriction from the comment, or assert it in `_dictInit`.\n\n::diff{file=\"src/dict.h\" lines=\"127-134\"}",
+    "files": [
+     "src/dict.h",
+     "src/dict.c"
+    ],
+    "fixPrompt": "In `src/dict.h` near the `keyFromStoredKey` declaration (around lines 127-134), the comment says the callback is only relevant for no_value=1 dicts. In `src/dict.c`, `dictStoredKey2Key` applies it to any dict whose type sets it, with no no_value check. Make the comment match the code: say the callback converts any stored element to its lookup key, and note that it is normally used with no_value=1 dicts. Do not change behaviour.",
+    "commentAnchor": {
+     "file": "src/dict.h",
+     "lineStart": 127,
+     "lineEnd": 134
+    }
+   },
+   {
+    "title": "No test covers the new keyFromStoredKey path",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The PR changes how every lookup, insert, and delete works for the keyspace dict, but it adds no test. The existing dict tests in `dict.c` cover no_value=1 dicts with plain keys, not a dict whose `keyFromStoredKey` differs from the lookup key. The paths most likely to break under this change are not exercised by any test in the PR:\n\n- `dictSetKeyAtLink` with newItem=0 and a NULL link, which is the path that has the bug above.\n- `dictAddRaw` on a dict with a non-identity `keyFromStoredKey`.\n- Lookups and deletes where the stored element and the lookup key have different types.\n\nA small unit test that uses a no_value dict with a `keyFromStoredKey` returning an sds from a wrapper struct would cover these and catch the defrag and dictSetKeyAtLink problems.\n\n::diff{file=\"src/dict.c\" lines=\"887-890\"}",
+    "files": [
+     "src/dict.c"
+    ],
+    "fixPrompt": "Add a unit test to the dict tests in `src/dict.c` (the TEST blocks near the existing no_value=1 test around line 2269). Build a dict type with `no_value=1` and a `keyFromStoredKey` callback that extracts an sds from a small wrapper struct. Cover dictAdd, dictFind, dictDelete, and dictSetKeyAtLink with newItem=0 and a NULL link. Assert the returned values and dictSize, not just that the calls do not crash. Follow the style of the surrounding tests.",
+    "commentAnchor": {
+     "file": "src/dict.c",
+     "lineStart": 887,
+     "lineEnd": 890
+    }
+   },
+   {
+    "title": "Unrelated whitespace and comment churn in defrag.c",
+    "severity": "low",
+    "category": "style",
+    "body": "The diff includes edits that have nothing to do with the stored-key change. It removes a trailing space after the `Hash dicts use no_value=1` comment in `activeDefragHfieldDictCallback`. It also reflows `siphash` arguments in `dictGenHashFunction`, and it touches a blank line in `dictFindLinkForInsert`. These lines add noise to the review and make the functional changes harder to find. Move them to a separate cleanup commit, or drop them.\n\n::diff{file=\"src/defrag.c\" lines=\"482-495\"}",
+    "files": [
+     "src/defrag.c"
+    ],
+    "fixPrompt": "In `src/defrag.c`, the trailing-space removal in the comment inside `activeDefragHfieldDictCallback` (around line 491) and the unrelated edits in `src/dict.c` (the `siphash` argument spacing in `dictGenHashFunction`, and whitespace in `dictFindLinkForInsert`) are cosmetic and not part of the stored-key change. Revert them, or move them into a separate cleanup commit, so the functional diff is easier to review. Keep the `UNUSED(plink)` removal, since `plink` is now used.",
+    "commentAnchor": {
+     "file": "src/defrag.c",
+     "lineStart": 482,
+     "lineEnd": 495
+    }
+   },
+   {
+    "title": "__stored_key is a no-op macro that uses a reserved identifier",
+    "severity": "low",
+    "category": "style",
+    "body": "`__stored_key` is defined as an empty macro in `dict.h` and used as a parameter annotation throughout the API. Two issues. Identifiers that start with a double underscore are reserved for the implementation, so this name is technically off-limits. The annotation also has no effect: the compiler does not check that a stored-key is passed where a lookup key is expected, so it is documentation that looks like enforcement. A name like `DICT_STORED_KEY` avoids the reserved-identifier problem and makes the no-op nature obvious.\n\n::code{file=\"src/dict.h\" lines=\"55-66\"}",
+    "files": [
+     "src/dict.h"
+    ],
+    "fixPrompt": "In `src/dict.h`, the empty annotation macro `__stored_key` (around line 66) uses a reserved double-underscore identifier. Rename it to something like `DICT_STORED_KEY` and update every use across `src/dict.h` and `src/dict.c`. Keep it as an empty macro, and keep the explanatory comment above it, which should note that it is documentation only.",
+    "commentAnchor": {
+     "file": "src/dict.h",
+     "lineStart": 55,
+     "lineEnd": 66
+    }
+   },
+   {
+    "title": "Stored-key flag removed, so no state can leak across calls",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Removing `dictUseStoredKeyApi` also removes a class of bug. The old flag was set and cleared around each call. An early return or an error path between the set and the clear would leave the dict in stored-key mode for later calls. The new design derives the mode from the dict type, which is stateless per call.\n\nI checked the removed call sites in rdb.c and t_hash.c, and every set had a matching clear on each path. The change is therefore a simplification and not a fix for a bug that was live today.\n\n::diff{file=\"src/rdb.c\" lines=\"2234-2240\"}",
+    "files": [
+     "src/rdb.c",
+     "src/t_hash.c",
+     "src/dict.c"
+    ]
+   },
+   {
+    "title": "hashTypeDelete no longer needs the isSdsField flag",
+    "severity": "info",
+    "category": "correctness",
+    "body": "I checked that dropping `isSdsField` from `hashTypeDelete` does not change behaviour. The flag only affected dicts in stored-key mode. Hash dicts had no stored-key callbacks, so the old code took the same path either way. The only dbDictType user is the keyspace, which never calls `hashTypeDelete`.\n\n`onFieldExpire` passes `entryGetField(e)`, which is an sds, so the new single signature is correct for that call site too. The other callers in t_hash.c, module.c, and the HGETDEL and HDEL commands all pass sds fields.\n\n::diff{file=\"src/t_hash.c\" lines=\"3500-3504\"}",
+    "files": [
+     "src/t_hash.c",
+     "src/module.c"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":1,\"title\":\"Code Review Bench PR #14646 - Replace fragile dict stored-key API with getKeyId callback\",\"author\":\"unknown\",\"baseSha\":\"2c2c3acc5e6b3ce873f3b22e294895ae3e159f53\",\"headSha\":\"df9a4c420c01ec275a65287320eefac850407dbd\"},\"summary\":\"This PR removes the mutable per-dict `useStoredKeyApi` flag and the `storedHashFunction`/`storedKeyCompare` callbacks from dict. In their place it adds one `dictType.keyFromStoredKey` callback, and dict.c ",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 11
+}

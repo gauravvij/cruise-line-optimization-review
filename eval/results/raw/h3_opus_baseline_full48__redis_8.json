@@ -1,0 +1,318 @@
+{
+ "id": "redis#8",
+ "repo": "redis",
+ "num": 8,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_final16",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#9",
+  "prefect#12",
+  "redis#8",
+  "redis#9",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-23T18:03:12.985Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Unused variable causes compilation warning",
+   "description": "The code declares an unused variable 'unused_flag' that triggers a compilation warning, causing the build to fail when -Werror flag is enabled",
+   "file_path": "src/t_hash.c",
+   "start_line": 2235,
+   "end_line": 2244,
+   "problematic_code_snippet": "void hincrbyfloatCommand(client *c) {\n    long double value, incr;\n    long long ll;\n    robj *o;\n    sds new;\n    unsigned char *vstr;\n    unsigned int vlen;\n    int has_expiration = 0;\n    uint64_t expireat = EB_EXPIRE_TIME_INVALID;\n    int unused_flag = 0;",
+   "rule_name": "Build Must Compile Without Warnings When -Werror is Enabled"
+  },
+  {
+   "title": "Buffer overflow in HPEXPIREAT propagation array",
+   "description": "The argv array is declared with size 5 (robj *argv[5]) which allocates indices 0-4, but the code attempts to access argv[5] which is out of bounds. This array is used to propagate the HPEXPIREAT command to replicas and AOF when a field has expiration. The buffer overflow can cause memory corruption, crash the server, or lead to undefined behavior during replication.",
+   "file_path": "src/t_hash.c",
+   "start_line": 2306,
+   "end_line": 2313,
+   "problematic_code_snippet": "        /* Propagate HPEXPIREAT */\n        robj *argv[5];\n        argv[0] = shared.hpexpireat;\n        argv[1] = c->argv[1];\n        argv[2] = createStringObjectFromLongLong(expireat);\n        argv[3] = shared.fields;\n        argv[4] = shared.integers[1];\n        argv[5] = c->argv[2];\n        alsoPropagate(c->db->id, argv, 6, PROPAGATE_AOF|PROPAGATE_REPL);"
+  },
+  {
+   "title": "Off-by-one error in field expiration comparison",
+   "description": "The expiration check uses strict greater-than (>) instead of greater-than-or-equal (>=) when comparing expiredAt with commandTimeSnapshot(). This causes fields that expire at exactly the current timestamp to be incorrectly treated as expired. In high-frequency operations, this can lead to premature field expiration and data loss, especially affecting the HINCRBYFLOAT operation's ability to preserve field TTL correctly.",
+   "file_path": "src/t_hash.c",
+   "start_line": 742,
+   "end_line": 743,
+   "problematic_code_snippet": "    if (*expiredAt > (uint64_t) commandTimeSnapshot())\n        return GETF_OK;"
+  },
+  {
+   "title": "Memory leak in HPEXPIREAT propagation",
+   "description": "The code creates a new string object via createStringObjectFromLongLong(expireat) and stores it in argv[2], but fails to call decrRefCount(argv[2]) after propagating the command. This causes a memory leak every time HINCRBYFLOAT is executed on a field with an expiration time. Over time, repeated calls will accumulate leaked string objects, gradually consuming server memory and potentially leading to out-of-memory conditions.",
+   "file_path": "src/t_hash.c",
+   "start_line": 2309,
+   "end_line": 2313,
+   "problematic_code_snippet": "        argv[2] = createStringObjectFromLongLong(expireat);\n        argv[3] = shared.fields;\n        argv[4] = shared.integers[1];\n        argv[5] = c->argv[2];\n        alsoPropagate(c->db->id, argv, 6, PROPAGATE_AOF|PROPAGATE_REPL);"
+  },
+  {
+   "title": "Out-of-bounds write to argv array may trigger -Warray-bounds (and is UB)",
+   "description": "The code declares `robj *argv[5];` (valid indices 0..4) but then writes `argv[5]` and passes an argument count of 6 to `alsoPropagate`. This is undefined behavior and can also trigger compiler diagnostics such as `-Warray-bounds`, which will fail the build under `-Werror`.",
+   "file_path": "src/t_hash.c",
+   "start_line": 2299,
+   "end_line": 2308,
+   "problematic_code_snippet": "        /* Propagate HPEXPIREAT */\n        robj *argv[5];\n        argv[0] = shared.hpexpireat;\n        argv[1] = c->argv[1];\n        argv[2] = createStringObjectFromLongLong(expireat);\n        argv[3] = shared.fields;\n        argv[4] = shared.integers[1];\n        argv[5] = c->argv[2];\n        alsoPropagate(c->db->id, argv, 6, PROPAGATE_AOF|PROPAGATE_REPL);",
+   "rule_name": "Build Must Compile Without Warnings When -Werror is Enabled"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "01bf0c033ff4f73a05f088db910db8e5313cde12",
+ "diff_chars": 10040,
+ "diff_lines": 233,
+ "user_prompt_chars": 11545,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 99120,
+ "wall_ms": 101119,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 6,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 10,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 6
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 25.961961171,
+ "spend_post_usd": 26.349845771,
+ "cost_settled": true,
+ "cost_wait_ms": 342,
+ "cost_usd": 0.3878845999999996,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.38374699999999995,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 23240,
+  "cache_read_input_tokens": 153535,
+  "output_tokens": 11840,
+  "output_tokens_details": {
+   "thinking_tokens": 1021
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 23240
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5042,
+    "cache_creation_input_tokens": 5235,
+    "cache_read_input_tokens": 36895,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 5235,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 11840,
+   "cacheReadInputTokens": 153535,
+   "cacheCreationInputTokens": 23240,
+   "webSearchRequests": 0,
+   "costUSD": 0.38374699999999995,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1021,
+   "cacheCreationEphemeral5mInputTokens": 23240,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 8,
+   "title": "Code Review Bench PR #14227 - Fix HINCRBYFLOAT removes field expiration on replica",
+   "author": "",
+   "baseSha": "11f1f8895e076fdba430d3823a7ff55c8fc574d6",
+   "headSha": "01bf0c033ff4f73a05f088db910db8e5313cde12"
+  },
+  "summary": "This PR fixes a master/replica mismatch. HINCRBYFLOAT gets replicated as HSET, and HSET drops the field's TTL on the replica. The fix adds an `expiredAt` out-parameter to `hashTypeGetValue()` so `hincrbyfloatCommand` can see whether the field has a TTL. If it does, the command blocks its normal propagation and queues HSET followed by `HPEXPIREAT key <ms> FIELDS 1 field`, which `alsoPropagate` wraps in MULTI/EXEC. It also adds a shared `FIELDS` object and a replication test.\n\nThe approach is sound, but the code has real bugs. The HPEXPIREAT argv array is declared with 5 slots and then given 6 entries, which overflows the stack. The expire-time string object created for that argv is never freed, so every HINCRBYFLOAT on a field with a TTL leaks memory. And `hashTypeGetValue` now treats a field as expired when its expire time equals now (`>=` became `>`). That change affects every hash read path, and it disagrees with `hfieldIsExpired()` and the active-expire logic. There's also a leftover unused variable.",
+  "verdict": "request_changes",
+  "verdictRationale": "There's a stack buffer overflow (`argv[5]` written into a 5-slot array), a memory leak on every propagation of a field with a TTL, and an unrelated change to how all hash read paths decide a field has expired. All three need fixing before merge.",
+  "architecture": {
+   "overview": "Redis replicates HINCRBYFLOAT as HSET carrying the final value, so float formatting can't diverge between master and replica. Before this PR the command just rewrote its own argv and let `call()` propagate it, so the replica ran a plain HSET, and HSET clears field TTLs. The master kept the TTL and the replica lost it.\n\nThis PR has `hashTypeGetValue()` optionally return the field's expire time. When `hincrbyfloatCommand` sees a TTL, it calls `preventCommandPropagation(c)` and pushes two ops onto `server.also_propagate`: the rewritten HSET and `HPEXPIREAT key <ms> FIELDS 1 field`. Because there are two ops, the propagation layer wraps them in MULTI/EXEC, and the replica applies the new value and restores the TTL atomically. Fields without a TTL still replicate as a single HSET.",
+   "steps": [
+    "`hincrbyfloatCommand` (src/t_hash.c) looks up the field through `hashTypeGetValue`, which now takes an optional `uint64_t *expiredAt` (NULL for every other caller).",
+    "`hashTypeGetFromListpack` / `hashTypeGetFromHashTable` fill `expiredAt` with the field TTL, or `EB_EXPIRE_TIME_INVALID` if there is none. `hashTypeGetValue` compares it against `commandTimeSnapshot()` to decide whether the field is expired.",
+    "After `hashTypeSet(... HASH_SET_KEEP_TTL)`, the command rewrites its argv to `HSET key field <final>` as before.",
+    "If the field had a TTL, it calls `preventCommandPropagation`, then `alsoPropagate`s the HSET and an HPEXPIREAT built from `shared.hpexpireat`, `shared.fields` (new in server.c/server.h) and `shared.integers[1]`.",
+    "The propagation layer sees multiple also_propagate ops and wraps them in MULTI/EXEC for AOF and replicas. The new test in hash-field-expire.tcl checks the stream shape and the replica's HTTL."
+   ],
+   "diagrams": [
+    {
+     "title": "HINCRBYFLOAT propagation decision",
+     "kind": "flowchart",
+     "description": "How HINCRBYFLOAT decides what to propagate after this PR.",
+     "mermaid": "flowchart TD\n  A[hincrbyfloatCommand] --> B[hashTypeGetValue with expiredAt]\n  B --> C[hashTypeSet KEEP_TTL]\n  C --> D[rewrite argv to HSET key field final]\n  D --> E{field had TTL?}\n  E -- no --> F[call propagates HSET]\n  E -- yes --> G[preventCommandPropagation]\n  G --> H[alsoPropagate HSET]\n  H --> I[alsoPropagate HPEXPIREAT key ms FIELDS 1 field]\n  I --> J[MULTI / HSET / HPEXPIREAT / EXEC to AOF + replicas]"
+    },
+    {
+     "title": "Master to replica replication of HINCRBYFLOAT on a field with a TTL",
+     "kind": "sequence",
+     "description": "Runtime interaction between client, master and replica for a field with a TTL.",
+     "mermaid": "sequenceDiagram\n  participant Client\n  participant Master\n  participant Replica\n  Client->>Master: HINCRBYFLOAT h1 f1 1.1\n  Master->>Master: hashTypeGetValue returns expireat\n  Master->>Master: hashTypeSet KEEP_TTL\n  Master-->>Client: \"2.1\"\n  Master->>Replica: MULTI\n  Master->>Replica: HSET h1 f1 2.1\n  Master->>Replica: HPEXPIREAT h1 ms FIELDS 1 f1\n  Master->>Replica: EXEC\n  Replica->>Replica: value updated, TTL restored"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Stack buffer overflow: 6 elements written into `robj *argv[5]`",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The HPEXPIREAT argv is declared with 5 slots, but the code writes `argv[5]` and passes `argc = 6` to `alsoPropagate`:\n\n::diff{file=\"src/t_hash.c\" lines=\"2306-2313\"}\n\n`argv[5] = c->argv[2]` writes past the end of the array. That is undefined behaviour: it can overwrite saved registers or other stack locals, and an ASAN build will abort here. `alsoPropagate` then reads that same out-of-bounds slot. It only works today if the compiler happens to leave padding there. Every HINCRBYFLOAT on a field with a TTL hits this path.\n\n::suggestion{file=\"src/t_hash.c\" lines=\"2306-2306\"}\n        robj *argv[6];\n\n",
+    "files": [
+     "src/t_hash.c"
+    ],
+    "fixPrompt": "In src/t_hash.c, hincrbyfloatCommand (around lines 2306-2313), the HPEXPIREAT argument array is declared as `robj *argv[5]` but six entries (indices 0..5) are written and `alsoPropagate(..., argv, 6, ...)` is called. Change the declaration to hold 6 elements (or declare it with an initializer list so the size is inferred), and keep the argc passed to alsoPropagate consistent with the array size.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 2306,
+     "lineEnd": 2313
+    }
+   },
+   {
+    "title": "Expire-time string object leaked on every propagation",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`argv[2] = createStringObjectFromLongLong(expireat)` creates an object with refcount 1. `alsoPropagate` calls `incrRefCount` on each argv entry it stores, so the caller still owns its own reference and has to release it. This code never calls `decrRefCount`, so every HINCRBYFLOAT on a field with a TTL leaks one robj on the master.\n\n::diff{file=\"src/t_hash.c\" lines=\"2309-2313\"}\n\nCompare `propagateHashFieldDeletion` in the same file: it creates its argv objects, calls `alsoPropagate`, then `decrRefCount`s them.\n\n::suggestion{file=\"src/t_hash.c\" lines=\"2313-2313\"}\n        alsoPropagate(c->db->id, argv, 6, PROPAGATE_AOF|PROPAGATE_REPL);\n        decrRefCount(argv[2]);\n\n",
+    "files": [
+     "src/t_hash.c"
+    ],
+    "fixPrompt": "In src/t_hash.c hincrbyfloatCommand (~line 2309-2313), the object created by createStringObjectFromLongLong(expireat) for the HPEXPIREAT argv is never released. alsoPropagate() increments the refcount of every argv element, so the caller must decrRefCount its own reference after the call. Add decrRefCount(argv[2]) after alsoPropagate, matching the pattern in propagateHashFieldDeletion in the same file.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 2309,
+     "lineEnd": 2313
+    }
+   },
+   {
+    "title": "Expiry comparison changed from `>=` to `>`, changing semantics for every hash read",
+    "severity": "high",
+    "category": "correctness",
+    "body": "This fix didn't need any change to how expiry is decided, but the PR slipped one into `hashTypeGetValue`:\n\n::diff{file=\"src/t_hash.c\" lines=\"742-743\"}\n\nBefore, a field whose expire time equals `commandTimeSnapshot()` counted as valid. Now it counts as expired, and on a master it is lazily deleted, with an HDEL propagated. The rest of the HFE code still uses the old rule:\n\n::code{file=\"src/t_hash.c\" lines=\"2936-2940\"}\n\n`hfieldIsExpired()`, the listpack check at line 574 and the iterator check at line 1424 all use `expire < now`. So HGET/HEXISTS/HSTRLEN/HINCRBY now expire a field one millisecond earlier than HGETALL, HRANDFIELD and active expiry do. Within a single command time snapshot, a field can be visible to one command and deleted by another. Revert this unrelated change.\n\n::suggestion{file=\"src/t_hash.c\" lines=\"742-742\"}\n    if (*expiredAt >= (uint64_t) commandTimeSnapshot())\n\n",
+    "files": [
+     "src/t_hash.c"
+    ],
+    "fixPrompt": "In src/t_hash.c hashTypeGetValue (line ~742), the PR changed `expiredAt >= commandTimeSnapshot()` to `*expiredAt > commandTimeSnapshot()`. That makes a field expire when its TTL equals now, which conflicts with hfieldIsExpired() (line ~2939) and the other `< commandTimeSnapshot()` checks in the same file, and it affects every caller (HGET, HEXISTS, HSTRLEN, HINCRBY). Restore `>=` so only the pointer dereference changes.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 742,
+     "lineEnd": 742
+    }
+   },
+   {
+    "title": "Unused variable `unused_flag`",
+    "severity": "low",
+    "category": "style",
+    "body": "`int unused_flag = 0;` is declared and never used. With `-Wall`, gcc and clang will emit an unused-variable warning, and Redis CI builds with `-Werror` in some configurations.\n\n::diff{file=\"src/t_hash.c\" lines=\"2242-2244\"}\n\nRemove it.",
+    "files": [
+     "src/t_hash.c"
+    ],
+    "fixPrompt": "In src/t_hash.c hincrbyfloatCommand (line ~2244), remove the unused local `int unused_flag = 0;`. It is never referenced and triggers -Wunused-variable.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 2244,
+     "lineEnd": 2244
+    }
+   },
+   {
+    "title": "`hashTypeGetValue` signature reformatted, breaking the file's style",
+    "severity": "low",
+    "category": "style",
+    "body": "The PR re-indents the continuation line and moves the opening brace onto its own line. The function previously used K&R style with aligned parameters, like the rest of t_hash.c. Only the new parameter needed to change.\n\n::diff{file=\"src/t_hash.c\" lines=\"713-715\"}\n\n::suggestion{file=\"src/t_hash.c\" lines=\"713-715\"}\nGetFieldRes hashTypeGetValue(redisDb *db, robj *o, sds field, unsigned char **vstr,\n                             unsigned int *vlen, long long *vll, int hfeFlags,\n                             uint64_t *expiredAt) {\n\n",
+    "files": [
+     "src/t_hash.c"
+    ],
+    "fixPrompt": "In src/t_hash.c lines 713-715, restore the original formatting of the hashTypeGetValue signature: keep the continuation parameters aligned under the first parameter and the opening brace on the same line, and just append the new `uint64_t *expiredAt` parameter.",
+    "commentAnchor": {
+     "file": "src/t_hash.c",
+     "lineStart": 713,
+     "lineEnd": 715
+    }
+   },
+   {
+    "title": "Propagation approach is right: prevent the original, then emit HSET + HPEXPIREAT atomically",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Calling `preventCommandPropagation` and then queuing two `alsoPropagate` ops is the correct way to control ordering. The propagation layer wraps multiple ops in MULTI/EXEC, so the replica can never apply the HSET without restoring the TTL. Using an absolute `HPEXPIREAT` in milliseconds also means a replica or AOF reload gets the exact same deadline. The test checks both the replication stream shape and the replica's actual HTTL/value, and it covers fields with and without a TTL.\n\n::code{file=\"tests/unit/type/hash-field-expire.tcl\" lines=\"1270-1293\"}",
+    "files": [
+     "src/t_hash.c",
+     "tests/unit/type/hash-field-expire.tcl"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":8,\"title\":\"Code Review Bench PR #14227 - Fix HINCRBYFLOAT removes field expiration on replica\",\"author\":\"\",\"baseSha\":\"11f1f8895e076fdba430d3823a7ff55c8fc574d6\",\"headSha\":\"01bf0c033ff4f73a05f088db910db8e5313cde12\"},\"summary\":\"This PR fixes a master/replica mismatch. HINCRBYFLOAT gets replicated as HSET, and HSET drops the field's TTL on the replica. The fix adds an `expiredAt` out-parameter to `hashTypeGetValue()` so `hincrbyfloatCommand` c",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

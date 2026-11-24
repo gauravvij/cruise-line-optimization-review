@@ -1,0 +1,323 @@
+{
+ "id": "prefect#9",
+ "repo": "prefect",
+ "num": 9,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:41:55.609Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Test file not co-located with component",
+   "description": "The rule requires test files to be in the same directory as component files. The test file flow-icon-text.test.tsx was moved to a __tests__ subdirectory instead of being co-located with flow-icon-text.tsx in the same directory.",
+   "file_path": "ui-v2/src/components/flows/flow-icon-text/__tests__/flow-icon-text.test.tsx",
+   "start_line": 11,
+   "end_line": 14,
+   "problematic_code_snippet": "import { Suspense } from \"react\";\nimport { describe, expect, it } from \"vitest\";\nimport { createFakeFlow } from \"@/mocks\";\nimport { FlowIconText } from \"../flow-icon-text\";",
+   "rule_name": "React Component Test Files Must Be Co-Located"
+  },
+  {
+   "title": "QueryClient instance mismatch between router context and provider",
+   "description": "The Storybook decorator creates a QueryClient instance mismatch. The `createTestRouter` function instantiates a new QueryClient (`new QueryClient()`) and passes it to the router context on line 32. However, the decorator wraps the component with `QueryClientProvider` using the module-level `queryClient` instance on line 43. This creates two separate QueryClient instances - one for the router context and one for the provider. Queries executed within the router tree will use a different cache than queries executed through the provider, causing cache inconsistency and potential state synchronization issues. The router and provider should share the same QueryClient instance.",
+   "file_path": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx",
+   "start_line": 29,
+   "end_line": 46,
+   "problematic_code_snippet": "return createRouter({\n\t\trouteTree: rootRoute,\n\t\thistory: createMemoryHistory({ initialEntries: [\"/\"] }),\n\t\tcontext: { queryClient: new QueryClient() },\n\t});\n};\n\nconst meta: Meta<typeof FlowIconText> = {\n\ttitle: \"Components/Flows/FlowIconText\",\n\tcomponent: FlowIconText,\n\tdecorators: [\n\t\t(_Story, context) => {\n\t\t\tconst router = createTestRouter(context.args.flowId ?? \"flow-123\");\n\t\t\treturn (\n\t\t\t\t<QueryClientProvider client={queryClient}>\n\t\t\t\t\t<RouterProvider router={router} />\n\t\t\t\t</QueryClientProvider>\n\t\t\t);\n\t\t},\n\t],"
+  },
+  {
+   "title": "Missing Suspense fallback causes blank UI during loading",
+   "description": "The FlowIconText component wraps FlowIconTextImplementation in a Suspense boundary but doesn't provide a fallback prop. When the component suspends while fetching flow data via useSuspenseQuery, React has no fallback content to display, resulting in a blank space in the UI until the query resolves. This creates a poor user experience with no loading indicator. The original implementation should have included a fallback prop like `<Skeleton className=\"h-4 w-full\" />` to show a loading state during data fetching.",
+   "file_path": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+   "start_line": 12,
+   "end_line": 17,
+   "problematic_code_snippet": "export const FlowIconText = ({ flowId }: FlowIconTextProps) => {\n\treturn (\n\t\t<Suspense>\n\t\t\t<FlowIconTextImplementation flowId={flowId} />\n\t\t</Suspense>\n\t);\n};"
+  },
+  {
+   "title": "Unused import violates Rule #12 noUnusedImports configuration",
+   "description": "The flow-icon-text.tsx file imports Skeleton from '@/components/ui/skeleton' on line 6 but never uses it in the component code. This directly violates Rule #12 'Unused Imports Must Be Automatically Removed' from AGENTS.md, which requires that unused imports be eliminated via automated linting. The biome.json configuration explicitly sets noUnusedImports as an error, meaning this should have been caught by pre-commit hooks. The unused import increases bundle size unnecessarily and indicates the linting process was bypassed or failed.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "import { useSuspenseQuery } from \"@tanstack/react-query\";\nimport { Link } from \"@tanstack/react-router\";\nimport { Suspense } from \"react\";\nimport { buildFLowDetailsQuery } from \"@/api/flows\";\nimport { Icon } from \"@/components/ui/icons\";\nimport { Skeleton } from \"@/components/ui/skeleton\";\n\ntype FlowIconTextProps = {\n\tflowId: string;\n};"
+  },
+  {
+   "title": "Unused import: Skeleton",
+   "description": "`Skeleton` is imported but never used in this file, which violates the rule requiring unused imports to be removed.",
+   "file_path": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+   "start_line": 6,
+   "end_line": 6,
+   "problematic_code_snippet": "import { Skeleton } from \"@/components/ui/skeleton\";",
+   "rule_name": "Unused Imports Must Be Automatically Removed"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect",
+ "head_sha": "d7af125d6f9757dff85349d7dc04bfc0ee7cd506",
+ "diff_chars": 3311,
+ "diff_lines": 119,
+ "user_prompt_chars": 5792,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 38433,
+ "wall_ms": 43433,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 13,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.903047786,
+ "spend_post_usd": 7.906049621,
+ "cost_settled": true,
+ "cost_wait_ms": 3079,
+ "cost_usd": 0.0030018350000000638,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.006710715000000001,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 11327,
+  "cache_read_input_tokens": 100704,
+  "output_tokens": 8574,
+  "output_tokens_details": {
+   "thinking_tokens": 2199
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 11327
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 8574,
+   "cacheReadInputTokens": 100704,
+   "cacheCreationInputTokens": 11327,
+   "webSearchRequests": 0,
+   "costUSD": 0.006710715000000001,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2199,
+   "cacheCreationEphemeral5mInputTokens": 11327,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/prefect",
+   "number": 9,
+   "title": "Code Review Bench PR #20030 - Add FlowIconText component for UI v2 migration",
+   "author": "",
+   "baseSha": "579c17b0bb82e1e4c82115fe1218a28b517471f2",
+   "headSha": "d7af125d6f9757dff85349d7dc04bfc0ee7cd506"
+  },
+  "summary": "This PR adds a `FlowIconText` component under `ui-v2/src/components/flows/flow-icon-text/`. It fetches a flow by ID with `useSuspenseQuery(buildFLowDetailsQuery)` and renders the Workflow icon plus the flow name as a link to `/flows/flow/$id`. It is a label-free sibling of the existing `FlowLink`, and it follows the same structure: a Suspense wrapper, a suspense-backed implementation component, and the same route, icon, and query builder. I checked it against `flow-link.tsx`, and the route, icon ID, and query builder all exist and are used the same way.\n\nThe main problem is that the PR description and checklist say unit tests were added, but the diff (3 files) and the head tree contain no `flow-icon-text.test.tsx`. The component therefore has no coverage at all. There is also a small UX regression: the outer `<Suspense>` has no fallback, so the link renders nothing while loading, whereas `FlowLink` shows a Skeleton.",
+  "verdict": "request_changes",
+  "verdictRationale": "The checklist claims tests exist, but none were added, so the new component is untested. That alone should block merge. The loading fallback gap and story cleanup are small and can be fixed alongside it. The component logic itself is correct and matches the established pattern.",
+  "architecture": {
+   "overview": "The existing flow-link UI in `ui-v2` is a Suspense-wrapped component. `FlowLink` (`src/components/flows/flow-link.tsx`) calls `useSuspenseQuery(buildFLowDetailsQuery(flowId))` from `@/api/flows`, renders a `Skeleton` while loading, and displays the label \"Flow\" followed by the Workflow icon and the flow name as a TanStack `Link` to `/flows/flow/$id`. Other components use the same query builder, such as `flow-run-header.tsx` and `task-runs-list-item.tsx`.\n\nThis PR adds `FlowIconText` as a parallel component in its own folder, with an `index.ts` barrel. It keeps the same query, route, and icon, but drops the \"Flow\" prefix and wraps the content in a `flex items-center gap-1` link. The change is additive: no existing callers are modified, and nothing in the app imports the component yet. Its outer `<Suspense>` has no fallback, which is the one place it departs from `FlowLink`'s loading behavior.",
+   "steps": [
+    "Entry point: a caller passes a `flowId` to `FlowIconText` (`flow-icon-text.tsx`, lines 12-17). The component wraps its inner implementation in a `<Suspense>` boundary with no fallback (lines 14-16).",
+    "Data: `FlowIconTextImplementation` (lines 19-33) calls `useSuspenseQuery(buildFLowDetailsQuery(flowId))` from `@/api/flows`. This is the same query `FlowLink` uses, so the cache is shared across both components.",
+    "Rendering: the component renders a TanStack `Link` to `/flows/flow/$id`, with `params.id` taken from the fetched `flow.id`, containing the Workflow `Icon` and `flow.name`.",
+    "Stories and exports: `flow-icon-text.stories.tsx` builds a memory router around the component and wraps it in a `QueryClientProvider`. Storybook's MSW loader (`.storybook/preview.ts`) mocks the API. `index.ts` re-exports the component.",
+    "Gap: no unit test file is included, although the PR description and checklist say one was added. Loading state and link navigation are therefore unverified."
+   ],
+   "diagrams": [
+    {
+     "title": "FlowIconText render path",
+     "kind": "flowchart",
+     "description": "How a caller's flowId becomes a flow link, and where the new component sits relative to the existing FlowLink.",
+     "mermaid": "flowchart LR\n  Caller[\"Caller with flowId\"] --> FIT[\"FlowIconText (flow-icon-text.tsx)\"]\n  FIT --> SUS[\"Suspense boundary (no fallback)\"]\n  SUS --> Impl[\"FlowIconTextImplementation\"]\n  Impl --> Q[\"useSuspenseQuery(buildFLowDetailsQuery)\"]\n  Q --> API[\"Flow details API\"]\n  API --> Impl\n  Impl --> Link[\"TanStack Link to /flows/flow/$id\"]\n  Link --> Icon[\"Icon Workflow + flow.name\"]\n  FL[\"FlowLink (existing)\"] -. same query and route .-> Q"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "No unit tests included despite checklist claiming they exist",
+    "severity": "high",
+    "category": "maintainability",
+    "body": "The PR description says `flow-icon-text.test.tsx` was added with MSW-based unit tests, and the checklist item \"includes unit tests that cover the changes\" is checked. The diff only adds `stories.tsx`, `flow-icon-text.tsx`, and `index.ts`. The head tree has no test file in `src/components/flows/flow-icon-text/`.\n\nThat leaves the component with no coverage for:\n- Rendering the flow name and the Workflow icon after the query resolves.\n- The link target: `href` should be `/flows/flow/<id>`.\n- The loading state, which is the gap described in the next finding.\n\nThe existing `flows.test.ts` already tests `buildFLowDetailsQuery` through `renderHook`, so the same `createWrapper`, `server.use`, and `createFakeFlow` helpers are available to reuse.\n\n::callout{type=\"warning\"}\nThe checklist is marked as done, so a reviewer may assume coverage that doesn't exist. Either add the test file or uncheck the item.\n",
+    "files": [
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx"
+    ],
+    "fixPrompt": "Add `ui-v2/src/components/flows/flow-icon-text/flow-icon-text.test.tsx`, which the PR description says exists but the diff does not include. Use MSW (`server.use(http.get(buildApiUrl(`/flows/${id}`), ...))`) and `createFakeFlow` in the same style as `src/api/flows/flows.test.ts`. Cover: (1) the flow name and Workflow icon render once the query resolves, (2) the link's href is `/flows/flow/<flow.id>`, and (3) a loading state shows the fallback. Use a router and QueryClient wrapper the way other component tests in `src/components/` do. Assert on rendered output, not internal calls.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+     "lineStart": 12,
+     "lineEnd": 33
+    }
+   },
+   {
+    "title": "Missing Suspense fallback: link renders nothing while loading",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`FlowIconText` wraps its implementation in a bare `<Suspense>` (lines 14-16), so the fallback is `null`. While the flow loads, nothing is drawn, and the link then appears and shifts the surrounding layout. `FlowLink` avoids this with `<Suspense fallback={<Skeleton className=\"h-4 w-full\" />}>`.\n\nThe component is meant to be a drop-in label-free variant of `FlowLink`, so it should match that loading behavior. `Skeleton` is already imported in this file, but it is unused, which suggests the fallback was dropped by accident.\n\n::diff{file=\"ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx\" lines=\"12-17\"}\n\n::suggestion{file=\"ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx\" lines=\"14-16\"}\n<Suspense fallback={<Skeleton className=\"h-4 w-full\" />}>\n  <FlowIconTextImplementation flowId={flowId} />\n</Suspense>\n",
+    "files": [
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx"
+    ],
+    "fixPrompt": "In `ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx`, the `<Suspense>` wrapper in `FlowIconText` (around lines 14-16) has no fallback, so nothing renders while the flow loads. Add a fallback that matches `FlowLink` in `src/components/flows/flow-link.tsx`: `<Skeleton className=\"h-4 w-full\" />`. `Skeleton` is already imported in this file but unused. Keep the rest of the component unchanged.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+     "lineStart": 14,
+     "lineEnd": 16
+    }
+   },
+   {
+    "title": "Story creates an unused QueryClient, and the router is rebuilt on every render",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "In `createTestRouter`, `context: { queryClient: new QueryClient() }` (line 32) passes a fresh client to the router. `FlowIconText` never reads it: `useSuspenseQuery` uses the client from the `QueryClientProvider` in the decorator (the shared `queryClient` at line 12). The story therefore has two query clients, and the one on the router is misleading to a reader.\n\nThe decorator also calls `createTestRouter` on every render, so a new router is created each time the story re-renders. Storybook decorators usually run once per story state, so this is minor, but it is avoidable.\n\n::code{file=\"ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx\" lines=\"20-33\"}\n\nDrop the `context` option, or pass the shared `queryClient` if the router needs it.",
+    "files": [
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx"
+    ],
+    "fixPrompt": "In `ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx`, `createTestRouter` passes `context: { queryClient: new QueryClient() }` (around line 32). `FlowIconText` uses the `QueryClientProvider` client, not the router context, so this second client is unused and misleading. Remove that `context` option, or reuse the module-level `queryClient`. Optionally create the router once instead of on every decorator call.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx",
+     "lineStart": 20,
+     "lineEnd": 33
+    }
+   },
+   {
+    "title": "Second near-duplicate of FlowLink; consider a prop instead",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`FlowIconText` duplicates nearly all of `FlowLink`. The only differences are the \"Flow\" label, the wrapper element (`div` with `text-xs` vs. a bare link), and the fallback. Two components that drift apart is a real risk, for example when the route or icon changes in one and not the other.\n\nThis is a judgment call, and the separate component is defensible given the PR's stated migration goal. If the two are expected to stay in sync, a `showLabel` prop on `FlowLink` would avoid the duplication. If they are meant to diverge, the current structure is fine.\n\n::diff{file=\"ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx\" lines=\"19-33\"}\n",
+    "files": [
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+     "ui-v2/src/components/flows/flow-link.tsx"
+    ],
+    "fixPrompt": "Consider whether `FlowIconText` in `ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx` should stay a separate component. It duplicates `FlowLink` in `src/components/flows/flow-link.tsx` except for the \"Flow\" label and the wrapper element. If the two should stay in sync, add an optional `showLabel` prop to `FlowLink` and remove the duplicate. If they are meant to diverge (as the migration goal suggests), keep both and leave a short comment explaining the difference. Make the decision explicit in the PR.",
+    "commentAnchor": {
+     "file": "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx",
+     "lineStart": 19,
+     "lineEnd": 33
+    }
+   },
+   {
+    "title": "Correct reuse of the existing flow query, route, and icon",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The component reuses the existing building blocks in the same way `FlowLink` does, which keeps it consistent with the rest of the UI:\n- `buildFLowDetailsQuery(flowId)` from `@/api/flows`, so the flow details are cached and shared with `FlowLink`, `flow-run-header`, and `task-runs-list-item`.\n- The `/flows/flow/$id` route, which is used in `cells.tsx` and `deployments/data-table`.\n- The `Workflow` icon, which is defined in `src/components/ui/icons/constants.ts`.\n\n`params={{ id: flow.id }}` uses the ID from the response rather than the prop, which is a sensible choice.",
+    "files": [
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.tsx"
+    ]
+   },
+   {
+    "title": "Storybook setup handles API mocking and router wiring",
+    "severity": "info",
+    "category": "style",
+    "body": "The story setup is sound. `.storybook/preview.ts` initializes `msw-storybook-addon` globally with `onUnhandledRequest: \"bypass\"`, so the story's flow request resolves without a per-story mock. The `RouterProvider` decorator also gives `Link` a router context, which avoids the runtime error a bare `Link` would cause in Storybook.",
+    "files": [
+     "ui-v2/src/components/flows/flow-icon-text/flow-icon-text.stories.tsx"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/prefect\",\"number\":9,\"title\":\"Code Review Bench PR #20030 - Add FlowIconText component for UI v2 migration\",\"author\":\"\",\"baseSha\":\"579c17b0bb82e1e4c82115fe1218a28b517471f2\",\"headSha\":\"d7af125d6f9757dff85349d7dc04bfc0ee7cd506\"},\"summary\":\"This PR adds a `FlowIconText` component under `ui-v2/src/components/flows/flow-icon-text/`. It fetches a flow by ID with `useSuspenseQuery(buildFLowDetailsQuery)` and renders the Workflow icon plus the flow name as a link ",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

@@ -1,0 +1,332 @@
+{
+ "id": "tauri#7",
+ "repo": "tauri",
+ "num": 7,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T08:34:20.609Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Windows-only Sha256 lacks platform guards",
+   "description": "The HashAlgorithm::Sha256 variant is only used for Windows-specific WIX tooling downloads but lacks #[cfg(target_os = \"windows\")] guards. Platform-specific code should use conditional compilation attributes to ensure it only compiles on supported platforms.",
+   "file_path": "crates/tauri-bundler/src/utils/http_utils.rs",
+   "start_line": 97,
+   "end_line": 129,
+   "problematic_code_snippet": "#[allow(dead_code)]\n#[derive(Clone, Copy)]\npub enum HashAlgorithm {\n  Sha256,\n  Sha1,\n}\n\n/// Function used to download a file and checks SHA256 to verify the download.\n#[allow(dead_code)]\npub fn download_and_verify(\n  url: &str,\n  hash: &str,\n  hash_algorithm: HashAlgorithm,\n) -> crate::Result<Vec<u8>> {\n  let data = download(url)?;\n  log::info!(\"validating hash\");\n  verify_hash(&data, hash, hash_algorithm)?;\n  Ok(data)\n}\n\n#[allow(dead_code)]\npub fn verify_hash(data: &[u8], hash: &str, hash_algorithm: HashAlgorithm) -> crate::Result<()> {\n  match hash_algorithm {\n    HashAlgorithm::Sha256 => {\n      let hasher = sha2::Sha256::new();\n      verify_data_with_hasher(data, hash, hasher)\n    }\n    HashAlgorithm::Sha1 => {\n      let hasher = sha1::Sha1::new();\n      verify_data_with_hasher(data, hash, hasher)\n    }\n  }\n}",
+   "rule_name": "Platform-Specific Code Must Use Appropriate Conditional Compilation"
+  },
+  {
+   "title": "GitHub mirror URL ignored, always downloads from original URL",
+   "description": "The function `generate_github_alternative_url` computes an alternative mirror URL from environment variables but then returns the original GitHub URL instead of the computed mirror URL. This breaks the GitHub mirror functionality that users configure via `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR` or `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE` environment variables. When GitHub has rate limits or accessibility issues, the configured mirrors will be silently ignored and downloads will fail from the original GitHub URLs. The bug occurs because `alt_url` is renamed to `_alt_url` (indicating it's unused) and `url.to_owned()` is returned instead of `alt_url`.",
+   "file_path": "crates/tauri-bundler/src/utils/http_utils.rs",
+   "start_line": 45,
+   "end_line": 61,
+   "problematic_code_snippet": "fn generate_github_alternative_url(url: &str) -> Option<(ureq::Agent, String)> {\n  if !url.starts_with(\"https://github.com/\") {\n    return None;\n  }\n\n  generate_github_mirror_url_from_template(url)\n    .or_else(|| generate_github_mirror_url_from_base(url))\n    .map(|_alt_url| {\n      (\n        ureq::Agent::config_builder()\n          .user_agent(BUNDLER_USER_AGENT)\n          .build()\n          .into(),\n        url.to_owned(),\n      )\n    })\n}"
+  },
+  {
+   "title": "Version mismatch between CLI and Tauri core in metadata",
+   "description": "The metadata-v2.json file incorrectly declares tauri core version as \"2.9.3\" when the actual Tauri runtime version remains at \"2.9.2\" (as confirmed in Cargo.lock). This PR only updates tauri-cli and tauri-bundler to 2.9.3, not the core Tauri runtime. This metadata file is used by the CLI to verify version compatibility and inform users about which versions work together. The incorrect version could lead to confusion about compatibility, failed version checks, or users attempting to use mismatched versions thinking they are compatible.",
+   "file_path": "crates/tauri-cli/metadata-v2.json",
+   "start_line": 6,
+   "end_line": 6,
+   "problematic_code_snippet": "{\n  \"cli.js\": {\n    \"version\": \"2.9.3\",\n    \"node\": \">= 10.0.0\"\n  },\n  \"tauri\": \"2.9.3\",\n  \"tauri-build\": \"2.5.1\",\n  \"tauri-plugin\": \"2.5.1\"\n}"
+  },
+  {
+   "title": "Version bump without corresponding .changes change file in this PR",
+   "description": "This PR bumps crate versions (and updates changelogs) but deletes all existing entries in `.changes/` and does not add a new change file. Per the rule, user-facing/functional changes requiring a version bump must include a covector change file under `.changes/` documenting the bump and summary.",
+   "file_path": "crates/tauri-bundler/Cargo.toml",
+   "start_line": 1,
+   "end_line": 4,
+   "problematic_code_snippet": "[package]\nname = \"tauri-bundler\"\nversion = \"2.7.3\"",
+   "rule_name": "Changes Requiring a Version Bump Must Include a Change File"
+  },
+  {
+   "title": "Version bump without corresponding .changes change file in this PR",
+   "description": "This PR bumps the `tauri-cli` version to 2.9.3 while removing `.changes/*` entries and not adding any new change file. The version bump indicates release-relevant changes that should be accompanied by a covector change file in `.changes/`.",
+   "file_path": "crates/tauri-cli/Cargo.toml",
+   "start_line": 1,
+   "end_line": 4,
+   "problematic_code_snippet": "[package]\nname = \"tauri-cli\"\nversion = \"2.9.3\"",
+   "rule_name": "Changes Requiring a Version Bump Must Include a Change File"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "ab921886bfcca88c3bae1b354039c5e884f26c4a",
+ "diff_chars": 8018,
+ "diff_lines": 231,
+ "user_prompt_chars": 9851,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 59317,
+ "wall_ms": 61378,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri-bundler/src/utils/http_utils.rs"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri-cli/metadata-v2.json"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 8,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 19,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 8
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.240683411,
+ "spend_post_usd": 7.255136816,
+ "cost_settled": true,
+ "cost_wait_ms": 326,
+ "cost_usd": 0.014453405000000252,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 9,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.011731974999999999,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 26815,
+  "cache_read_input_tokens": 203140,
+  "output_tokens": 12695,
+  "output_tokens_details": {
+   "thinking_tokens": 5222
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 26815
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 12695,
+   "cacheReadInputTokens": 203140,
+   "cacheCreationInputTokens": 26815,
+   "webSearchRequests": 0,
+   "costUSD": 0.011731974999999999,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5222,
+   "cacheCreationEphemeral5mInputTokens": 26815,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 7,
+   "title": "Code Review Bench PR #14409 - Apply Version Updates From Current Changes",
+   "author": "",
+   "baseSha": "57faad0b3d49c8c5a97a3229f0a527527120ffc2",
+   "headSha": "ab921886bfcca88c3bae1b354039c5e884f26c4a"
+  },
+  "summary": "This is a release-prep PR: it bumps tauri-bundler to 2.7.3, tauri-cli to 2.9.3 and @tauri-apps/cli to 2.9.3, updates Cargo.lock, writes the matching CHANGELOG entries, and deletes the four `.changes/*.md` change files they consume. The version bookkeeping is internally consistent: the Cargo.lock entries, the tauri-cli → tauri-bundler `2.7.3` pin, and the package.json version all agree, and each changelog entry maps to a deleted change file.\n\nThe PR is not just a version bump, though. In `crates/tauri-bundler/src/utils/http_utils.rs`, the `generate_github_alternative_url` rewrite discards the computed mirror URL (`|_alt_url|` … `url.to_owned()`), so `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR[_TEMPLATE]` is silently ignored. That is a functional regression, and the existing unit tests don't cover this path. The same file also drops the `cfg(windows)` gate on `HashAlgorithm::Sha256`, which is unrelated to a version bump. Separately, `crates/tauri-cli/metadata-v2.json` now advertises `\"tauri\": \"2.9.3\"` even though the `tauri` crate is still 2.9.2, and that value is written into newly generated projects.",
+  "verdict": "request_changes",
+  "verdictRationale": "The mirror-URL regression is a real behavioural bug in code that is not part of a version bump, and it contradicts the documented env vars in ENVIRONMENT_VARIABLES.md. The `\"tauri\": \"2.9.3\"` metadata value points generated projects at a tauri version this PR does not produce. Both should be fixed before merge. The Sha256 cfg change and the test gap are smaller, but they belong in the same pass.",
+  "architecture": {
+   "overview": "The bundler downloads build tools (NSIS, WiX, and similar) through `crates/tauri-bundler/src/utils/http_utils.rs`. `download()` calls `create_agent_and_url`, which first asks `generate_github_alternative_url` whether the URL should be redirected to a GitHub mirror. The mirror comes either from a template in `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE` or from a base URL in `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR`. If a mirror applies, a configured ureq agent with the bundler user agent fetches the mirror URL. Otherwise `base_ureq_agent()` fetches the original URL.\n\nThis PR does not change that architecture, but it breaks the redirect step. The mirror URL is computed and then thrown away, so every download goes to the original GitHub URL. The PR also updates the version metadata that `tauri-cli` embeds (`metadata-v2.json`), which `tauri init` and `plugin init` read to pin the `tauri` and `tauri-build` versions in generated `Cargo.toml` files. Finally, it bumps versions and changelogs for tauri-bundler, tauri-cli and @tauri-apps/cli.",
+   "steps": [
+    "Entry point: `tauri-cli` calls `download()` / `download_and_verify()` in `http_utils.rs` when it needs NSIS or WiX (see `bundle/windows/nsis/mod.rs` and `msi/mod.rs`).",
+    "`create_agent_and_url` (line 63) delegates to `generate_github_alternative_url` (line 45). This PR rewrites its `.map` closure (lines 52-59) so the agent carries the user agent but the URL is always the original `url`. That is the regression.",
+    "`HashAlgorithm` (lines 97-102) and `verify_hash` (line 118) lose their `cfg(target_os = \"windows\")` gates. `sha2` is an unconditional dependency, so this compiles on every platform, but it is unrelated to the release.",
+    "`crates/tauri-cli/metadata-v2.json` is read by `init.rs`, `plugin/init.rs` and `info/mod.rs`. Bumping its `tauri` field to 2.9.3 changes the version written into generated projects, while `crates/tauri/Cargo.toml` stays at 2.9.2.",
+    "Release bookkeeping: `Cargo.lock`, `tauri-cli/Cargo.toml` (pin `tauri-bundler = 2.7.3`), `packages/cli/package.json` (2.9.3), and three CHANGELOG files are updated, and four `.changes/*.md` files are deleted."
+   ],
+   "diagrams": [
+    {
+     "title": "Tool download path with mirror redirect",
+     "kind": "flowchart",
+     "description": "How a build-tool download chooses an agent and URL in http_utils.rs, including the mirror branch this PR breaks.",
+     "mermaid": "flowchart LR\n  A[download url] --> B[create_agent_and_url]\n  B --> C[generate_github_alternative_url]\n  C -->|not github.com| D[base_ureq_agent + original url]\n  C --> E{mirror template or base env set?}\n  E -->|no| D\n  E -->|yes| F[agent with BUNDLER_USER_AGENT + mirror url computed]\n  F --> G[PR: mirror url discarded, original url used]\n  G --> H[agent.get final_url]\n  D --> H"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Mirror URL is computed and then discarded, so GitHub mirror env vars are ignored",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`generate_github_alternative_url` now binds the computed mirror URL to `_alt_url` and returns `url.to_owned()`. The mirror lookup still runs, but its result is never used. Any user who sets `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR` or `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE` (documented in `ENVIRONMENT_VARIABLES.md`) will still download from github.com. In regions where GitHub is blocked, that means NSIS or WiX downloads fail, and the mirror feature regresses silently.\n\n::diff{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"50-60\"}\n\n::callout{type=\"warning\"}\nThe only functional change left in this path is the user agent on the mirror agent, and that agent is never used with a mirror URL. Restore the original `alt_url` binding and return it, as in the base code.\n\n::suggestion{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"52-59\"}\n.map(|alt_url| {\n  (\n    ureq::Agent::config_builder()\n      .user_agent(BUNDLER_USER_AGENT)\n      .build()\n      .into(),\n    alt_url,\n  )\n})\n",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/utils/http_utils.rs`, `generate_github_alternative_url` (around lines 45-61) computes the mirror URL via `generate_github_mirror_url_from_template` / `generate_github_mirror_url_from_base`, but the `.map` closure at lines 52-59 binds it to `_alt_url` and returns `url.to_owned()`, so the mirror is never used. Rename the binding back to `alt_url` and return `alt_url` as the second tuple element, matching the original code. Keep the `BUNDLER_USER_AGENT` agent configuration unchanged. Consider adding a unit test that asserts the returned URL equals the mirror URL when `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE` is set, so this regression is caught.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 52,
+     "lineEnd": 59
+    }
+   },
+   {
+    "title": "metadata-v2.json advertises tauri 2.9.3, but the tauri crate is still 2.9.2",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`crates/tauri-cli/metadata-v2.json` changes `\"tauri\"` from `2.9.2` to `2.9.3`. That field is not tied to the CLI version. It is the version of the `tauri` crate that generated projects depend on: `init.rs` and `plugin/init.rs` format it into `tauri = { version = \"<metadata.tauri>\" }`. This PR does not bump `crates/tauri/Cargo.toml` (still `2.9.2`), so a project created by this CLI would depend on a `tauri` version that is not published. The `tauri` value looks like it came from a find-and-replace of the CLI version. The `tauri-build` and `tauri-plugin` entries (2.5.1) were correctly left alone.\n\n::diff{file=\"crates/tauri-cli/metadata-v2.json\" lines=\"1-9\"}\n\n::callout{type=\"warning\"}\nRevert `\"tauri\"` to `\"2.9.2\"` unless the `tauri` crate is also being released in this PR. The `cli.js` version (2.9.3) should stay as is.",
+    "files": [
+     "crates/tauri-cli/metadata-v2.json",
+     "crates/tauri/Cargo.toml"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/metadata-v2.json`, the `\"tauri\"` field was bumped to `2.9.3`, but the `tauri` crate in `crates/tauri/Cargo.toml` is still `2.9.2` and is not part of this release. The field feeds `tauri = { version = ... }` generation in `crates/tauri-cli/src/init.rs` and `crates/tauri-cli/src/plugin/init.rs`, so it must match a published `tauri` version. Revert the `\"tauri\"` value to `\"2.9.2\"`. Leave `cli.js.version` (2.9.3), `tauri-build`, and `tauri-plugin` unchanged.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/metadata-v2.json",
+     "lineStart": 6,
+     "lineEnd": 6
+    }
+   },
+   {
+    "title": "Unrelated removal of the Windows-only gate on HashAlgorithm::Sha256",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The diff drops `#[cfg(target_os = \"windows\")]` from the `Sha256` enum variant and from its `verify_hash` match arm. This is not part of a version bump or the listed changelog entries. The change compiles, because `sha2` is an unconditional dependency, and `#[allow(dead_code)]` covers the rest. It does mean the SHA-256 path is now compiled on every platform, even though its only caller (WiX, `msi/mod.rs`) is Windows-only. If the removal is intentional, it belongs in its own PR with a changelog entry. Otherwise, restore the gates.\n\n::diff{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"97-102\"}\n\nThe `verify_hash` match arm at line 120 has the same change.",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/utils/http_utils.rs`, the `#[cfg(target_os = \"windows\")]` attributes on `HashAlgorithm::Sha256` (around line 100) and on the matching arm in `verify_hash` (around line 120) were removed in a version-bump PR, unrelated to its purpose. Either restore both attributes to match the base revision (`git show 57faad0:crates/tauri-bundler/src/utils/http_utils.rs`), or move the change into a separate PR with its own change file. Confirm that `cargo check` still passes on Linux and Windows after the change.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 99,
+     "lineEnd": 102
+    }
+   },
+   {
+    "title": "No test covers the mirror redirect path that regressed",
+    "severity": "low",
+    "category": "style",
+    "body": "The unit tests in `http_utils.rs` only exercise `generate_github_mirror_url_from_template`. Nothing checks what `generate_github_alternative_url` or `create_agent_and_url` returns, so the discarded mirror URL passes the test suite unnoticed. A small test that sets the template env var and asserts the returned URL is the mirror URL would have caught the regression.\n\n::code{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"45-61\"}",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/utils/http_utils.rs`, the `#[cfg(test)] mod tests` block covers only `generate_github_mirror_url_from_template`. Add a test that calls `generate_github_alternative_url` (or `create_agent_and_url`) with a GitHub release URL while `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE` is set, and assert the returned URL is the rendered mirror URL, not the original. Clean up the env var afterwards, following the existing tests in that module.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 45,
+     "lineEnd": 61
+    }
+   },
+   {
+    "title": "Version bump, lockfile, package.json and changelogs are consistent",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The release bookkeeping is done correctly. `Cargo.lock` matches the crate versions. `tauri-cli/Cargo.toml` pins `tauri-bundler = 2.7.3`. `packages/cli/package.json` is at 2.9.3, matching the `tauri-cli` version it wraps. Each changelog entry maps to one of the four deleted `.changes/*.md` files, and the `Dependencies` lines are correct. The changelog author links use the same malformed `../../` form as earlier releases, so that is not a regression in this PR.",
+    "files": [
+     "Cargo.lock",
+     "crates/tauri-bundler/Cargo.toml",
+     "crates/tauri-cli/Cargo.toml",
+     "packages/cli/package.json",
+     "crates/tauri-bundler/CHANGELOG.md",
+     "crates/tauri-cli/CHANGELOG.md",
+     "packages/cli/CHANGELOG.md"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":7,\"title\":\"Code Review Bench PR #14409 - Apply Version Updates From Current Changes\",\"author\":\"\",\"baseSha\":\"57faad0b3d49c8c5a97a3229f0a527527120ffc2\",\"headSha\":\"ab921886bfcca88c3bae1b354039c5e884f26c4a\"},\"summary\":\"This is a release-prep PR: it bumps tauri-bundler to 2.7.3, tauri-cli to 2.9.3 and @tauri-apps/cli to 2.9.3, updates Cargo.lock, writes the matching CHANGELOG entries, and deletes the four `.changes/*.md` change files they consu",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

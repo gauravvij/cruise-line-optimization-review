@@ -1,0 +1,314 @@
+{
+ "id": "firefox-ios#4",
+ "repo": "firefox-ios",
+ "num": 4,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:25:49.266Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Helper methods marked public inappropriately",
+   "description": "Helper methods checkUrl(), copyUrl(), and checkCopiedUrl() are marked public but are only used internally within the ClipBoardTests class. They should be marked private to minimize exposure of internal implementation details.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift",
+   "start_line": 11,
+   "end_line": 41,
+   "problematic_code_snippet": "    // Check for test url in the browser\n    public func checkUrl() {\n        let urlTextField = app.textFields[AccessibilityIdentifiers.Browser.AddressToolbar.searchTextField]\n        mozWaitForValueContains(urlTextField, value: \"example.com\")\n    }\n\n    // Copy url from the browser\n    public func copyUrl() {\n        urlBarAddress.waitAndTap()\n        // ... implementation\n    }\n\n    // Check copied url is same as in browser\n    public func checkCopiedUrl() {\n        if #unavailable(iOS 16.0) {\n            // ... implementation\n        }\n    }",
+   "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+  },
+  {
+   "title": "Missing clipboard verification after copy operation",
+   "description": "The testClipboard() method copies the URL but skips the checkCopiedUrl() verification step that validates the clipboard contents match the expected URL. This test previously verified that the copied URL in the clipboard matches the browser's URL bar value, ensuring the copy operation worked correctly. Without this check, the test cannot detect if the copy operation failed or if the clipboard contains incorrect data, allowing clipboard-related bugs to pass undetected.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift",
+   "start_line": 66,
+   "end_line": 71,
+   "problematic_code_snippet": "    func testClipboard() {\n        navigator.openURL(url)\n        waitUntilPageLoad()\n        checkUrl()\n        copyUrl()\n\n        navigator.createNewTab()"
+  },
+  {
+   "title": "Incorrect UI element verification for light theme selection",
+   "description": "After selecting light theme mode via Action.SelectLightTheme, the test verifies the wrong UI element by checking darkThemeView instead of lightThemeView. This causes the test to validate dark theme selection state when it should be verifying light theme was properly selected. The bug means the test will fail when light theme is correctly selected (darkThemeView will be '0' not '1'), or pass incorrectly if light theme selection fails but dark theme happens to be selected.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift",
+   "start_line": 51,
+   "end_line": 54,
+   "problematic_code_snippet": "        // Select Light mode\n        navigator.performAction(Action.SelectLightTheme)\n        let lightIsSelected = app.buttons[AccessibilityIdentifiers.Settings.Appearance.darkThemeView].value\n        XCTAssertEqual(lightIsSelected as? String, \"1\")"
+  },
+  {
+   "title": "Navigation timing issue in settings toggle verification",
+   "description": "The test taps the 'Done' button before navigating to NewTabScreen, reversing the correct order of operations. The navigator.goto(NewTabScreen) call expects to transition from the settings screen, but 'Done' has already been tapped which dismisses the settings UI. This creates a race condition where the navigation command may fail or behave unpredictably because it's operating on an already-dismissed screen. The correct flow should be navigate first, then tap Done to confirm the navigation completed.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/HomePageSettingsUITest.swift",
+   "start_line": 155,
+   "end_line": 156,
+   "problematic_code_snippet": "        app.switches[\"Shortcuts\"].waitAndTap()\n\n        app.buttons[\"Done\"].waitAndTap()\n        navigator.goto(NewTabScreen)"
+  },
+  {
+   "title": "Public methods lack required documentation comments",
+   "description": "The helper methods checkUrl(), copyUrl(), and checkCopiedUrl() were changed from internal to public visibility in this PR. According to AGENTS.md Rule 14, all public API elements must include triple-slash (///) documentation comments describing their purpose, behavior, parameters, and return values. These methods only have single-line comments (// Comment) instead of proper documentation comments (/// Comment). This violates the repository's explicit compliance rules for public APIs.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "    // Check for test url in the browser\n    public func checkUrl() {\n\n    // Copy url from the browser\n    public func copyUrl() {\n\n    // Check copied url is same as in browser\n    public func checkCopiedUrl() {"
+  },
+  {
+   "title": "Public helper methods lack required documentation comments",
+   "description": "The helper methods `checkUrl()`, `copyUrl()`, and `checkCopiedUrl()` were changed to `public` but do not have triple-slash (`///`) documentation comments as required for public APIs.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift",
+   "start_line": 11,
+   "end_line": 45,
+   "problematic_code_snippet": "// Check for test url in the browser\npublic func checkUrl() {\n    let urlTextField = app.textFields[AccessibilityIdentifiers.Browser.AddressToolbar.searchTextField]\n    mozWaitForValueContains(urlTextField, value: \"example.com\")\n}\n\n// Copy url from the browser\npublic func copyUrl() {\n    urlBarAddress.waitAndTap()\n    ...\n}\n\n// Check copied url is same as in browser\npublic func checkCopiedUrl() {\n    ...\n}",
+   "rule_name": "Public APIs Must Have Documentation Comments"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "ec4c83cbbd5795fad903ad268083937dbaaddf63",
+ "diff_chars": 10388,
+ "diff_lines": 204,
+ "user_prompt_chars": 11319,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 36290,
+ "wall_ms": 39201,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 3,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 3,
+ "turn_trace": {
+  "assistant_lines": 6,
+  "unique_message_ids": 3,
+  "lines_without_id": 0,
+  "tool_use_blocks": 3
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.747659256,
+ "spend_post_usd": 7.754415416,
+ "cost_settled": true,
+ "cost_wait_ms": 375,
+ "cost_usd": 0.006756159999999234,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 4,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.006744625,
+ "usage": {
+  "input_tokens": 6,
+  "cache_creation_input_tokens": 16639,
+  "cache_read_input_tokens": 78415,
+  "output_tokens": 7760,
+  "output_tokens_details": {
+   "thinking_tokens": 1991
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 16639
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 6,
+   "outputTokens": 7760,
+   "cacheReadInputTokens": 78415,
+   "cacheCreationInputTokens": 16639,
+   "webSearchRequests": 0,
+   "costUSD": 0.006744625,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1991,
+   "cacheCreationEphemeral5mInputTokens": 16639,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 4,
+   "title": "Code Review Bench PR #31612 - [MTE-5149] - delete auto tests",
+   "author": "",
+   "baseSha": "f1aa78dde039664ed80829f41cf09047df25beef",
+   "headSha": "ec4c83cbbd5795fad903ad268083937dbaaddf63"
+  },
+  "summary": "This PR removes several XCUITests that were marked for deletion: `ClipBoardTests.testCopyLink` (already a commented-out body), `HomePageSettingsUITests.testSetCustomURLAsHome` (already wrapped in an unconditional `XCTSkipIf(true)`), and the matching entries in four `.xctestplan` files. It also changes `DisplaySettingTests.testCheckSystemThemeChanges` to point at a new TestRail ID, reorders the Done tap and navigation in `testDisableTopSitesSettingsRemovesSection`, and makes three `ClipBoardTests` helpers `public`.\n\nThe deletions themselves are low-risk. The test plan edits are consistent with the removed methods, and no remaining references to the deleted names exist. The problem is in the one test that was edited rather than deleted. After selecting Light theme, `testCheckSystemThemeChanges` now reads the Dark theme button's value and asserts it equals `\"1\"`. That assertion will fail, so the test is broken. The PR description also says a new test case was created, but the diff edits the existing test in place, and the PR includes some changes (the reorder, the visibility change) that the description does not mention.",
+  "verdict": "request_changes",
+  "verdictRationale": "The change to `testCheckSystemThemeChanges` is a clear bug: the variable is named and documented as the light-theme check, but it reads `darkThemeView`, so the test asserts the wrong button and will fail after Light is selected. That needs fixing before merge. The other items (an undocumented reorder in an unrelated test, unnecessary `public` modifiers, and a now-unused helper) are minor and should be cleaned up or explained.",
+  "architecture": {
+   "overview": "The XCUITest suite is organized into test classes (for example `DisplaySettingTests`, `HomePageSettingsUITests`, `ClipBoardTests`) that inherit from `BaseTestCase` and drive the app through a screen-graph `navigator`. Test selection is controlled by several `.xctestplan` files (Smoketest, TAESmokeTestPlan, AccessibilityTestPlan, FullFunctionalTestPlan), each listing tests by `Class/testMethod()` identifiers. A test that is in a plan but no longer exists in code is simply never run, and a test deleted from code but left in a plan is a stale reference.\n\nThis PR removes two test methods and their plan entries, and makes one existing theme test check a different accessibility identifier. It does not change any application code. The behavior it affects is the test coverage for display theme selection, home page custom-URL setup, and clipboard handling.",
+   "steps": [
+    "Start at the test plans. Each `.xctestplan` lists test identifiers per class. The PR removes `ClipBoardTests/testCopyLink()` and `HomePageSettingsUITests/testSetCustomURLAsHome()` from four plans, which matches the deleted methods.",
+    "Next, `ClipBoardTests.swift` removes `testCopyLink` (whose body was already commented out) and drops the `checkCopiedUrl()` call from `testClipboard`. The helper methods `checkUrl`, `copyUrl`, and `checkCopiedUrl` are now `public`, which is unnecessary.",
+    "`HomePageSettingsUITest.swift` removes `testSetCustomURLAsHome`, which was already skipped. It also reorders the Done tap and the `NewTabScreen` navigation in `testDisableTopSitesSettingsRemovesSection`.",
+    "`DisplaySettingsTests.swift` is the only place the PR changes an assertion. `testCheckSystemThemeChanges` gets a new TestRail link, and its light-theme check now reads the dark theme button (`darkThemeView`) instead of `lightThemeView`. That is the point that needs a fix.",
+    "Accessibility identifiers `lightThemeView` and `darkThemeView` are defined in `AccessibilityIdentifiers.swift` and bound to `ThemeOptionView` in the app. The test should read the identifier that matches the state it asserts."
+   ],
+   "diagrams": [
+    {
+     "title": "Test selection and the changed tests",
+     "kind": "flowchart",
+     "description": "How the xctestplan files select tests, and which of them this PR touches.",
+     "mermaid": "flowchart LR\n  P1[Smoketest.xctestplan] --> C1[ClipBoardTests]\n  P2[TAESmokeTestPlan.xctestplan] --> C1\n  P3[AccessibilityTestPlan.xctestplan] --> C1\n  P4[FullFunctionalTestPlan.xctestplan] --> H1[HomePageSettingsUITests]\n  P1 --> H1\n  P2 --> H1\n  P3 --> H1\n  P1 --> D1[DisplaySettingTests]\n  C1 -->|testCopyLink removed| X1[(deleted)]\n  H1 -->|testSetCustomURLAsHome removed| X2[(deleted)]\n  D1 -->|testCheckSystemThemeChanges light check reads darkThemeView| A1[ThemeOptionView identifiers]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "testCheckSystemThemeChanges asserts the Dark button after selecting Light",
+    "severity": "high",
+    "category": "correctness",
+    "body": "After `navigator.performAction(Action.SelectLightTheme)`, the test now reads `app.buttons[...Appearance.darkThemeView].value` and assigns it to `lightIsSelected`. It then expects `\"1\"`. Once Light is selected, the Dark button should be `\"0\"`, so this assertion fails. The test is now broken, and it no longer checks the light theme at all.\n\nThe change also doesn't match the PR description, which says the test was rebuilt to match new steps. The diff only changes the identifier and the TestRail link.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift\" lines=\"46-54\"}\n\n::suggestion{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift\" lines=\"53-54\"}\nlet lightIsSelected = app.buttons[AccessibilityIdentifiers.Settings.Appearance.lightThemeView].value\nXCTAssertEqual(lightIsSelected as? String, \"1\")\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift`, `testCheckSystemThemeChanges` (around lines 46-60) reads `AccessibilityIdentifiers.Settings.Appearance.darkThemeView` into `lightIsSelected` right after `Action.SelectLightTheme`, then asserts it equals \"1\". That assertion will fail. Change the identifier on the light check to `lightThemeView`, matching the `lightThemeView` usage in `testCheckDisplaySettingsDefault` on line 39. Keep the dark-theme block unchanged. Confirm the rest of the test's steps still match the intended TestRail case 3298823.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift",
+     "lineStart": 53,
+     "lineEnd": 54
+    }
+   },
+   {
+    "title": "Unrelated reorder of Done tap and navigation in testDisableTopSitesSettingsRemovesSection",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The diff swaps `navigator.goto(NewTabScreen)` and `app.buttons[\"Done\"].waitAndTap()`, so Done is now tapped before the navigator moves to the new tab screen. This is a flow change to a test that isn't part of the stated goal (deleting tests and updating the theme test), and the PR description doesn't mention it. It may be a real fix for a flaky step, but that isn't stated. If it is a fix, say so in the commit message. If it isn't, revert it.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/HomePageSettingsUITest.swift\" lines=\"152-158\"}\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/HomePageSettingsUITest.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/HomePageSettingsUITest.swift`, `testDisableTopSitesSettingsRemovesSection` (around lines 155-156) now taps `Done` before calling `navigator.goto(NewTabScreen)`, which the original did in the reverse order. This change isn't described in the PR. Either revert it to the original order or add a comment explaining why Done must come first, and mention the reason in the PR description. Don't change anything else in this test.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/HomePageSettingsUITest.swift",
+     "lineStart": 155,
+     "lineEnd": 156
+    }
+   },
+   {
+    "title": "ClipBoardTests helpers made public and checkCopiedUrl is now dead code",
+    "severity": "low",
+    "category": "style",
+    "body": "Three helpers in `ClipBoardTests` are changed to `public func`, but nothing outside this class calls them, and other test helpers in this suite aren't declared `public`. The change adds noise without a reason.\n\nRemoving the `checkCopiedUrl()` call from `testClipboard` also leaves `checkCopiedUrl` with no callers. Its only remaining reference is inside the commented-out `testClipboardPasteAndGo` block. That makes it dead code. Either remove it or keep the call that uses it.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift\" lines=\"8-12\"}\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift`, the helpers `checkUrl`, `copyUrl`, and `checkCopiedUrl` were changed to `public func` in this PR, but no code outside this class uses them. Revert them to the original `func` with no modifier to match the other helpers in the suite. Also check whether `checkCopiedUrl` still has any caller. It was only called from `testClipboard`, which no longer calls it. If nothing uses it, remove the method or note why it is kept.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ClipBoardTests.swift",
+     "lineStart": 11,
+     "lineEnd": 11
+    }
+   },
+   {
+    "title": "PR description does not match the diff for the theme test",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The description says a new test case was created for `testCheckSystemThemeChanges` and that the old one would be deleted. The diff does neither. It edits the existing method in place, keeps the same name, and only changes the TestRail link (2337487 → 3298823). Anyone tracing the old TestRail case will lose the link to the original steps. Either add a new method for the new case and delete the old one, or update the description to match what the diff does.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift\" lines=\"45-48\"}\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift`, the PR description says a new test was created for `testCheckSystemThemeChanges` and the old one deleted. The diff instead edits the existing method and only changes the TestRail link on line 46 from 2337487 to 3298823. Decide which is intended. If a new case was meant, add a separate method for it and remove the old one. If the in-place edit was intended, update the PR description to say so, and keep the original TestRail reference if the steps still correspond to case 2337487.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/XCUITests/DisplaySettingsTests.swift",
+     "lineStart": 46,
+     "lineEnd": 46
+    }
+   },
+   {
+    "title": "Deleted test was already permanently skipped, and test plan entries are consistent",
+    "severity": "info",
+    "category": "correctness",
+    "body": "`testSetCustomURLAsHome` was wrapped in an unconditional `XCTSkipIf(true)` that pointed to issue #28117, so removing it doesn't change what runs. The `enterWebPageAsHomepage` helper it used is still used by other tests, so nothing becomes unused. The four `.xctestplan` files were updated to match, and a grep finds no remaining references to either deleted test name. Test plan entries are qualified by class name, so `NavigationTest/testCopyLink()` is unaffected by removing `ClipBoardTests/testCopyLink()`.",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/XCUITests/HomePageSettingsUITest.swift",
+     "firefox-ios/firefox-ios-tests/Tests/AccessibilityTestPlan.xctestplan",
+     "firefox-ios/firefox-ios-tests/Tests/Smoketest.xctestplan"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":4,\"title\":\"Code Review Bench PR #31612 - [MTE-5149] - delete auto tests\",\"author\":\"\",\"baseSha\":\"f1aa78dde039664ed80829f41cf09047df25beef\",\"headSha\":\"ec4c83cbbd5795fad903ad268083937dbaaddf63\"},\"summary\":\"This PR removes several XCUITests that were marked for deletion: `ClipBoardTests.testCopyLink` (already a commented-out body), `HomePageSettingsUITests.testSetCustomURLAsHome` (already wrapped in an unconditional `XCTSkipIf(true)`), a",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

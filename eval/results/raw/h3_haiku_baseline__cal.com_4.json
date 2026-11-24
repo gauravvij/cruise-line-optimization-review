@@ -1,0 +1,362 @@
+{
+ "id": "cal.com#4",
+ "repo": "cal.com",
+ "num": 4,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:13:59.838Z",
+ "num_of_issues": 7,
+ "issues": [
+  {
+   "title": "Handler logic mixed in schema file",
+   "description": "The rule requires that schema and handler logic are separated into different files. However, the schema file `booking.output.ts` now contains a handler method `cleanEmailForDisplay()` that performs email validation and transformation logic, mixing schema definition with handler logic in the same file.",
+   "file_path": "packages/platform/types/bookings/2024-08-13/outputs/booking.output.ts",
+   "start_line": 59,
+   "end_line": 62,
+   "problematic_code_snippet": "  // Validate and clean email for display purposes\n  static cleanEmailForDisplay(email: string): string {\n    return email.replace(/\\+[a-zA-Z0-9]{25}/, \"\");\n  }",
+   "rule_name": "Schema and Handler Files Must Be Separated with Type-Safe Patterns"
+  },
+  {
+   "title": "Lost `this` context in displayGuests mapping causes runtime error",
+   "description": "In the `getOutputBooking` method at line 171, the code passes `this.getDisplayEmail` directly to the `map` function without binding the `this` context. This causes a runtime error because when `getDisplayEmail` is invoked inside the `map` callback, `this` will be `undefined`, resulting in \"Cannot read property 'replace' of undefined\" or similar errors. The arrow function `(guest: string) => this.getDisplayEmail(guest)` was removed, which was necessary to preserve the `this` binding. This will break all bookings that have guests.",
+   "file_path": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+   "start_line": 167,
+   "end_line": 174,
+   "problematic_code_snippet": "if (\n  bookingTransformed.bookingFieldsResponses?.guests &&\n  Array.isArray(bookingTransformed.bookingFieldsResponses.guests)\n) {\n  bookingTransformed.bookingFieldsResponses.displayGuests = bookingTransformed.bookingFieldsResponses.guests.map(\n    this.getDisplayEmail\n  );\n}"
+  },
+  {
+   "title": "Recurring seated bookings returned in wrong order",
+   "description": "In the `getOutputRecurringSeatedBookings` method at line 424, the sort operation that orders bookings chronologically by start time has been removed. The original code sorted bookings with `.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())` to ensure they are returned in chronological order. Without this sorting, recurring bookings will be returned in an arbitrary order (based on how they were stored in the database or map), which breaks the expected API contract and will confuse clients expecting chronological ordering of recurring events.",
+   "file_path": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+   "start_line": 411,
+   "end_line": 425,
+   "problematic_code_snippet": "async getOutputRecurringSeatedBookings(bookingsIds: number[], showAttendees: boolean) {\n  const databaseBookings = await this.bookingsRepository.getByIdsWithAttendeesWithBookingSeatAndUserAndEvent(bookingsIds);\n\n  const bookingsMap = new Map(databaseBookings.map(booking => [booking.id, booking]));\n\n  const transformed = bookingsIds.map(bookingId => {\n    const databaseBooking = bookingsMap.get(bookingId);\n    if (!databaseBooking) {\n      throw new Error(`Booking with id=${bookingId} was not found in the database`);\n    }\n    return this.getOutputRecurringSeatedBooking(databaseBooking, showAttendees);\n  });\n\n  return transformed;\n}"
+  },
+  {
+   "title": "Unnecessary regex processing on literal \"unknown\" string",
+   "description": "In the `getHost` method at line 219, when the user is null/unknown, the code now calls `this.getDisplayEmail(\"unknown\")` instead of directly setting `displayEmail: \"unknown\"`. This causes unnecessary regex processing on the literal string \"unknown\" which has no CUID suffix to remove. While this doesn't break functionality, it adds unnecessary computational overhead and is semantically incorrect - the getDisplayEmail method is designed to strip CUID suffixes from actual email addresses, not process placeholder strings. This represents a performance issue and code smell that violates the principle of only processing data when necessary.",
+   "file_path": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+   "start_line": 213,
+   "end_line": 222,
+   "problematic_code_snippet": "getHost(user: DatabaseUser | null) {\n  if (!user) {\n    return {\n      id: \"unknown\",\n      name: \"unknown\",\n      email: \"unknown\",\n      displayEmail: this.getDisplayEmail(\"unknown\"),\n      username: \"unknown\",\n    };\n  }"
+  },
+  {
+   "title": "Service file uses disallowed '.service.ts' suffix / naming convention violation",
+   "description": "Rule 1 disallows dot-suffix service filenames like '.service.ts' and requires service files to be named '<Entity>Service.ts' with matching PascalCase. This PR modifies a service located at 'services/output.service.ts', which violates the naming convention.",
+   "file_path": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "export class OutputBookingsService_2024_08_13 {",
+   "rule_name": "Rule 1: Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Line(s) exceed the 110 character line width requirement",
+   "description": "The added assignment line is longer than the 110 character limit required by the Biome formatting rules for TS/JS files.",
+   "file_path": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+   "start_line": 167,
+   "end_line": 169,
+   "problematic_code_snippet": "      bookingTransformed.bookingFieldsResponses.displayGuests = bookingTransformed.bookingFieldsResponses.guests.map(\n        this.getDisplayEmail\n      );",
+   "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "JSON formatting deviates from expected formatter output (indentation removed)",
+   "description": "The PR introduces improperly indented JSON (the 'required' key is moved to column 1). This indicates the JSON was not kept formatted per the repository’s formatting/lint-staged expectations (Biome format for JSON).",
+   "file_path": "docs/api-reference/v2/openapi.json",
+   "start_line": 31718,
+   "end_line": 31727,
+   "problematic_code_snippet": "-        \"required\": [\n+\"required\": [",
+   "rule_name": "Rule 6: Lint Staged Files Before Commit with Error-on-Warnings Enforcement"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "f6968d6a1368ac14d6c3abdd0d68457ae23c1e44",
+ "diff_chars": 35277,
+ "diff_lines": 753,
+ "user_prompt_chars": 39606,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 71591,
+ "wall_ms": 73731,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 13,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.776721271,
+ "spend_post_usd": 5.792694171,
+ "cost_settled": true,
+ "cost_wait_ms": 337,
+ "cost_usd": 0.015972899999999512,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.014626779999999999,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 34522,
+  "cache_read_input_tokens": 145823,
+  "output_tokens": 17705,
+  "output_tokens_details": {
+   "thinking_tokens": 5109
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 34522
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 17705,
+   "cacheReadInputTokens": 145823,
+   "cacheCreationInputTokens": 34522,
+   "webSearchRequests": 0,
+   "costUSD": 0.014626779999999999,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5109,
+   "cacheCreationEphemeral5mInputTokens": 34522,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/cal.com",
+   "number": 4,
+   "title": "Code Review Bench PR #25593 - fix(api): return original email without OAuth suffix in bookings",
+   "author": "",
+   "baseSha": "35012c171a200e9f448698cba5c7b18c91ff4a38",
+   "headSha": "f6968d6a1368ac14d6c3abdd0d68457ae23c1e44"
+  },
+  "summary": "This PR adds a `displayEmail` field next to the existing `email` field across API v2 (2024-08-13) booking outputs. The new value strips a `+{cuid}` suffix using the regex `/\\+[a-zA-Z0-9]{25}/`, so `email` keeps the OAuth-suffixed value for backwards compatibility. It covers hosts, attendees, `bookingFieldsResponses` (`email` and `displayGuests`), and `reassignedTo`. The OpenAPI JSON, the DTO classes, and a broad set of e2e tests are updated to match.\n\nThe additive approach is sound and avoids a breaking change to `email`. However, I found three real problems. First, the unanchored regex strips any 25-character alphanumeric run after a `+`, so ordinary plus-addressed emails get mangled. Second, the diff silently removes the sort in `getOutputRecurringSeatedBookings`, which is unrelated to the feature. Third, several new test assertions compare the response to itself and cannot meaningfully fail.",
+  "verdict": "request_changes",
+  "verdictRationale": "The regex can corrupt the `displayEmail` for ordinary plus-addressed emails, which is the field this PR exists to get right. It is a one-line fix, but it should land before merge. The silent sort removal is an unrelated behavior change that should be reverted or justified. The test and documentation issues are smaller but affect confidence in the change.",
+  "architecture": {
+   "overview": "API v2 booking responses are built in `OutputBookingsService_2024_08_13` (`output.service.ts`). It takes a database booking, maps `user`, `attendees`, and `bookingFieldsResponses` into the response shape, and returns it. The DTOs in `packages/platform/types/bookings/2024-08-13/outputs/booking.output.ts` define the Swagger/OpenAPI shape. Managed users have their email stored with a `+{cuid}` suffix so that users from different OAuth clients don't collide.\n\nThis PR does not change storage or the write path. It adds a read-time transformation: a private `getDisplayEmail` helper strips the suffix and attaches the result as a new `displayEmail` key on hosts, attendees, reassignedTo, and bookingFieldsResponses (plus `displayGuests`). The original `email` values are passed through unchanged, which keeps existing clients working. The OpenAPI JSON is hand-edited to advertise the new properties.",
+   "steps": [
+    "Entry point: `bookings.service.ts` calls the output service for every booking response (single, list, recurring, seated, reassigned).",
+    "`OutputBookingsService_2024_08_13.getOutputBooking` and its siblings map the DB booking into the response; this is where `hosts` (via `getHost`), `attendees`, and `bookingFieldsResponses` are built.",
+    "The PR adds `getDisplayEmail` (`output.service.ts` line ~96) and calls it for each email field, so `email` stays raw and `displayEmail` is the cleaned copy.",
+    "The PR also adds `displayEmail` / `displayGuests` to the DTO classes and the OpenAPI JSON so the docs and Swagger describe the new fields.",
+    "Watch the regex (it decides what gets stripped) and the unrelated change to `getOutputRecurringSeatedBookings`, which drops its sort."
+   ],
+   "diagrams": [
+    {
+     "title": "Booking output path with displayEmail",
+     "kind": "flowchart",
+     "description": "Shows where the read-time transform sits between the DB booking and the API response.",
+     "mermaid": "flowchart LR\n  DB[(Booking DB row with user, attendees, responses)] --> Repo[BookingsRepository_2024_08_13]\n  Repo --> Svc[OutputBookingsService_2024_08_13]\n  Svc --> Host[getHost: hosts with displayEmail]\n  Svc --> Att[attendees map: email and displayEmail]\n  Svc --> Resp[bookingFieldsResponses: email, displayEmail, guests, displayGuests]\n  Svc --> Reas[getOutputReassignedBooking: reassignedTo.displayEmail]\n  Host --> Out[API v2 2024-08-13 response]\n  Att --> Out\n  Resp --> Out\n  Reas --> Out"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Regex strips real characters from plus-addressed emails",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The regex `/\\+[a-zA-Z0-9]{25}/` has no anchor at the end and no check for the CUID prefix. It matches any `+` followed by exactly 25 alphanumerics and removes only those 25 characters, which means:\n\n- `john+abcdefghijklmnopqrstuvwxy@x.com` (25-char tag) becomes `john@x.com`, which is wrong.\n- `john+abcdefghijklmnopqrstuvwxyz@x.com` (26-char tag) becomes `johnz@x.com`, which is corrupted. I ran this to confirm.\n\nA CUID v1 is 25 characters and always starts with `c`, so a stricter pattern would avoid this. The same helper is used in five places, so the damage spreads to every email field.\n\n::code{file=\"apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts\" lines=\"96-98\"}\n\n::suggestion{file=\"apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts\" lines=\"96-98\"}\nprivate getDisplayEmail(email: string): string {\n  // Strip only a trailing \"+c<24 alnum>\" CUID right before the @ sign.\n  return email.replace(/\\+c[a-z0-9]{24}(?=@)/, \"\");\n}\n\nIf the CUID format is guaranteed, the existing comparison with `google-calendar.service.ts` should be checked too, so both use the same pattern.",
+    "files": [
+     "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts`, `getDisplayEmail` (around lines 96-98) uses the unanchored regex `/\\+[a-zA-Z0-9]{25}/`. That regex corrupts ordinary plus-addressed emails such as `john+<26 chars>@x.com`, which becomes `johnz@x.com`. Tighten it so it only removes a CUID-shaped suffix directly before `@` (for example `\\+c[a-z0-9]{24}(?=@)`). Keep the function pure and reuse it everywhere it's already called. Check that the pattern matches the one in `google-calendar.service.ts`, and add unit tests for a plus-tagged email that must be preserved.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+     "lineStart": 96,
+     "lineEnd": 98
+    }
+   },
+   {
+    "title": "Unrelated sort removed from getOutputRecurringSeatedBookings",
+    "severity": "high",
+    "category": "correctness",
+    "body": "In `getOutputRecurringSeatedBookings`, the PR replaces `return transformed.sort(...by start time)` with `return transformed;`. This has nothing to do with `displayEmail`, and it changes the response order for recurring seated bookings. The sibling methods still sort by start, so the behavior is now inconsistent. The `bookingsIds` order from the caller is not guaranteed to be chronological, so clients that relied on the sort will see a different order.\n\nIf this was meant as a cleanup, it needs its own PR and a test showing ordering doesn't matter. Otherwise, restore the sort.\n\n::diff{file=\"apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts\" lines=\"411-424\"}",
+    "files": [
+     "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts`, `getOutputRecurringSeatedBookings` (around line 424) was changed from `return transformed.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());` to `return transformed;`. That sort is unrelated to the displayEmail feature and changes response ordering. Restore the original sort line so behavior matches the sibling methods, or move the removal into a separate PR with justification.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+     "lineStart": 411,
+     "lineEnd": 424
+    }
+   },
+   {
+    "title": "Seated-attendee tests compare the response to itself",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "Some new assertions take the expected value from the same response they're checking. For example, `displayEmail: createdSeatedBooking.attendees[0].displayEmail` is compared to a value from a previous response of the same code. If the server returns the wrong value, the expectation moves with it, so the assertion can't fail on the bug it's meant to catch. The same pattern appears in the `attendee?.displayEmail` check in the seated-bookings spec.\n\nThe managed-user spec does this right: it compares against `firstManagedUserEmail` and `secondManagedUserEmail`, which are known inputs. Use the same approach in the seated tests.\n\n::diff{file=\"apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts\" lines=\"277-285\"}",
+    "files": [
+     "apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts`, the `displayEmail` expectations near lines 280 and 421 compare against `createdSeatedBooking.attendees[0].displayEmail` and `attendee?.displayEmail`, which come from the same server output being tested. Replace them with the known input email with the `+cuid` suffix stripped, the same way `managed-user-bookings.e2e-spec.ts` does. Assert against values that are fixed by the test setup, not against other response fields.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/seated-bookings.e2e-spec.ts",
+     "lineStart": 277,
+     "lineEnd": 285
+    }
+   },
+   {
+    "title": "CI breaking-change check suppressed for new response fields",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The PR adds six entries to `.github/oasdiff-err-ignore.txt`. These tell the oasdiff CI check to ignore `oneOf` changes on booking responses. The check exists to catch unintended contract changes, and the PR does not explain why these specific changes are safe. Adding `displayEmail` as a required response property is an additive change, but the ignore entries also hide unrelated `oneOf` changes for the same endpoints. Future changes to those endpoints won't be flagged.\n\nNarrow the ignore rules to the exact messages, or add a comment explaining why each is expected.\n\n::diff{file=\".github/oasdiff-err-ignore.txt\" lines=\"2-8\"}",
+    "files": [
+     ".github/oasdiff-err-ignore.txt"
+    ],
+    "fixPrompt": "In `.github/oasdiff-err-ignore.txt`, the six new lines (around lines 5-8) suppress oasdiff errors for booking endpoints. Confirm each entry matches an actual, intended schema change, and add a short comment above the block explaining that these are the intentional `displayEmail` additions. Remove any entry that covers an unrelated change.",
+    "commentAnchor": {
+     "file": ".github/oasdiff-err-ignore.txt",
+     "lineStart": 5,
+     "lineEnd": 8
+    }
+   },
+   {
+    "title": "Output helper logic duplicated three times and DTO helper is dead code",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The `displayEmail` / `displayGuests` block is copied almost verbatim into `getOutputBooking`, `getOutputRecurringBooking`, and the seated variants. The copies already differ slightly: one uses `.map(this.getDisplayEmail)` (unbound, which works only because the method doesn't use `this`) and another uses `(guest: string) => this.getDisplayEmail(guest)`.\n\nSeparately, `BookingAttendee.cleanEmailForDisplay` in the DTO file is never called. It duplicates the service helper, and its comment says \"Validate\" although it only replaces. Remove it, and pull the shared block into a single private method.\n\n::code{file=\"apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts\" lines=\"155-172\"}",
+    "files": [
+     "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+     "packages/platform/types/bookings/2024-08-13/outputs/booking.output.ts"
+    ],
+    "fixPrompt": "In `apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts`, the `displayEmail` and `displayGuests` assignment block is duplicated in several `getOutput*` methods. Extract it into one private helper, such as `attachDisplayFields(booking)`, and call it from each place. Use an arrow or explicit lambda for `.map` so the call doesn't depend on an unbound `this`. Also remove the unused static `cleanEmailForDisplay` in `packages/platform/types/bookings/2024-08-13/outputs/booking.output.ts` (around lines 60-62), since nothing calls it.",
+    "commentAnchor": {
+     "file": "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+     "lineStart": 155,
+     "lineEnd": 172
+    }
+   },
+   {
+    "title": "Hand-edited OpenAPI JSON has broken indentation",
+    "severity": "low",
+    "category": "style",
+    "body": "In `docs/api-reference/v2/openapi.json`, the `\"required\"` arrays that gained `displayEmail` lost their indentation. Each line starts at column 0 instead of matching the surrounding keys. The JSON stays valid, but it's clearly hand-edited and will fail any formatter check. The PR says the spec was auto-generated, so regenerating it would produce the correct formatting.\n\n::diff{file=\"docs/api-reference/v2/openapi.json\" lines=\"31726-31736\"}",
+    "files": [
+     "docs/api-reference/v2/openapi.json"
+    ],
+    "fixPrompt": "In `docs/api-reference/v2/openapi.json`, the `\"required\": [` lines added for `displayEmail` (around lines 31726-31736 and the matching spots in the attendee, seated attendee, and reassigned schemas) are not indented like their neighbors. Re-run the OpenAPI generator or the repo's formatter so the file matches the project style, and confirm the JSON still parses.",
+    "commentAnchor": {
+     "file": "docs/api-reference/v2/openapi.json",
+     "lineStart": 31726,
+     "lineEnd": 31736
+    }
+   },
+   {
+    "title": "displayEmail added consistently across output types with backwards-compatible email",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The PR keeps every original `email` field unchanged and adds `displayEmail` next to it. Existing clients don't break, and clients that want the clean address can use the new field. The e2e tests cover the host, attendee, guest, and reassigned cases, and the `unknown` fallback for a missing user is handled.",
+    "files": [
+     "apps/api/v2/src/ee/bookings/2024-08-13/services/output.service.ts",
+     "apps/api/v2/src/ee/bookings/2024-08-13/controllers/e2e/managed-user-bookings.e2e-spec.ts"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/cal.com\",\"number\":4,\"title\":\"Code Review Bench PR #25593 - fix(api): return original email without OAuth suffix in bookings\",\"author\":\"\",\"baseSha\":\"35012c171a200e9f448698cba5c7b18c91ff4a38\",\"headSha\":\"f6968d6a1368ac14d6c3abdd0d68457ae23c1e44\"},\"summary\":\"This PR adds a `displayEmail` field next to the existing `email` field across API v2 (2024-08-13) booking outputs. The new value strips a `+{cuid}` suffix using the regex `/\\\\+[a-zA-Z0-9]{25}/`, so `email",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

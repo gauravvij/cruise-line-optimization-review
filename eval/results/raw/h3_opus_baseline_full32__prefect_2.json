@@ -1,0 +1,310 @@
+{
+ "id": "prefect#2",
+ "repo": "prefect",
+ "num": 2,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_retry12",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7"
+ ],
+ "run_started_at": "2026-11-23T17:05:32.114Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Cross-field validation uses field validator",
+   "description": "The rule requires cross-field validation to use @model_validator decorator, but the code uses @field_validator which accesses unvalidated fields via info.data, causing order-dependent validation issues",
+   "file_path": "src/prefect/server/events/schemas/automations.py",
+   "start_line": 772,
+   "end_line": 780,
+   "problematic_code_snippet": "    @field_validator(\"automation_triggered_event_id\")\n    @classmethod\n    def validate_automation_triggered_event_id(cls, v, info):\n        \"\"\"Ensure automation_triggered_event_id is only set when triggering_event exists.\"\"\"\n        if v is not None and info.data.get(\"triggering_event\") is None:\n            raise ValueError(\n                \"automation_triggered_event_id can only be set when triggering_event is provided\"\n            )\n        return v",
+   "rule_name": "Pydantic Models Must Use model_validator for Cross-Field Validation"
+  },
+  {
+   "title": "Incorrect automation_triggered_event_id for state-specific actions",
+   "description": "When actions_on_trigger or actions_on_resolve are executed, they should be linked to their specific triggered_event.id or resolved_event.id respectively. However, the code incorrectly uses primary_state_change_event_id (which always prefers Triggered over Resolved) for both types of actions. This breaks the tracing chain for actions_on_resolve - they will reference the wrong event ID when only a Resolved state change occurs, making it impossible to correctly trace the action back to the automation.resolved event that actually prompted it.",
+   "file_path": "src/prefect/server/events/triggers.py",
+   "start_line": 458,
+   "end_line": 471,
+   "problematic_code_snippet": "    # Conditionally add in actions that fire on specific trigger states\n    if TriggerState.Triggered in firing.trigger_states:\n        triggered_event = state_change_events[TriggerState.Triggered]\n        source_actions += [\n            (triggered_event, action, primary_state_change_event_id)\n            for action in automation.actions_on_trigger\n        ]\n\n    if TriggerState.Resolved in firing.trigger_states:\n        resolved_event = state_change_events[TriggerState.Resolved]\n        source_actions += [\n            (resolved_event, action, primary_state_change_event_id)\n            for action in automation.actions_on_resolve\n        ]"
+  },
+  {
+   "title": "Missing related resources in action.triggered event on failure path",
+   "description": "In the fail() method, the code builds related_resources list that includes both automation-triggered-event and triggering-event references. However, when emitting the 'prefect.automation.action.triggered' event, it incorrectly uses self._resulting_related_resources instead of the newly built related_resources list. This means the action.triggered event will not include the automation-triggered-event or triggering-event links on the failure path, breaking the traceability chain documented in the PR. Users won't be able to trace from failed actions back to their source events.",
+   "file_path": "src/prefect/server/events/actions.py",
+   "start_line": 197,
+   "end_line": 207,
+   "problematic_code_snippet": "            await events.emit(\n                Event(\n                    occurred=triggered_action.triggered,\n                    event=\"prefect.automation.action.triggered\",\n                    resource=resource,\n                    related=self._resulting_related_resources,\n                    payload=action_details,\n                    id=triggered_event_id,\n                    follows=follows_id,\n                )\n            )"
+  },
+  {
+   "title": "Validation incorrectly rejects proactive triggers with automation_triggered_event_id",
+   "description": "The field_validator for automation_triggered_event_id prevents setting this field when triggering_event is None. However, proactive triggers (which have no triggering_event) still create automation.triggered events and need to link actions to them via automation_triggered_event_id. The code in triggers.py sets automation_triggered_event_id=primary_state_change_event_id for all actions including proactive triggers, causing Pydantic validation to fail at runtime. This breaks all proactive automations, which is a critical functional regression.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "@field_validator(\"automation_triggered_event_id\")\n@classmethod\ndef validate_automation_triggered_event_id(cls, v, info):\n    \"\"\"Ensure automation_triggered_event_id is only set when triggering_event exists.\"\"\"\n    if v is not None and info.data.get(\"triggering_event\") is None:\n        raise ValueError(\n            \"automation_triggered_event_id can only be set when triggering_event is provided\"\n        )\n    return v"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect",
+ "head_sha": "7a8ea7161e6ca281127bae1e8c231dc652100583",
+ "diff_chars": 32022,
+ "diff_lines": 775,
+ "user_prompt_chars": 33472,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 150557,
+ "wall_ms": 152454,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 11,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 10,
+ "turn_trace": {
+  "assistant_lines": 19,
+  "unique_message_ids": 10,
+  "lines_without_id": 0,
+  "tool_use_blocks": 11
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 17.174535559,
+ "spend_post_usd": 17.640015559,
+ "cost_settled": true,
+ "cost_wait_ms": 341,
+ "cost_usd": 0.46547999999999945,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 12,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.4960243999999999,
+ "usage": {
+  "input_tokens": 20,
+  "cache_creation_input_tokens": 32195,
+  "cache_read_input_tokens": 402047,
+  "output_tokens": 12728,
+  "output_tokens_details": {
+   "thinking_tokens": 1097
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 32195
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 5010,
+    "cache_creation_input_tokens": 5180,
+    "cache_read_input_tokens": 45905,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 5180,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 20,
+   "outputTokens": 12728,
+   "cacheReadInputTokens": 402047,
+   "cacheCreationInputTokens": 32195,
+   "webSearchRequests": 0,
+   "costUSD": 0.4960243999999999,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1097,
+   "cacheCreationEphemeral5mInputTokens": 32195,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/prefect",
+   "number": 2,
+   "title": "Code Review Bench PR #20227 - Link automation.action.* events to automation.triggered event",
+   "author": "",
+   "baseSha": "23a746d62df52199199369b547bc7eb291a39487",
+   "headSha": "7a8ea7161e6ca281127bae1e8c231dc652100583"
+  },
+  "summary": "This PR adds an `automation_triggered_event_id` field to `TriggeredAction`. `triggers.act()` fills it with the ID of the `automation.triggered` (or `automation.resolved`) event, and `Action.succeed()`/`Action.fail()` use it to add a related resource with the role `automation-triggered-event` to the action events. The PR also cleans up `succeed()` so it reuses the `resource` it already builds, and adds the `triggering-event` link to the `executed`/`failed` events.\n\nThe idea is good, but two bugs block merge. First, the new validator rejects `automation_triggered_event_id` whenever `triggering_event` is None. `act()` always sets the ID, so a proactive automation with no matching event now raises a `ValidationError` inside `act()` and none of its actions are published. I reproduced this against the head commit. Second, in `fail()` the `related=` arguments were swapped the wrong way. The `action.triggered` event on the failure path now carries only `_resulting_related_resources`, so it loses both the old `triggering-event` link and the new link. The PR's own `test_failure_events_include_automation_triggered_event_link` asserts that link on `triggered_event`, so that test should fail.",
+  "verdict": "request_changes",
+  "verdictRationale": "The new validator breaks proactive automations that have no triggering event, so no actions get published for them. `fail()` also drops related resources from `action.triggered`, which is a regression and contradicts the PR's own test. Both must be fixed before merge.",
+  "architecture": {
+   "overview": "When a trigger fires, `triggers.act()` builds one state-change event (`prefect.automation.triggered` or `.resolved`) for each trigger state and publishes them. It then builds a `TriggeredAction` for every action in `automation.actions`, `actions_on_trigger` and `actions_on_resolve`, and puts each one on the actions queue. The actions service reads each `TriggeredAction`, runs it, and calls `Action.succeed()` or `Action.fail()`. Each of those emits an `action.triggered` event followed by an `action.executed` or `action.failed` event.\n\nThis PR passes the state-change event's ID through that pipeline. `act()` picks a primary state-change event (Triggered first, then Resolved) and stores its ID on every `TriggeredAction` as `automation_triggered_event_id`. A new validator requires `triggering_event` to be set whenever that ID is set. `succeed()`/`fail()` then add an `automation-triggered-event` related resource alongside the existing `triggering-event` one.",
+   "steps": [
+    "Start at `triggers.act()` (src/prefect/server/events/triggers.py ~425): it builds and publishes `state_change_events`, one per trigger state.",
+    "The new code picks `primary_state_change_event_id` (Triggered first, then Resolved) and adds it as a third element of each `source_actions` tuple.",
+    "Each tuple becomes a `TriggeredAction` with the new `automation_triggered_event_id` field. The `field_validator` in schemas/automations.py rejects the ID when `triggering_event` is None.",
+    "The actions service deserializes the `TriggeredAction` and runs the action.",
+    "`Action.succeed()`/`Action.fail()` (src/prefect/server/events/actions.py) build `related_resources`: the action's own resources, then `automation-triggered-event`, then `triggering-event`. Both emitted events should carry that list."
+   ],
+   "diagrams": [
+    {
+     "title": "Automation event linkage flow",
+     "kind": "flowchart",
+     "description": "How the automation.triggered event ID flows from act() through TriggeredAction into the action.* events.",
+     "mermaid": "flowchart LR\n  F[Firing] --> A[\"triggers.act()\"]\n  A --> S[\"automation.triggered / resolved events\"]\n  A --> P[\"primary_state_change_event_id\"]\n  P --> T[\"TriggeredAction.automation_triggered_event_id\"]\n  T --> Q[actions queue]\n  Q --> X[\"Action.act()\"]\n  X -->|ok| SU[\"succeed()\"]\n  X -->|ActionFailed| FA[\"fail()\"]\n  SU --> E1[\"action.triggered + action.executed\"]\n  FA --> E2[\"action.triggered + action.failed\"]\n  E1 -. automation-triggered-event .-> S\n  E2 -. automation-triggered-event .-> S"
+    },
+    {
+     "title": "Runtime interaction",
+     "kind": "sequence",
+     "description": "Message flow between trigger evaluation, the messaging bus, and the actions service.",
+     "mermaid": "sequenceDiagram\n  participant Trig as triggers.act\n  participant Bus as messaging\n  participant Svc as actions service\n  participant Act as Action\n  participant Ev as PrefectServerEventsClient\n  Trig->>Bus: publish automation.triggered (id=X)\n  Trig->>Bus: publish TriggeredAction(automation_triggered_event_id=X)\n  Bus->>Svc: TriggeredAction\n  Svc->>Act: act()\n  Act->>Ev: emit action.triggered (related: X, triggering-event)\n  Act->>Ev: emit action.executed / failed (related: X, triggering-event)"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Validator breaks proactive automations that have no triggering event",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`act()` always sets `primary_state_change_event_id`. A firing always has at least one trigger state, so the ID is never None. It passes that ID to every `TriggeredAction`, including the ones for `automation.actions`, which use `firing.triggering_event`. For a proactive trigger with no matching events, `firing.triggering_event` is `None`.\n\nThe new validator rejects exactly that combination:\n\n::diff{file=\"src/prefect/server/events/schemas/automations.py\" lines=\"772-780\"}\n\nSo `TriggeredAction(...)` raises a `ValidationError` inside the list comprehension in `act()`:\n\n::code{file=\"src/prefect/server/events/triggers.py\" lines=\"473-489\"}\n\n::callout{type=\"warning\"}\nI reproduced this on the head commit: `TriggeredAction(triggering_event=None, automation_triggered_event_id=uuid4(), ...)` fails with \"automation_triggered_event_id can only be set when triggering_event is provided\". In production, a proactive automation like \"alert me if no heartbeat event arrives in 10 minutes\" would emit `automation.triggered` and then crash before publishing any actions. Those are the cases where the automation matters most.\n\nThe existing `test_acting_publishes_an_action_message_from_a_proactive_trigger` builds a firing with no triggering event, so it should hit this error. Nothing explains the constraint either: the `automation.triggered` event exists whether or not there was a triggering event. Remove the validator.\n\n::suggestion{file=\"src/prefect/server/events/schemas/automations.py\" lines=\"772-780\"}\n\n\n",
+    "files": [
+     "src/prefect/server/events/schemas/automations.py",
+     "src/prefect/server/events/triggers.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/schemas/automations.py` (lines ~772-780), the new `validate_automation_triggered_event_id` field_validator rejects `automation_triggered_event_id` when `triggering_event` is None. `triggers.act()` (src/prefect/server/events/triggers.py ~440-489) always sets that ID, so proactive automations with no triggering event raise a ValidationError and publish no actions. Remove the validator. The automation.triggered event exists independently of the triggering event. Then add a test in `tests/events/server/triggers/test_service.py` asserting that for a proactive firing without a triggering_event, the published TriggeredAction has a non-None `automation_triggered_event_id`.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/schemas/automations.py",
+     "lineStart": 772,
+     "lineEnd": 780
+    }
+   },
+   {
+    "title": "fail() emits action.triggered without the related resources",
+    "severity": "high",
+    "category": "correctness",
+    "body": "In `fail()`, the `related=` arguments were swapped the wrong way. `action.failed` now gets `related_resources`, which is correct. But `action.triggered` was switched from `related_resources` to `self._resulting_related_resources`:\n\n::diff{file=\"src/prefect/server/events/actions.py\" lines=\"197-206\"}\n\nThis is a regression. Before this PR, `action.triggered` on the failure path already carried the `triggering-event` link. Now it carries neither that link nor the new `automation-triggered-event` link. It is also inconsistent with `succeed()`, where both events use `related_resources`.\n\nThe PR's own `test_failure_events_include_automation_triggered_event_link` asserts that `triggered_event.related` contains `automation-triggered-event`, so that test should fail against this code.\n\n::suggestion{file=\"src/prefect/server/events/actions.py\" lines=\"202-202\"}\n                    related=related_resources,\n\n",
+    "files": [
+     "src/prefect/server/events/actions.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/actions.py`, inside `Action.fail()` (around line 202), the `prefect.automation.action.triggered` event is emitted with `related=self._resulting_related_resources`. Change it to `related=related_resources` so it includes the `automation-triggered-event` and `triggering-event` links, matching `succeed()` and the previous behavior. Then run `tests/events/server/actions/test_actions_service.py::test_failure_events_include_automation_triggered_event_link` to confirm it passes.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/actions.py",
+     "lineStart": 202,
+     "lineEnd": 202
+    }
+   },
+   {
+    "title": "actions_on_resolve link to the Triggered event, not the Resolved event",
+    "severity": "low",
+    "category": "correctness",
+    "body": "Every action gets `primary_state_change_event_id`, which prefers Triggered. If a firing has both states, an `actions_on_resolve` action gets `triggering_event = resolved_event`, but `automation-triggered-event` points to the *triggered* event:\n\n::diff{file=\"src/prefect/server/events/triggers.py\" lines=\"466-471\"}\n\nThat contradicts the docs and the field description, which say the link is \"the `automation.triggered` or `automation.resolved` event that prompted the action\". OSS code doesn't currently create Resolved firings, so the impact today is small. Still, using the state-specific event's ID costs nothing and matches the docs:\n\n::suggestion{file=\"src/prefect/server/events/triggers.py\" lines=\"468-471\"}\n        source_actions += [\n            (resolved_event, action, resolved_event.id)\n            for action in automation.actions_on_resolve\n        ]\n\nApply the same change to `actions_on_trigger`, using `triggered_event.id`.",
+    "files": [
+     "src/prefect/server/events/triggers.py"
+    ],
+    "fixPrompt": "In `src/prefect/server/events/triggers.py` `act()` (lines ~459-471), `actions_on_trigger` and `actions_on_resolve` entries use `primary_state_change_event_id` (which prefers Triggered), so resolve actions link to the wrong state-change event when both states are present. Use `triggered_event.id` for `actions_on_trigger` and `resolved_event.id` for `actions_on_resolve`. Keep `primary_state_change_event_id` only for the default `automation.actions`.",
+    "commentAnchor": {
+     "file": "src/prefect/server/events/triggers.py",
+     "lineStart": 459,
+     "lineEnd": 471
+    }
+   },
+   {
+    "title": "test_service assertions can't detect a missing or wrong automation_triggered_event_id",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "Both `act()` tests copy the parsed value back into the expected object, so the comparison always passes:\n\n::diff{file=\"tests/events/server/triggers/test_service.py\" lines=\"57-61\"}\n\nIf `act()` left out the ID or set the wrong one, these tests would still pass. That's how the proactive-trigger crash above could slip through without a dedicated assertion. Capture the published `automation.triggered` event (via the `messaging.publish` mock) and assert `parsed.automation_triggered_event_id == that_event.id`.",
+    "files": [
+     "tests/events/server/triggers/test_service.py"
+    ],
+    "fixPrompt": "In `tests/events/server/triggers/test_service.py`, the reactive and proactive `test_acting_publishes_an_action_message_*` tests set `automation_triggered_event_id=parsed.automation_triggered_event_id` in the expected TriggeredAction, which makes the check tautological. Capture the automation.triggered event passed to the patched `messaging.publish` and assert `parsed.automation_triggered_event_id` equals its `id` (and is not None), for both the reactive and proactive cases.",
+    "commentAnchor": {
+     "file": "tests/events/server/triggers/test_service.py",
+     "lineStart": 60,
+     "lineEnd": 60
+    }
+   },
+   {
+    "title": "succeed() now reuses its resource and links triggering-event on executed/failed events",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "`succeed()` used to build the automation `Resource` inline twice and ignore the `resource` it had already built. That meant `prefect.posture` was missing from `action.triggered`/`action.executed` for event triggers. Reusing `resource` fixes that. Adding the `triggering-event` link to the `executed`/`failed` events also makes tracing more consistent, and the per-action test updates cover it well.",
+    "files": [
+     "src/prefect/server/events/actions.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/prefect\",\"number\":2,\"title\":\"Code Review Bench PR #20227 - Link automation.action.* events to automation.triggered event\",\"author\":\"\",\"baseSha\":\"23a746d62df52199199369b547bc7eb291a39487\",\"headSha\":\"7a8ea7161e6ca281127bae1e8c231dc652100583\"},\"summary\":\"This PR adds an `automation_triggered_event_id` field to `TriggeredAction`. `triggers.act()` fills it with the ID of the `automation.triggered` (or `automation.resolved`) event, and `Action.succeed()`/`Actio",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

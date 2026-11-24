@@ -1,0 +1,327 @@
+{
+ "id": "Ghost#10",
+ "repo": "Ghost",
+ "num": 10,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T15:41:46.842Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Strict mode disabled in TypeScript config",
+   "description": "The rule requires TypeScript configuration files to have 'strict' set to true in compilerOptions, but it was set to false",
+   "file_path": "apps/activitypub/tsconfig.json",
+   "start_line": 18,
+   "end_line": 18,
+   "problematic_code_snippet": "    /* Linting */\n    \"strict\": false,\n    \"noUnusedLocals\": true,",
+   "rule_name": "TypeScript Files Must Enable Strict Type Checking"
+  },
+  {
+   "title": "Missing error handling in Bluesky enable function leaves UI in perpetual loading state",
+   "description": "The handleEnable function removes the try-catch block that was wrapping the enableBlueskyMutation call. When the API call fails (network error, server error, etc.), the loading state is never reset to false, leaving the user stuck with a spinning loader and no way to retry. This is inconsistent with the handleDisable function which properly handles errors. The bug causes a poor user experience where users must refresh the page to recover from any API failure.",
+   "file_path": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+   "start_line": 48,
+   "end_line": 55,
+   "problematic_code_snippet": "    const handleEnable = async () => {\n        if (!account?.avatarUrl) {\n            setIsEditingProfile(true);\n        } else {\n            setLoading(true);\n            await enableBlueskyMutation.mutateAsync();\n        }\n    };"
+  },
+  {
+   "title": "Polling logic performs one extra retry attempt beyond configured maximum",
+   "description": "The confirmation polling interval increments the retry counter after checking if the limit is reached, combined with changing the condition from `>` to `>=`. This creates an off-by-one error where the system will actually make 13 API calls (retries 0-12) instead of the intended 12 calls defined by MAX_CONFIRMATION_RETRIES. The counter starts at 0, gets incremented to 12, makes a call, then on the next iteration checks if 12 >= 12 and only then stops. This wastes API resources and delays the timeout error message by one additional polling interval (5 seconds).",
+   "file_path": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+   "start_line": 103,
+   "end_line": 117,
+   "problematic_code_snippet": "        const confirmHandleInterval = setInterval(async () => {\n            if (retryCountRef.current >= MAX_CONFIRMATION_RETRIES) {\n                clearInterval(confirmHandleInterval);\n\n                toast.error('Something went wrong, please try again.');\n\n                await disableBlueskyMutation.mutateAsync();\n                setLoading(false);\n\n                return;\n            }\n\n            retryCountRef.current += 1;\n            confirmHandle();\n        }, CONFIRMATION_INTERVAL);"
+  },
+  {
+   "title": "Missing query invalidation after Bluesky handle confirmation causes stale following list",
+   "description": "The confirmBlueskyHandle mutation successfully updates the account cache but fails to invalidate the accountFollows query. When Bluesky is enabled via Bridgy Fed, the account automatically follows the brid.gy account. Both enableBluesky and disableBluesky mutations properly invalidate QUERY_KEYS.accountFollows('index', 'following') to refresh this list, but confirmBlueskyHandle does not. This means after the handle is confirmed, the UI won't show the brid.gy follow relationship until the user manually refreshes the page or navigates away and back. This is inconsistent with the established pattern in the codebase and creates a confusing user experience where the integration appears incomplete.",
+   "file_path": "apps/activitypub/src/hooks/use-activity-pub-queries.ts",
+   "start_line": 2820,
+   "end_line": 2834,
+   "problematic_code_snippet": "        onSuccess(blueskyHandle: string) {\n            // If the bluesky handle is empty then the handle was not confirmed\n            // so we don't need to update the cache\n            if (blueskyHandle === '') {\n                return;\n            }\n\n            updateAccountBlueskyCache(queryClient, {\n                blueskyEnabled: true,\n                blueskyHandleConfirmed: true,\n                blueskyHandle: blueskyHandle\n            });\n\n            // Note: Missing invalidation of accountFollows query that should happen here\n        },"
+  },
+  {
+   "title": "Missing semicolon after type alias declaration",
+   "description": "The `BlueskyDetails` type alias declaration is not terminated with a semicolon, relying on ASI. The codebase rule requires explicit semicolons at the end of statements.",
+   "file_path": "apps/activitypub/src/hooks/use-activity-pub-queries.ts",
+   "start_line": 2722,
+   "end_line": 2732,
+   "problematic_code_snippet": "type BlueskyDetails = {\n    blueskyEnabled: boolean;\n    blueskyHandleConfirmed: boolean;\n    blueskyHandle: string | null;\n}\n\nfunction updateAccountBlueskyCache(queryClient: QueryClient, blueskyDetails: BlueskyDetails) {",
+   "rule_name": "Rule 19: Code Must Always Use Semicolons"
+  },
+  {
+   "title": "JSX attribute uses double-quoted string literals",
+   "description": "In this TSX file, the JSX attribute values for `className`, `href`, `rel`, and `target` are written using double quotes, violating the rule requiring single quotes for string literals in JS/TS files.",
+   "file_path": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+   "start_line": 176,
+   "end_line": 176,
+   "problematic_code_snippet": "<p className='mt-2 pr-32 text-base'>Your social web profile is now connected to Bluesky, via <a className=\"text-purple hover:text-purple-600\" href=\"https://fed.brid.gy\" rel=\"noreferrer\" target=\"_blank\">Bridgy Fed</a>. Posts are automatically synced after a short delay to complete activation.</p>",
+   "rule_name": "Rule 18: Code Must Use Single Quotes for Strings"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "92f3514d5ea12edd52184c74100692362d7dff7c",
+ "diff_chars": 29140,
+ "diff_lines": 589,
+ "user_prompt_chars": 31913,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 121800,
+ "wall_ms": 124616,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 9,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 1.037799757,
+ "spend_post_usd": 1.457086357,
+ "cost_settled": true,
+ "cost_wait_ms": 419,
+ "cost_usd": 0.4192866000000002,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.4760208,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 29249,
+  "cache_read_input_tokens": 172279,
+  "output_tokens": 14764,
+  "output_tokens_details": {
+   "thinking_tokens": 1334
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 29249
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 14764,
+   "cacheReadInputTokens": 172279,
+   "cacheCreationInputTokens": 29249,
+   "webSearchRequests": 0,
+   "costUSD": 0.4760208,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1334,
+   "cacheCreationEphemeral5mInputTokens": 29249,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 10,
+   "title": "Code Review Bench PR #25189 - Updated activitypub Bluesky sharing enablement flow",
+   "author": "",
+   "baseSha": "9b6ba0fc89a738ca4b650a10d4de58fefd37d065",
+   "headSha": "92f3514d5ea12edd52184c74100692362d7dff7c"
+  },
+  "summary": "This PR moves Bluesky sharing to the v2 backend endpoints. `enableBluesky()` no longer returns a handle. A new `confirmBlueskyHandle()` call (POST `v2/actions/bluesky/confirm-handle`) asks the backend which handle Bridgy Fed actually assigned. The UI polls that endpoint every 5s, up to 12 times. When the handle is confirmed, the React Query account cache is updated and the profile card appears. If it's never confirmed, Bluesky is disabled automatically. The API-layer changes and their tests are clean and cover the null, missing and invalid-handle cases.\n\nThe component logic has real gaps, though. `handleEnable` dropped its try/finally, so a failed enable request leaves the button stuck on \"Enabling…\" forever. The polling promises have no rejection handling. The PR also quietly turns off TypeScript `strict` for the whole activitypub app, which has nothing to do with this feature and removes null-safety checking from the codebase. There's also a leftover \"Missing invalidation\" comment, and the `handleConfirmed` state duplicates data that's already in the cache.",
+  "verdict": "request_changes",
+  "verdictRationale": "Turning off `strict` in tsconfig is an unrelated regression for the whole app. The enable error path also lost its loading reset, so the UI can get permanently stuck. Both should be fixed before merge.",
+  "architecture": {
+   "overview": "Before this PR, enabling Bluesky was a single POST to `v1/actions/bluesky/enable`. That call returned the handle, and `updateAccountBlueskyCache` derived `blueskyEnabled` from whether the handle was non-null. This PR splits the work into two phases. `enableBluesky` (v2) only starts bridging. After that, the cached account is `{blueskyEnabled: true, blueskyHandleConfirmed: false, blueskyHandle: null}`.\n\n`BlueskySharing.tsx` then runs a `useEffect` that is keyed on `blueskyEnabled`/`blueskyHandleConfirmed`. It starts a `setInterval` that calls `useConfirmBlueskyHandleMutationForUser` every 5s. When the backend returns a non-empty handle, the mutation writes `{blueskyHandleConfirmed: true, blueskyHandle}` into the `account('index')` query cache. That re-runs the effect, which stops polling and shows the enabled UI. After 12 unsuccessful polls, the component calls the disable mutation, which resets the cache.",
+   "steps": [
+    "`api/activitypub.ts`: `enableBluesky`/`disableBluesky` now POST to v2 endpoints. The new `confirmBlueskyHandle` returns the handle string, or '' when there isn't one yet.",
+    "`hooks/use-activity-pub-queries.ts`: `updateAccountBlueskyCache` now takes a full `BlueskyDetails` object. The enable, disable and the new confirm mutations each write explicit state into the account cache.",
+    "`BlueskySharing.tsx` `handleEnable`: sets `loading` and calls the enable mutation. The cache now says enabled but unconfirmed.",
+    "`BlueskySharing.tsx` `useEffect`: while the account is enabled but unconfirmed, it polls `confirmHandle` every `CONFIRMATION_INTERVAL`. After `MAX_CONFIRMATION_RETRIES` polls, it calls the disable mutation.",
+    "Rendering: `showAsEnabled` (enabled && confirmed) switches the view. `handleConfirmed` gates the profile card and the 'Open profile' link."
+   ],
+   "diagrams": [
+    {
+     "title": "Bluesky enable/confirm state flow",
+     "kind": "flowchart",
+     "description": "How the account cache state drives the BlueskySharing polling effect.",
+     "mermaid": "flowchart TD\n  A[Enable button] --> B[enableBluesky v2]\n  B --> C[cache: enabled=true, confirmed=false]\n  C --> D[useEffect starts setInterval 5s]\n  D --> E{retries >= 12?}\n  E -- no --> F[confirmBlueskyHandle]\n  F -- handle '' --> D\n  F -- handle --> G[cache: confirmed=true, handle]\n  G --> H[effect: stop polling, toast, show profile]\n  E -- yes --> I[disableBluesky v2]\n  I --> J[cache: enabled=false]"
+    },
+    {
+     "title": "Enable and confirm runtime interaction",
+     "kind": "sequence",
+     "description": "Interaction between the component, React Query cache, and the ActivityPub API during enablement.",
+     "mermaid": "sequenceDiagram\n  participant UI as BlueskySharing\n  participant RQ as QueryCache account(index)\n  participant API as ActivityPub API\n  UI->>API: POST v2/actions/bluesky/enable\n  API-->>UI: 200\n  UI->>RQ: set enabled=true, confirmed=false\n  loop every 5s up to 12x\n    UI->>API: POST v2/actions/bluesky/confirm-handle\n    API-->>UI: {handle} or null\n  end\n  UI->>RQ: set confirmed=true, handle\n  RQ-->>UI: re-render, stop polling"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "TypeScript strict mode disabled for the whole activitypub app",
+    "severity": "high",
+    "category": "maintainability",
+    "body": "This PR turns off `strict` in the app's tsconfig. Nothing in the feature needs that, and every other app in the monorepo (`admin-x-settings`, `posts`, `stats`, `shade`, …) keeps `strict: true`.\n\n::diff{file=\"apps/activitypub/tsconfig.json\" lines=\"18-18\"}\n\n::callout{type=\"warning\"}\nWith strict off, `strictNullChecks` and `noImplicitAny` stop applying to the entire app. This PR also changes `blueskyHandle` to `string | null`, which is exactly the kind of change null checking exists to catch. Turning strict off probably hides type errors that the new code introduces. It doesn't fix them.\n\n::suggestion{file=\"apps/activitypub/tsconfig.json\" lines=\"18-18\"}\n    \"strict\": true,\n",
+    "files": [
+     "apps/activitypub/tsconfig.json"
+    ],
+    "fixPrompt": "In `apps/activitypub/tsconfig.json` line 18, `strict` was changed from `true` to `false` as part of the Bluesky flow PR. Revert it to `true`. Then run the activitypub app's type check (e.g. `yarn tsc --noEmit` in apps/activitypub) and fix any errors the Bluesky changes introduced, such as `blueskyHandle` now being `string | null`, the `loading` useState initializer returning `boolean | undefined`, and the `currentProfile` typing in `updateAccountBlueskyCache`. Fix them properly. Don't loosen compiler options.",
+    "commentAnchor": {
+     "file": "apps/activitypub/tsconfig.json",
+     "lineStart": 18,
+     "lineEnd": 18
+    }
+   },
+   {
+    "title": "Failed enable request leaves the button stuck in 'Enabling…' forever",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The old code wrapped the mutation in `try/finally { setLoading(false) }`. That's gone now:\n\n::diff{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"48-55\"}\n\nIf `enableBlueskyMutation.mutateAsync()` rejects (500, network error, 429), the cache is never updated, so `account.blueskyEnabled` stays `false`. The `useEffect` only depends on `blueskyEnabled`/`blueskyHandleConfirmed`, so it never re-runs to reset `loading`. The button stays disabled with a spinner and the \"You can leave this page…\" hint until the user navigates away. The rejection is also unhandled: `handleEnable` is an `onClick` handler, and nothing awaits it.\n\n::suggestion{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"52-53\"}\n            setLoading(true);\n            try {\n                await enableBlueskyMutation.mutateAsync();\n            } catch {\n                setLoading(false);\n                toast.error('Something went wrong, please try again.');\n            }\n",
+    "files": [
+     "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx"
+    ],
+    "fixPrompt": "In `apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx`, `handleEnable` (lines 48-55) calls `setLoading(true)` and then `await enableBlueskyMutation.mutateAsync()` without error handling. If the request fails, `account.blueskyEnabled` never changes, so the useEffect never resets `loading`, and the button stays stuck on 'Enabling Bluesky sharing...'. Wrap the mutateAsync call in try/catch. On error, call `setLoading(false)` and show an error toast, unless it's a 429, which the mutation's onError already handles with `renderRateLimitError`. On success, leave `loading` true, because the polling effect takes over from there.",
+    "commentAnchor": {
+     "file": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "lineStart": 48,
+     "lineEnd": 55
+    }
+   },
+   {
+    "title": "Unhandled promise rejections in confirm polling and auto-disable",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`confirmHandle` fires `mutateAsync().then(...)` with no `.catch`. Any confirm-handle failure (500, network blip) becomes an unhandled rejection on every 5s tick:\n\n::diff{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"68-75\"}\n\nThe auto-disable branch has the same problem. If `disableBlueskyMutation.mutateAsync()` throws, `setLoading(false)` never runs, the interval is already cleared, and the UI stays in the loading state after showing the error toast:\n\n::code{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"103-115\"}\n\nThe ticks also don't wait for the previous request to finish. On a slow backend, confirm requests can overlap.\n\n::suggestion{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"69-73\"}\n        confirmBlueskyHandleMutation.mutateAsync().then((handle) => {\n            if (handle) {\n                setHandleConfirmed(true);\n            }\n        }).catch(() => {\n            // Treat as not-yet-confirmed; the next interval tick will retry\n        });\n",
+    "files": [
+     "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx"
+    ],
+    "fixPrompt": "In `apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx`: (1) `confirmHandle` (lines 68-75) calls `confirmBlueskyHandleMutation.mutateAsync().then(...)` without a catch. Add a catch that treats failures as 'not yet confirmed' so the next tick retries. (2) In the interval callback (lines 103-118), wrap `await disableBlueskyMutation.mutateAsync()` in try/finally so `setLoading(false)` always runs. Optionally, skip a tick while `confirmBlueskyHandleMutation.isPending` so requests don't overlap.",
+    "commentAnchor": {
+     "file": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "lineStart": 68,
+     "lineEnd": 75
+    }
+   },
+   {
+    "title": "`handleConfirmed` state duplicates the cache and makes the profile card flicker",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`showAsEnabled` already requires `account.blueskyHandleConfirmed`. `handleConfirmed` mirrors that same value from the effect and from the `confirmHandle` callback, but it starts as `false`. When the page mounts for an already-confirmed account, the first paint shows the 'connected' copy without the profile card. The card only appears after the effect runs.\n\n::diff{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"190-190\"}\n\nInside the `showAsEnabled` branch, `handleConfirmed` is always true once the effect has run, so the extra state only adds a render of lag and gives the confirmation status a second source of truth. Consider dropping `handleConfirmed` and rendering the card whenever `showAsEnabled` is true.",
+    "files": [
+     "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx"
+    ],
+    "fixPrompt": "In `apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx`, the `handleConfirmed` useState (line 36) duplicates `account.blueskyHandleConfirmed`. It causes a one-render flicker where the profile card is missing for already-confirmed accounts (line 190). Remove `handleConfirmed` and its setters in `confirmHandle` and the useEffect, and render the profile card whenever `showAsEnabled` is true. The confirm mutation's cache update already drives the re-render.",
+    "commentAnchor": {
+     "file": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "lineStart": 190,
+     "lineEnd": 190
+    }
+   },
+   {
+    "title": "Leftover 'Missing invalidation' comment in confirm-handle mutation",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "This comment says an invalidation \"should happen here\" but doesn't do it:\n\n::diff{file=\"apps/activitypub/src/hooks/use-activity-pub-queries.ts\" lines=\"2833-2833\"}\n\nThe brid.gy follow happens in the enable step, and `useEnableBlueskyMutationForUser` already invalidates `accountFollows('index', 'following')`. Either the invalidation really is needed here (add it), or the comment is wrong and should be removed. As it stands, a future reader can't tell which.",
+    "files": [
+     "apps/activitypub/src/hooks/use-activity-pub-queries.ts"
+    ],
+    "fixPrompt": "In `apps/activitypub/src/hooks/use-activity-pub-queries.ts` line 2833, `useConfirmBlueskyHandleMutationForUser.onSuccess` has a comment saying an accountFollows invalidation is missing. Decide whether confirming the handle changes the following list. If it does, add `queryClient.invalidateQueries({queryKey: QUERY_KEYS.accountFollows('index', 'following')})` to match the enable and disable mutations. If it doesn't, delete the misleading comment.",
+    "commentAnchor": {
+     "file": "apps/activitypub/src/hooks/use-activity-pub-queries.ts",
+     "lineStart": 2833,
+     "lineEnd": 2833
+    }
+   },
+   {
+    "title": "Settings page shows Bluesky as 'On' while the handle is still unconfirmed",
+    "severity": "low",
+    "category": "correctness",
+    "body": "`Settings.tsx:54` still shows \"On\" based only on `account.blueskyEnabled`. `BlueskySharing` now treats enabled-but-unconfirmed as a pending state and shows the enable button with a spinner. So a user can leave the Bluesky page mid-confirmation (which the new hint text suggests) and see \"On\" in Settings, even though the confirmation might still fail and get auto-disabled.\n\n::diff{file=\"apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx\" lines=\"138-138\"}",
+    "files": [
+     "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "apps/activitypub/src/views/Preferences/components/Settings.tsx"
+    ],
+    "fixPrompt": "`BlueskySharing.tsx` (line 138) only treats Bluesky as enabled when `blueskyEnabled && blueskyHandleConfirmed`, but `apps/activitypub/src/views/Preferences/components/Settings.tsx` line 54 still shows 'On' based on `blueskyEnabled` alone. Update Settings.tsx to use the same rule. Optionally, show a 'Pending' label when Bluesky is enabled but the handle isn't confirmed yet.",
+    "commentAnchor": {
+     "file": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "lineStart": 138,
+     "lineEnd": 138
+    }
+   },
+   {
+    "title": "API layer and tests for confirm-handle are clean",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "`confirmBlueskyHandle()` keeps the existing defensive parsing: it returns `''` for a null body, a missing `handle`, or a non-string `handle`. The tests cover all three cases and the happy path. The enable and disable tests now assert the HTTP method and the v2 paths. Passing explicit `BlueskyDetails` to `updateAccountBlueskyCache` is also clearer than the old approach of deriving `blueskyEnabled` from whether the handle was null.\n\n::code{file=\"apps/activitypub/src/api/activitypub.ts\" lines=\"711-734\"}",
+    "files": [
+     "apps/activitypub/src/api/activitypub.ts",
+     "apps/activitypub/src/api/activitypub.test.ts"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":10,\"title\":\"Code Review Bench PR #25189 - Updated activitypub Bluesky sharing enablement flow\",\"author\":\"\",\"baseSha\":\"9b6ba0fc89a738ca4b650a10d4de58fefd37d065\",\"headSha\":\"92f3514d5ea12edd52184c74100692362d7dff7c\"},\"summary\":\"This PR moves Bluesky sharing to the v2 backend endpoints. `enableBluesky()` no longer returns a handle. A new `confirmBlueskyHandle()` call (POST `v2/actions/bluesky/confirm-handle`) asks the backend which handle Brid",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

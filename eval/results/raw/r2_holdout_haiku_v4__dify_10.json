@@ -1,0 +1,433 @@
+{
+ "id": "dify#10",
+ "repo": "dify",
+ "num": 10,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:25:44.579Z",
+ "num_of_issues": 11,
+ "issues": [
+  {
+   "title": "__str__ without complementary __repr__",
+   "description": "The SubscriptionPlan class overrides __str__ without implementing the complementary __repr__ method, violating the requirement that special methods should be properly implemented with their relevant complementary methods",
+   "file_path": "api/services/billing_service.py",
+   "start_line": 22,
+   "end_line": 30,
+   "problematic_code_snippet": "class SubscriptionPlan(TypedDict):\n    \"\"\"Tenant subscriptionplan information.\"\"\"\n\n    plan: str\n    expiration_date: int\n\n    def __str__(self) -> str:\n        \"\"\"Return a human-readable string representation for debugging.\"\"\"\n        return f\"Plan: {self['plan']}, Expiration: {self['expiration_date']}\"",
+   "rule_name": "Python Code Must Not Override Dunder Methods Unnecessarily"
+  },
+  {
+   "title": "Wrong dictionary used in Redis cache pipeline loop",
+   "description": "In the get_plan_bulk_with_cache method, when caching new tenant plans to Redis, the code iterates over `bulk_plans.items()` instead of `plans_to_cache.items()`. This is problematic because `bulk_plans` may contain tenant plans that had None values from validation failures in get_plan_bulk (when results[tenant_id] = None is set on exception). The code will attempt to cache these None values or invalid entries, leading to corrupted cache data. Additionally, if bulk_plans contains more entries than plans_to_cache due to any filtering logic, the logging statement will report an incorrect count of cached items.",
+   "file_path": "api/services/billing_service.py",
+   "start_line": 370,
+   "end_line": 378,
+   "problematic_code_snippet": "                if plans_to_cache:\n                    try:\n                        pipe = redis_client.pipeline()\n                        for tenant_id, subscription_plan in bulk_plans.items():\n                            redis_key = cls._make_plan_cache_key(tenant_id)\n                            # Serialize dict to JSON string\n                            json_str = json.dumps(subscription_plan)\n                            pipe.setex(redis_key, cls._PLAN_CACHE_TTL, json_str)\n                        pipe.execute()"
+  },
+  {
+   "title": "Type contract violation in get_plan_bulk return value",
+   "description": "In the get_plan_bulk method, when subscription plan validation fails for a tenant, the code sets `results[tenant_id] = None` instead of skipping that tenant with `continue`. This violates the method's return type contract of `dict[str, SubscriptionPlan]` by inserting None values. Downstream consumers expecting valid SubscriptionPlan objects will encounter AttributeError or TypeError when attempting to access plan fields like `subscription_plan['plan']` or `subscription_plan['expiration_date']`. This bug can cascade through the caching layer in get_plan_bulk_with_cache, potentially storing None values in Redis.",
+   "file_path": "api/services/billing_service.py",
+   "start_line": 284,
+   "end_line": 292,
+   "problematic_code_snippet": "                for tenant_id, plan in data.items():\n                    try:\n                        subscription_plan = subscription_adapter.validate_python(plan)\n                        results[tenant_id] = subscription_plan\n                    except Exception:\n                        logger.exception(\n                            \"get_plan_bulk: failed to validate subscription plan for tenant(%s)\", tenant_id\n                        )\n                        results[tenant_id] = None"
+  },
+  {
+   "title": "Incorrect cache count in observability logging",
+   "description": "In the get_plan_bulk_with_cache method, the logging statement reports `len(bulk_plans)` as the number of cached items instead of `len(plans_to_cache)`. This creates misleading observability metrics. When some tenant plans fail validation or are filtered out, bulk_plans will contain more entries than plans_to_cache, causing the log to report an inflated count of successfully cached items. This makes it difficult to diagnose caching issues and can mask problems where fewer plans are actually cached than expected.",
+   "file_path": "api/services/billing_service.py",
+   "start_line": 380,
+   "end_line": 383,
+   "problematic_code_snippet": "                        logger.info(\n                            \"get_plan_bulk_with_cache: cached %s new tenant plans to Redis\",\n                            len(bulk_plans),\n                        )"
+  },
+  {
+   "title": "Raising generic Exception instead of domain-specific exception",
+   "description": "New code raises a generic `Exception` from a service method. Per the rule, backend services should raise domain-specific exceptions (e.g., from `services/errors` or `core/errors`) to provide clearer context and allow consistent translation to HTTP responses.",
+   "file_path": "api/services/billing_service.py",
+   "start_line": 316,
+   "end_line": 320,
+   "problematic_code_snippet": "if len(cached_values) != len(tenant_ids):\n    raise Exception(\n        \"get_plan_bulk_with_cache: unexpected error: redis mget failed: cached values length mismatch\"\n    )",
+   "rule_name": "Backend Errors Must Use Domain-Specific Exceptions"
+  },
+  {
+   "title": "Fixture function missing parameter and return type annotations",
+   "description": "The fixture `setup_redis_cleanup` lacks type annotations for `flask_app_with_containers` and has no return type annotation. The rule requires explicit type hints for all parameters and return values.",
+   "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+   "start_line": 23,
+   "end_line": 26,
+   "problematic_code_snippet": "@pytest.fixture(autouse=True)\ndef setup_redis_cleanup(self, flask_app_with_containers):\n    \"\"\"Clean up Redis cache before and after each test.\"\"\"",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  },
+  {
+   "title": "Helper function missing return type annotation",
+   "description": "`_create_test_plan_data` is missing an explicit return type annotation.",
+   "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+   "start_line": 37,
+   "end_line": 40,
+   "problematic_code_snippet": "def _create_test_plan_data(self, plan: str = \"sandbox\", expiration_date: int = 1735689600):\n    \"\"\"Helper to create test SubscriptionPlan data.\"\"\"\n    return {\"plan\": plan, \"expiration_date\": expiration_date}",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  },
+  {
+   "title": "Helper function missing return type annotation (and uses unparameterized dict)",
+   "description": "`_set_cache` has no return type annotation. (Additionally, `plan_data: dict` is unparameterized; while still an annotation, the rule requires complete type hints for maintainability.)",
+   "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+   "start_line": 42,
+   "end_line": 44,
+   "problematic_code_snippet": "def _set_cache(self, tenant_id: str, plan_data: dict, ttl: int = 600):\n    \"\"\"Helper to set cache data in Redis.\"\"\"",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  },
+  {
+   "title": "Helper function missing return type annotation",
+   "description": "`_get_cache` is missing a return type annotation (it appears to return `str | None`).",
+   "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+   "start_line": 48,
+   "end_line": 50,
+   "problematic_code_snippet": "def _get_cache(self, tenant_id: str):\n    \"\"\"Helper to get cache data from Redis.\"\"\"",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  },
+  {
+   "title": "Test function missing parameter and return type annotations",
+   "description": "This new test function lacks a type annotation for `flask_app_with_containers` and has no return type annotation (typically `-> None`). Rule requires type hints for all parameters and return values. (Same issue applies to the other newly added `test_get_plan_bulk_with_cache_*` functions in this file.)",
+   "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+   "start_line": 60,
+   "end_line": 61,
+   "problematic_code_snippet": "def test_get_plan_bulk_with_cache_all_cache_hit(self, flask_app_with_containers):\n    \"\"\"Test bulk plan retrieval when all tenants are in cache.\"\"\"",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  },
+  {
+   "title": "Unit test missing parameter and return type annotations",
+   "description": "The newly added unit test method lacks a type annotation for `mock_send_request` and has no return type annotation (typically `-> None`).",
+   "file_path": "api/tests/unit_tests/services/test_billing_service.py",
+   "start_line": 1297,
+   "end_line": 1298,
+   "problematic_code_snippet": "def test_get_plan_bulk_with_invalid_tenant_plan_skipped(self, mock_send_request):\n    \"\"\"Test bulk plan retrieval when one tenant has invalid plan data (should skip that tenant).\"\"\"",
+   "rule_name": "Python Functions Must Include Type Annotations"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "70fe873c2abcfb285ab25cae4c1b7e212f11b507",
+ "diff_chars": 25660,
+ "diff_lines": 565,
+ "user_prompt_chars": 27421,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 120048,
+ "wall_ms": 122407,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "get_plan_bulk|get_plan_bulk_with_cache|_make_plan_cache_key"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/services/billing_service.py"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/services/billing_service.py"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/tests/unit_tests/services/test_billing_service.py"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "Clean up before test|def setup_redis_cleanup|def test_get_plan_bulk_with_cache_empty_tenant_ids|Since we can't easily verify|time.sleep\\(2\\)|import time|def test_get_plan_bulk_with_cache_redis_pipeline_failure"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 12,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 28,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 12
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.458027752,
+ "spend_post_usd": 0.474640827,
+ "cost_settled": true,
+ "cost_wait_ms": 363,
+ "cost_usd": 0.016613074999999977,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 13,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.018661365,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 36135,
+  "cache_read_input_tokens": 395819,
+  "output_tokens": 20369,
+  "output_tokens_details": {
+   "thinking_tokens": 10021
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 36135
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 20369,
+   "cacheReadInputTokens": 395819,
+   "cacheCreationInputTokens": 36135,
+   "webSearchRequests": 0,
+   "costUSD": 0.018661365,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 10021,
+   "cacheCreationEphemeral5mInputTokens": 36135,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 10,
+   "title": "Code Review Bench PR #30339 - feat: get plan bulk with cache",
+   "author": "unknown",
+   "baseSha": "f117f0ad6e7a78c3ce89a89e9791b54b7e76ea6c",
+   "headSha": "70fe873c2abcfb285ab25cae4c1b7e212f11b507"
+  },
+  "summary": "This PR adds `BillingService.get_plan_bulk_with_cache`, a Redis-backed wrapper around the existing batched billing lookup `get_plan_bulk`. It reads per-tenant plan JSON with one `MGET`, sends only the misses to the billing API, and writes the fresh results back with a pipelined `SETEX` at a 600-second TTL. It also makes `get_plan_bulk` validate each tenant separately, so one malformed record no longer drops a whole 200-tenant chunk. The new function has no production callers yet, only tests.\n\nThe caching design is sound and the fallback paths are well considered: an `MGET` failure falls back to the API, and a pipeline failure still returns data. However, the per-tenant validation change has a real defect. The `except` branch stores `None` under the failing tenant's key. That breaks the declared `dict[str, SubscriptionPlan]` return type, makes the new unit test fail (I reproduced `len(result) == 3` where it asserts 2), and lets `None` leak into the cache as the string `\"null\"`. A dead `__str__` on the TypedDict and some weak integration tests are smaller issues.",
+  "verdict": "request_changes",
+  "verdictRationale": "The PR should not merge as is. `get_plan_bulk` writes `None` values into its result for invalid plans, which contradicts its return type and fails the newly added unit test `test_get_plan_bulk_with_invalid_tenant_plan_skipped`. The same `None` then flows into `get_plan_bulk_with_cache`, which caches it as `\"null\"` and refetches that tenant on every call. The fix is small: omit invalid tenants instead of storing `None`, and filter defensively in the cache layer. The remaining findings are minor.",
+  "architecture": {
+   "overview": "Today `BillingService` (api/services/billing_service.py) calls the billing HTTP API through `_send_request`. `get_plan_bulk` batches tenant IDs 200 at a time to `POST /subscription/plan/batch` and validates each returned plan against the `SubscriptionPlan` TypedDict via a pydantic `TypeAdapter`. Redis is available as the shared `redis_client` from `extensions/ext_redis.py`, but the billing service does not use it for plan data yet.\n\nThis PR adds a read-through cache layer. `get_plan_bulk_with_cache` reads `tenant_plan:<tenant_id>` keys with one `MGET`, validates the JSON hits, sends only the misses through `get_plan_bulk`, and writes the results back with a pipelined `SETEX` at a 600-second TTL. It also changes `get_plan_bulk`'s per-tenant error handling, and that change is where the contract problem is.",
+   "steps": [
+    "Entry point: a batch caller invokes `BillingService.get_plan_bulk_with_cache(tenant_ids)`. No production caller exists in this PR, only the tests in `api/tests`.",
+    "Step 1 (new): build `tenant_plan:` keys and call `redis_client.mget`. Each non-empty value is decoded and validated; invalid or empty entries become cache misses. An `MGET` exception falls back to treating every tenant as a miss.",
+    "Step 2 (changed): `get_plan_bulk` fetches the misses in chunks of 200. Per-tenant validation is new: a bad record is logged and now stored as `None` in the result dict. This is the defect path.",
+    "Step 3 (new): fresh plans are merged into the return value and written back with a pipeline `SETEX` at a 600-second TTL. A `None` value is serialized to `null` here too, so the cache receives it.",
+    "Also changed: `SubscriptionPlan` gains a `__str__` that never runs, since values are plain dicts at runtime. Tests add integration coverage under `test_containers_integration_tests` (Redis via testcontainers) and unit coverage for the `get_plan_bulk` validation path."
+   ],
+   "diagrams": [
+    {
+     "title": "Cache read-through path for bulk plan lookup",
+     "kind": "flowchart",
+     "description": "Shows how tenant IDs are split between Redis cache hits and billing API misses, and where results are written back.",
+     "mermaid": "flowchart LR\n  caller[\"Batch caller\"] --> gpbc[\"BillingService.get_plan_bulk_with_cache\"]\n  gpbc --> mget[\"redis_client.mget on tenant_plan keys\"]\n  mget -->|valid cached JSON| hits[\"tenant_plans result\"]\n  mget -->|missing or invalid entry| gpb[\"BillingService.get_plan_bulk\"]\n  gpb --> api[\"Billing API POST /subscription/plan/batch\"]\n  api --> gpb\n  gpb --> pipe[\"redis pipeline setex, TTL 600\"]\n  gpb --> hits\n  pipe --> hits"
+    },
+    {
+     "title": "Bulk plan lookup request sequence",
+     "kind": "sequence",
+     "description": "Runtime interaction between the caller, BillingService, Redis, and the billing API on a partial cache hit.",
+     "mermaid": "sequenceDiagram\n  participant Job as Batch caller\n  participant Svc as BillingService\n  participant Redis\n  participant Billing as Billing API\n  Job->>Svc: get_plan_bulk_with_cache(tenant_ids)\n  Svc->>Redis: MGET tenant_plan keys\n  Redis-->>Svc: cached values or nil per tenant\n  alt cache misses remain\n    Svc->>Billing: POST /subscription/plan/batch, chunks of 200\n    Billing-->>Svc: data map of tenant to plan\n    Svc->>Redis: pipeline SETEX per tenant, TTL 600\n  end\n  Svc-->>Job: tenant_id to plan mapping"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Invalid plans stored as None break get_plan_bulk's return contract and fail the new unit test",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`get_plan_bulk` is typed to return `dict[str, SubscriptionPlan]`, but when a tenant's plan fails validation the `except` branch stores `None` under that tenant's key. The key is still present, so callers and the new test see a `None` value.\n\nThe new unit test `test_get_plan_bulk_with_invalid_tenant_plan_skipped` says the invalid tenant should be \"skipped\", and asserts `len(result) == 2` and `\"tenant-invalid\" not in result`. With this code the result has 3 keys, including `\"tenant-invalid\": None`. I reproduced the validation logic with pydantic and got `len: 3`, so that test fails in CI.\n\nAny caller that does `plan[\"plan\"]` on a returned value will raise `TypeError` for an invalid tenant. Omitting the tenant is the behavior the test and the type both describe.\n\n::diff{file=\"api/services/billing_service.py\" lines=\"284-295\"}\n\nThe neighboring per-tenant `try` is the right idea. It just shouldn't write a sentinel into the result.",
+    "files": [
+     "api/services/billing_service.py",
+     "api/tests/unit_tests/services/test_billing_service.py"
+    ],
+    "fixPrompt": "In `api/services/billing_service.py`, `BillingService.get_plan_bulk` (around lines 284-295) stores `results[tenant_id] = None` when `subscription_adapter.validate_python(plan)` fails. Remove that assignment so an invalid tenant is simply absent from the returned dict, keeping the existing `logger.exception` call. This matches the `dict[str, SubscriptionPlan]` return type and the test `test_get_plan_bulk_with_invalid_tenant_plan_skipped` in `api/tests/unit_tests/services/test_billing_service.py` (around lines 1297-1331), which asserts the invalid tenant is not in the result. Do not change the chunk-level exception handling.",
+    "commentAnchor": {
+     "file": "api/services/billing_service.py",
+     "lineStart": 285,
+     "lineEnd": 292
+    }
+   },
+   {
+    "title": "None results are cached as \"null\" and refetched from the billing API on every call",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`get_plan_bulk_with_cache` takes the result of `get_plan_bulk` without filtering it. A tenant whose plan failed validation arrives as `None`, so it is:\n\n1. Returned to the caller as `None` in `tenant_plans`.\n2. Serialized with `json.dumps(None)`, which gives the string `\"null\"`, and stored with `SETEX` for 600 seconds.\n\nOn the next call, `b\"null\"` is truthy, so `json.loads` yields `None`, validation raises, and the code logs an exception and adds the tenant to `cache_misses`. The tenant is then refetched from the billing API on every call for as long as its record is bad, and it is re-cached as `null` each time. The result is a steady stream of extra billing API requests and error logs for one bad record, plus a `None` in a dict typed as `SubscriptionPlan`.\n\n::diff{file=\"api/services/billing_service.py\" lines=\"359-377\"}\n\nThe fix belongs in the cache layer as well as in `get_plan_bulk`: only cache and return entries that are real plans.",
+    "files": [
+     "api/services/billing_service.py"
+    ],
+    "fixPrompt": "In `api/services/billing_service.py`, `BillingService.get_plan_bulk_with_cache` (around lines 359-377) passes the output of `get_plan_bulk` straight into `tenant_plans` and the Redis pipeline. Filter out `None` values before both steps, so that only valid `SubscriptionPlan` dicts are returned and written with `setex`. Also add a unit or integration test where the mocked `get_plan_bulk` returns a `None` for one tenant, asserting that tenant is absent from the result and that no `\"null\"` value is written to Redis. Follow the existing style in `api/tests/test_containers_integration_tests/services/test_billing_service.py`.",
+    "commentAnchor": {
+     "file": "api/services/billing_service.py",
+     "lineStart": 359,
+     "lineEnd": 377
+    }
+   },
+   {
+    "title": "SubscriptionPlan.__str__ is dead code",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The `__str__` method added to the `SubscriptionPlan` TypedDict cannot run. TypedDict instances are plain `dict`s at runtime, and `str()` on a plain dict uses `dict.__repr__`, not the method on the class. I checked this in isolation: `str(SubscriptionPlan(plan=\"a\", expiration_date=1))` returns `{'plan': 'a', 'expiration_date': 1}`.\n\nThe method also suggests a debug format that nothing actually produces. Remove it. If a readable format is needed, add a helper function instead.\n\n::diff{file=\"api/services/billing_service.py\" lines=\"22-30\"}",
+    "files": [
+     "api/services/billing_service.py"
+    ],
+    "fixPrompt": "In `api/services/billing_service.py`, remove the `__str__` method added to the `SubscriptionPlan` TypedDict (around lines 28-30). It never executes, because TypedDict values are plain dicts at runtime. If a debug string is needed, use a module-level helper instead. Make no other changes.",
+    "commentAnchor": {
+     "file": "api/services/billing_service.py",
+     "lineStart": 22,
+     "lineEnd": 30
+    }
+   },
+   {
+    "title": "Redundant plans_to_cache dict and guard",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`plans_to_cache` is a copy of `bulk_plans` with the same keys and values. The `if plans_to_cache:` guard is also redundant, because it only runs inside `if bulk_plans:`. The code loops over `bulk_plans` twice and builds a third dict, which makes it harder to see which dict is the source of truth. Once the `None` handling above is fixed, filtering can happen in one comprehension.\n\n::diff{file=\"api/services/billing_service.py\" lines=\"362-370\"}",
+    "files": [
+     "api/services/billing_service.py"
+    ],
+    "fixPrompt": "In `api/services/billing_service.py`, `BillingService.get_plan_bulk_with_cache` (around lines 362-370) builds `plans_to_cache` as a copy of `bulk_plans` and then checks `if plans_to_cache:` inside `if bulk_plans:`. Replace this with a single filtered dict built from `bulk_plans` (dropping `None` values, as part of the same fix for the `null` caching issue). Remove the redundant guard. Keep the logic and log messages otherwise unchanged.",
+    "commentAnchor": {
+     "file": "api/services/billing_service.py",
+     "lineStart": 362,
+     "lineEnd": 370
+    }
+   },
+   {
+    "title": "Integration fixture comment says cleanup runs before the test, but it doesn't",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The `setup_redis_cleanup` fixture has a comment `# Clean up before test`, but nothing runs before the `yield`. Only the teardown after `yield` deletes `tenant_plan:*` keys. If a previous run was killed before teardown, stale `tenant-1`/`tenant-2` keys stay in Redis. Several tests then see unexpected cache hits: for example, `test_get_plan_bulk_with_cache_all_cache_miss` expects the billing API to be called, which won't happen with stale data.\n\n::code{file=\"api/tests/test_containers_integration_tests/services/test_billing_service.py\" lines=\"22-33\"}\n\nRun the same deletion before the `yield`, so every test starts from a clean prefix.",
+    "files": [
+     "api/tests/test_containers_integration_tests/services/test_billing_service.py"
+    ],
+    "fixPrompt": "In `api/tests/test_containers_integration_tests/services/test_billing_service.py`, the `setup_redis_cleanup` fixture (around lines 22-33) says `# Clean up before test` but only deletes `tenant_plan:*` keys after the `yield`. Move the same `keys(pattern)`/`delete` logic to run before the `yield` as well, or extract it into a helper called from both places. This makes each test independent of leftovers from a killed run.",
+    "commentAnchor": {
+     "file": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "lineStart": 23,
+     "lineEnd": 33
+    }
+   },
+   {
+    "title": "Empty-input test asserts only the return value, not the Redis or API calls it claims to check",
+    "severity": "low",
+    "category": "style",
+    "body": "`test_get_plan_bulk_with_cache_empty_tenant_ids` says it verifies that no Redis operation happens, but its own comments admit it doesn't: \"Since we can't easily verify this without more mocking, we just verify the result\". The test only checks `result == {}` and that `get_plan_bulk` isn't called. The early return makes that pass trivially, but the test doesn't check the Redis part of its own docstring. Either patch `redis_client.mget` and assert it wasn't called, or delete the stale comments so the test describes what it actually checks.\n\n::code{file=\"api/tests/test_containers_integration_tests/services/test_billing_service.py\" lines=\"302-318\"}",
+    "files": [
+     "api/tests/test_containers_integration_tests/services/test_billing_service.py"
+    ],
+    "fixPrompt": "In `api/tests/test_containers_integration_tests/services/test_billing_service.py`, `test_get_plan_bulk_with_cache_empty_tenant_ids` (around lines 302-318) has comments saying it can't verify that no Redis operation happened. Either patch `redis_client.mget` (and `pipeline`) with `patch.object` and assert they are not called, which makes the test meaningful, or remove the misleading comments and the unfulfilled claim. Keep the existing `result == {}` and `get_plan_bulk` not-called assertions.",
+    "commentAnchor": {
+     "file": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "lineStart": 302,
+     "lineEnd": 318
+    }
+   },
+   {
+    "title": "TTL-expiry test uses a real 2-second sleep with an inline import",
+    "severity": "low",
+    "category": "style",
+    "body": "`test_get_plan_bulk_with_cache_ttl_expired` calls `time.sleep(2)` to wait for a 1-second TTL, and imports `time` inside the test. The test adds about 2 seconds of wall time and depends on Redis timing. Deleting the key, or calling `redis_client.expire(key, 0)`, simulates an expired key without a sleep and makes the test deterministic.\n\n::code{file=\"api/tests/test_containers_integration_tests/services/test_billing_service.py\" lines=\"328-336\"}",
+    "files": [
+     "api/tests/test_containers_integration_tests/services/test_billing_service.py"
+    ],
+    "fixPrompt": "In `api/tests/test_containers_integration_tests/services/test_billing_service.py`, `test_get_plan_bulk_with_cache_ttl_expired` (around lines 328-336) uses an inline `import time` and `time.sleep(2)` to wait for a 1-second TTL. Replace the sleep with a deterministic expiry, for example `redis_client.delete(cache_key_1)` or `redis_client.expire(cache_key_1, 0)`, then keep the existing `exists == 0` assertion. Move any imports to the top of the file.",
+    "commentAnchor": {
+     "file": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "lineStart": 328,
+     "lineEnd": 332
+    }
+   },
+   {
+    "title": "Per-tenant validation keeps one malformed plan from dropping a whole chunk",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The old `get_plan_bulk` put validation inside the chunk-level `try`. One malformed record raised there, so the `except` discarded all 200 tenants in that chunk. The new per-tenant `try` isolates the failure and keeps the other 199 valid plans. The log message names the tenant, so bad data is easy to find.\n\nThe mechanism is right. The only problem is what goes into the result for the failing key, covered in the finding above.\n\n::code{file=\"api/services/billing_service.py\" lines=\"284-292\"}",
+    "files": [
+     "api/services/billing_service.py"
+    ]
+   },
+   {
+    "title": "Cache layer degrades gracefully on Redis failure",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The cache read and write paths have separate failure handling. A failed `MGET` (including a length mismatch) logs and falls back to fetching every tenant from the billing API. A failed pipeline `execute` logs but still returns the plans the caller asked for. Redis is a performance layer here, not a source of truth, so neither failure surfaces as an error to the caller. The integration tests exercise both paths (`mget` failure and `pipeline` failure).\n\n::code{file=\"api/services/billing_service.py\" lines=\"320-356\"}",
+    "files": [
+     "api/services/billing_service.py",
+     "api/tests/test_containers_integration_tests/services/test_billing_service.py"
+    ]
+   },
+   {
+    "title": "Cache TTL is a documented trade-off, but expired subscriptions can stay visible for up to 10 minutes",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Plans are cached for 600 seconds, and the docstring warns that high-consistency callers should use `get_plan_bulk`. That is the right place for the warning. Callers that gate behavior on `expiration_date` or `plan` should know that an upgrade, downgrade, or expiry can take up to 10 minutes to appear. The PR has no cache invalidation hook for plan changes, so this is a deliberate staleness window. It is worth confirming that the future batch callers can tolerate it.\n\n::code{file=\"api/services/billing_service.py\" lines=\"305-312\"}",
+    "files": [
+     "api/services/billing_service.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":10,\"title\":\"Code Review Bench PR #30339 - feat: get plan bulk with cache\",\"author\":\"unknown\",\"baseSha\":\"f117f0ad6e7a78c3ce89a89e9791b54b7e76ea6c\",\"headSha\":\"70fe873c2abcfb285ab25cae4c1b7e212f11b507\"},\"summary\":\"This PR adds `BillingService.get_plan_bulk_with_cache`, a Redis-backed wrapper around the existing batched billing lookup `get_plan_bulk`. It reads per-tenant plan JSON with one `MGET`, sends only the misses to the billing API, and w",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 10
+}

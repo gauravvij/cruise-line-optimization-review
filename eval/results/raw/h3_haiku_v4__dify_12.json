@@ -1,0 +1,438 @@
+{
+ "id": "dify#12",
+ "repo": "dify",
+ "num": 12,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T07:53:16.980Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Python variable uses camelCase naming",
+   "description": "The rule requires all Python variables and functions to use snake_case naming convention, but the code uses camelCase for the variable 'escapedPattern' instead of 'escaped_pattern'",
+   "file_path": "api/libs/helper.py",
+   "start_line": 61,
+   "end_line": 65,
+   "problematic_code_snippet": "    if not pattern:\n        return pattern\n    # Escape backslash first, then percent and underscore\n    escapedPattern = pattern.replace(\"\\\\\", \"\\\\\\\\\").replace(\"%\", \"\\\\%\").replace(\"_\", \"\\\\_\")\n    return escapedPattern",
+   "rule_name": "Python Code Must Use Snake Case for Variables and Functions"
+  },
+  {
+   "title": "Missing escape parameter in 'not contains' metadata filter",
+   "description": "In the metadata filtering logic for dataset retrieval, the 'not contains' case applies escape_like_pattern() to escape special characters but fails to specify the escape='\\' parameter in the notlike() call. This renders the escaping ineffective - the database won't interpret the backslash escapes correctly, allowing special characters like %, _, and \\ to be treated as SQL wildcards instead of literal characters. This creates a SQL injection vulnerability through LIKE wildcards and causes incorrect query results when filtering metadata that contains these special characters.",
+   "file_path": "api/core/rag/retrieval/dataset_retrieval.py",
+   "start_line": 1205,
+   "end_line": 1207,
+   "problematic_code_snippet": "            case \"not contains\":\n                escaped_value = escape_like_pattern(str(value))\n                filters.append(json_field.notlike(f\"%{escaped_value}%\"))"
+  },
+  {
+   "title": "Incorrect escape character in IRIS vector database LIKE query",
+   "description": "The IRIS vector database implementation escapes special characters using backslash (via escape_like_pattern which produces \\%, \\_, \\\\) but then specifies ESCAPE '|' in the SQL query instead of ESCAPE '\\'. This mismatch causes the database to look for the wrong escape character - it will treat | as the escape character while the string contains backslash escapes. As a result, the escaped special characters won't be properly interpreted, allowing SQL wildcards to remain active and causing search queries with special characters to produce incorrect results or security vulnerabilities.",
+   "file_path": "api/core/rag/datasource/vdb/iris/iris_vector.py",
+   "start_line": 293,
+   "end_line": 299,
+   "problematic_code_snippet": "                escaped_query = escape_like_pattern(query)\n                query_pattern = f\"%{escaped_query}%\"\n                sql = f\"\"\"\n                    SELECT TOP {top_k} id, text, meta\n                    FROM {self.schema}.{self.table_name}\n                    WHERE text LIKE ? ESCAPE '|'\n                \"\"\""
+  },
+  {
+   "title": "Keyword trimming logic may break escape sequences",
+   "description": "The workflow app service trims the keyword to 30 characters and then applies escape_like_pattern(). However, this creates a subtle bug: if a backslash character appears exactly at position 30, the trim could split an escape sequence that the user intended. More critically, if special characters appear in positions 28-30, they'll be included in the escaped output, but any context around them will be lost, potentially creating malformed escape sequences. The trimming should occur AFTER escaping to preserve the integrity of the escape sequences, or better yet, the escaping should be done before any string manipulation.",
+   "file_path": "api/services/workflow_app_service.py",
+   "start_line": 91,
+   "end_line": 94,
+   "problematic_code_snippet": "            # Escape special characters in keyword to prevent SQL injection via LIKE wildcards\n            keyword_trimmed = keyword[:30]\n            escaped_keyword = escape_like_pattern(keyword_trimmed)\n            keyword_like_val = f\"%{escaped_keyword}%\""
+  },
+  {
+   "title": "Improper import ordering (isort/ruff)",
+   "description": "Ruff/isort requires standard-library imports to be sorted consistently. Here, `from unittest.mock ...` (module `unittest`) should be ordered before `import uuid` (module `uuid`) within the standard library import section.",
+   "file_path": "api/tests/test_containers_integration_tests/services/test_tag_service.py",
+   "start_line": 1,
+   "end_line": 2,
+   "problematic_code_snippet": "import uuid\nfrom unittest.mock import create_autospec, patch",
+   "rule_name": "Python Code Must Follow Ruff Linting Rules"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "fe99d63a964df8696252d6d51e7de0b4c8521a43",
+ "diff_chars": 47325,
+ "diff_lines": 1110,
+ "user_prompt_chars": 49226,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 94862,
+ "wall_ms": 96930,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 18,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.737791501,
+ "spend_post_usd": 6.755023501,
+ "cost_settled": true,
+ "cost_wait_ms": 372,
+ "cost_usd": 0.017231999999999914,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.018194164999999998,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 39215,
+  "cache_read_input_tokens": 273459,
+  "output_tokens": 21113,
+  "output_tokens_details": {
+   "thinking_tokens": 9914
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 39215
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 21113,
+   "cacheReadInputTokens": 273459,
+   "cacheCreationInputTokens": 39215,
+   "webSearchRequests": 0,
+   "costUSD": 0.018194164999999998,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 9914,
+   "cacheCreationEphemeral5mInputTokens": 39215,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 12,
+   "title": "Code Review Bench PR #30450 - centralize SQL LIKE pattern escaping",
+   "author": "",
+   "baseSha": "f699718da6d49180c26477f553d89c6cef2224b9",
+   "headSha": "fe99d63a964df8696252d6d51e7de0b4c8521a43"
+  },
+  "summary": "This PR adds `escape_like_pattern()` to `api/libs/helper.py` and applies it to most user-keyword LIKE/ILIKE searches across conversations, annotations, apps, datasets, segments, tags, external knowledge, workflow logs, and metadata filtering. Each SQLAlchemy call now passes `escape=\"\\\\\"`, and the existing ad-hoc escaping in `conversation_service.py` is folded into the helper. Tests are added at unit level and as container integration tests.\n\nThe core SQLAlchemy call sites are mostly consistent and the helper is sound. However, two real regressions and one incomplete-coverage gap need fixing before merge. The IRIS vector search builds its LIKE with `ESCAPE '|'` while the helper emits backslash escapes, so `_` and `%` stop matching literally and ordinary keyword searches get worse. The workflow-log keyword search also drops the `unicode_escape` transformation that matched non-ASCII text stored in JSON-escaped form. Several integration tests also cannot distinguish escaped from unescaped behavior, and two document-name LIKE searches are still unescaped even though the PR description claims full coverage.",
+  "verdict": "request_changes",
+  "verdictRationale": "The IRIS fallback search now uses a different escape character than the helper emits, which breaks search for keywords containing `_`, `%`, or backslashes. The workflow keyword change removes the JSON unicode-escape handling that made non-ASCII keyword search work. Both are regressions in shipped behavior, not style issues, so they should be fixed first. The test-quality and coverage gaps are real but secondary.",
+  "architecture": {
+   "overview": "Dify's API layer builds SQL LIKE/ILIKE filters from user-supplied keywords in several places: Flask-RESTX controllers under `api/controllers`, service classes under `api/services`, the RAG retrieval path in `core/rag/retrieval/dataset_retrieval.py`, and vector-store backends under `core/rag/datasource/vdb`. Most of these use SQLAlchemy ORM expressions (`.ilike(...)`) against PostgreSQL or MySQL. A few vector backends (IRIS, ClickZetta) build raw SQL strings instead. Before this PR, keyword wildcards (`%`, `_`) and backslashes were passed through unescaped, so user input acted as LIKE pattern syntax.\n\nThis PR introduces one helper, `escape_like_pattern` in `api/libs/helper.py`, that escapes backslash, `%`, and `_` with backslash. Each ORM call site now escapes the keyword and passes `escape=\"\\\\\"` so the database interprets the backslash as the escape character. The change does not introduce parameter-binding changes, since SQLAlchemy already binds values; the concern is LIKE wildcard semantics, not SQL injection. Raw-SQL vector backends must use the same escape character the helper emits, and the IRIS branch does not.",
+   "steps": [
+    "Entry point: HTTP controllers and services receive a `keyword`/`search`/`name` query parameter and previously interpolated it into `f\"%{keyword}%\"` for `.ilike()`.",
+    "New helper: `escape_like_pattern` in `api/libs/helper.py` escapes backslash first, then `%` and `_`. Its unit tests cover each character and the ordering.",
+    "ORM call sites: conversation, annotation, app, dataset, segment, tag, external-knowledge, and workflow-log services now call the helper and pass `escape=\"\\\\\"` to `.ilike()`/`.notlike()`.",
+    "Metadata filtering: `dataset_retrieval.py` applies the helper to the `contains`/`start with`/`end with` cases; the `not contains` branch omits the explicit escape argument.",
+    "Raw-SQL backends: IRIS fallback LIKE and ClickZetta fallback LIKE build SQL strings. ClickZetta appends `ESCAPE '\\\\'`; IRIS appends `ESCAPE '|'`, which does not match the helper's backslash escapes.",
+    "Tests: unit tests cover the helper; container integration tests add cases for `%`, `_`, and backslash searches in annotation, app, tag, and workflow-log services. The app and workflow test files also move `AppService` imports into each test function."
+   ],
+   "diagrams": [
+    {
+     "title": "Keyword search paths through the escaping helper",
+     "kind": "flowchart",
+     "description": "Shows how user keywords reach the database through the shared helper (ORM path) or raw SQL (vector backends), and where the escape character must agree.",
+     "mermaid": "flowchart LR\n  A[\"HTTP query param: keyword / search / name\"] --> B[\"Controller or service\"]\n  B --> C[\"escape_like_pattern in libs/helper.py\"]\n  C --> D[\"SQLAlchemy ilike with escape backslash\"]\n  D --> E[(\"PostgreSQL or MySQL\")]\n  B --> F[\"Vector backend raw SQL\"]\n  F --> G[\"ClickZetta: LIKE with ESCAPE backslash\"]\n  F --> H[\"IRIS: LIKE with ESCAPE pipe\"]\n  C --> F"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "IRIS LIKE fallback uses a different escape character than the helper emits",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The IRIS fallback search now escapes the query with `escape_like_pattern`, which emits backslash escapes (`\\%`, `\\_`). The SQL, however, declares `ESCAPE '|'`, so the backslashes are literal characters in the pattern.\n\n::diff{file=\"api/core/rag/datasource/vdb/iris/iris_vector.py\" lines=\"289-298\"}\n\nConsequences:\n- `\"test_data\"` becomes `%test\\_data%`. The backslash is literal, so the pattern requires a backslash in the stored text and no longer matches `test_data`. Searches that worked before now return nothing.\n- `\"50%\"` becomes `%50\\%%`. The `%` is still a wildcard, so it matches `50` followed by anything.\n- Backslashes in queries are doubled and stop matching the stored text.\n\nThe IRIS integration test file has no keyword-search assertions, so nothing catches this. Use the same escape character the helper emits, e.g. `ESCAPE '\\\\'` in the SQL string, and add an IRIS-level assertion for `_` and `%`.",
+    "files": [
+     "api/core/rag/datasource/vdb/iris/iris_vector.py"
+    ],
+    "fixPrompt": "In `api/core/rag/datasource/vdb/iris/iris_vector.py`, the fallback LIKE search (around lines 289-298) escapes the query with `escape_like_pattern` (backslash escaping), but the SQL declares `ESCAPE '|'`, so the escape characters are never interpreted. Change the SQL clause so the escape character matches the one the helper produces (backslash), keeping the parameter binding. Verify the escaped `%`/`_` are treated as literals. Consider adding a test covering `_`, `%`, and backslash in the IRIS fallback path.",
+    "commentAnchor": {
+     "file": "api/core/rag/datasource/vdb/iris/iris_vector.py",
+     "lineStart": 289,
+     "lineEnd": 298
+    }
+   },
+   {
+    "title": "Workflow keyword search drops unicode-escape handling, breaking non-ASCII search",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The original code converted the keyword with `keyword[:30].encode('unicode_escape')` and then doubled `\\u` so it would match JSON text. `WorkflowRun.inputs` and `outputs` are stored with `json.dumps(...)` (default `ensure_ascii=True`), so non-ASCII text such as `中文` is stored as `中文`. The old transform existed to match that form.\n\n::diff{file=\"api/services/workflow_app_service.py\" lines=\"91-101\"}\n\nThe new code uses the raw keyword, so a search for `中文` no longer matches the stored `中文` form in `inputs` or `outputs`. That is a silent regression in workflow log search for non-English users. The PR neither preserves the transform nor explains its removal. Keep the escape-stored-form logic and apply `escape_like_pattern` to the transformed value, or add a test that searches non-ASCII text.",
+    "files": [
+     "api/services/workflow_app_service.py",
+     "api/models/workflow.py"
+    ],
+    "fixPrompt": "In `api/services/workflow_app_service.py` (around lines 88-101), the keyword search previously transformed the trimmed keyword with `encode('unicode_escape')` and doubled `\\u` so it matched JSON-stored, ASCII-escaped `inputs`/`outputs`. The PR replaced that with the raw keyword, which breaks non-ASCII search. Restore the unicode-escape transformation on `keyword_trimmed`, then pass the result through `escape_like_pattern` before building `keyword_like_val`. Keep `escape=\"\\\\\"` on the `ilike` calls. Add an integration assertion that a non-ASCII keyword matches a run whose inputs contain it.",
+    "commentAnchor": {
+     "file": "api/services/workflow_app_service.py",
+     "lineStart": 91,
+     "lineEnd": 101
+    }
+   },
+   {
+    "title": "Two document-name LIKE searches are still unescaped despite the PR's coverage claim",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The PR description says escaping now applies \"across all database queries\". Two console/service API document searches still build the pattern from raw user input and call `.like(search)` with no escaping:\n\n- `api/controllers/console/datasets/datasets_document.py` around line 265: `search = f\"%{search}%\"` then `Document.name.like(search)`\n- `api/controllers/service_api/dataset/document.py` around line 475: the same pattern.\n\nA `_` or `%` in a document name search acts as a wildcard, and the results differ from the dataset-level search this PR fixes. Those files are not in the diff, so this is an omission rather than a regression. Apply the helper and `escape=\"\\\\\"` to both. Also note the PR's claim of full coverage is not accurate until they are fixed.",
+    "files": [
+     "api/services/dataset_service.py",
+     "api/controllers/console/datasets/datasets_document.py",
+     "api/controllers/service_api/dataset/document.py"
+    ],
+    "fixPrompt": "Two document-name searches still use unescaped LIKE patterns: `api/controllers/console/datasets/datasets_document.py` (around line 265) and `api/controllers/service_api/dataset/document.py` (around line 475). Both build `search = f\"%{search}%\"` and call `Document.name.like(search)`. Escape the user input with `libs.helper.escape_like_pattern` before wrapping it, and pass `escape=\"\\\\\"` to `.like()`, matching the pattern applied to `DatasetService.get_datasets` in `api/services/dataset_service.py` around line 147. Add a test with `%` and `_` in document names.",
+    "commentAnchor": {
+     "file": "api/services/dataset_service.py",
+     "lineStart": 146,
+     "lineEnd": 148
+    }
+   },
+   {
+    "title": "New integration tests cannot distinguish escaped from unescaped behavior",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "Several \"should NOT match\" assertions would pass even without the fix. In the app test, the negative case searches for `50%` against `\"100% different\"`. The unescaped pattern `%50%%` does not match that name, so the assertion is always true. The workflow test has the same problem with `workflow_run_4`, and its positive checks use `>= 1` rather than exact counts.\n\n::code{file=\"api/tests/test_containers_integration_tests/services/test_app_service.py\" lines=\"1126-1131\"}\n\nThe `_` cases are also weak: the test data has no name the unescaped `_` wildcard could accidentally match, so the test passes whether escaping works or not. The \"Test 4\" blocks in the tag, annotation, and app tests repeat Test 1's query and add no new coverage. Use data that a missing escape would wrongly match, such as a name that differs only where the wildcard sits (for example `test-data` or `testXdata` next to `test_data`), and assert exact totals.",
+    "files": [
+     "api/tests/test_containers_integration_tests/services/test_app_service.py",
+     "api/tests/test_containers_integration_tests/services/test_tag_service.py",
+     "api/tests/test_containers_integration_tests/services/test_annotation_service.py",
+     "api/tests/test_containers_integration_tests/services/test_workflow_app_service.py"
+    ],
+    "fixPrompt": "The new escaping integration tests don't discriminate. In `test_app_service.py` (around lines 1126-1131), the 'should NOT match 100%' assertion would pass without escaping because the unescaped pattern `%50%%` cannot match `100% different`. The same weakness is in `test_workflow_app_service.py` (around line 423) and the Test 4 blocks in `test_tag_service.py` (around line 390) and `test_annotation_service.py` (around line 511), which duplicate Test 1's query. Add fixtures where the unescaped wildcard would match wrongly (e.g. `test-data` or `testXdata` alongside `test_data`), and assert exact `total`/item counts rather than `>= 1`. Remove the duplicated Test 4 blocks.",
+    "commentAnchor": {
+     "file": "api/tests/test_containers_integration_tests/services/test_app_service.py",
+     "lineStart": 1126,
+     "lineEnd": 1131
+    }
+   },
+   {
+    "title": "Test-file churn moves AppService imports into every test with an unverified 'circular dependency' rationale",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The PR comments out the module-level `from services.app_service import AppService` in two test files and re-imports it inside about twenty test functions, each annotated `# Import here to avoid circular dependency`. This is unrelated to LIKE escaping and adds noise to a 650-line diff. The PR does not show the cycle, and the code it changes (`services/app_service.py`) does not import `libs.helper` at module level, so the cited cycle may not come from this change at all. If a real cycle exists, fix it at the import site, and keep the test imports at module level otherwise.\n\n::code{file=\"api/tests/test_containers_integration_tests/services/test_app_service.py\" lines=\"11-12\"}",
+    "files": [
+     "api/tests/test_containers_integration_tests/services/test_app_service.py",
+     "api/tests/test_containers_integration_tests/services/test_workflow_app_service.py"
+    ],
+    "fixPrompt": "Revert the import-hoisting churn in `api/tests/test_containers_integration_tests/services/test_app_service.py` and `test_workflow_app_service.py`. Restore the module-level `from services.app_service import AppService` import and delete the per-test `# Import here to avoid circular dependency` blocks. First confirm whether a cycle exists by importing `services.app_service` in a clean interpreter with this branch's dependencies. If the cycle is real, document it and fix the root import, not the test files. Keep the new escaping tests otherwise unchanged.",
+    "commentAnchor": {
+     "file": "api/tests/test_containers_integration_tests/services/test_app_service.py",
+     "lineStart": 11,
+     "lineEnd": 12
+    }
+   },
+   {
+    "title": "ClickZetta ESCAPE clause depends on how its SQL dialect parses backslashes in literals",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The ClickZetta fallback now escapes the query with backslashes and then emits `ESCAPE '\\\\'` in the Python f-string, which becomes `ESCAPE '\\'` in the SQL. The query literal itself is `LIKE '%...%'` with backslashes inside. If ClickZetta's SQL parser treats backslash as an escape inside string literals (as Spark and Hive do), the `\\%` in the literal is consumed before LIKE sees it, and the escaping is lost. Standard SQL does not do this, so I can't tell from the code alone. No test covers this path. Confirm against ClickZetta behavior, and if literal backslashes are interpreted, pass the pattern as a bound parameter or use a different escape character.\n\n::diff{file=\"api/core/rag/datasource/vdb/clickzetta/clickzetta_vector.py\" lines=\"988-992\"}",
+    "files": [
+     "api/core/rag/datasource/vdb/clickzetta/clickzetta_vector.py"
+    ],
+    "fixPrompt": "In `api/core/rag/datasource/vdb/clickzetta/clickzetta_vector.py` around lines 988-992, the fallback LIKE builds `LIKE '%{escaped_query}%' ESCAPE '\\\\'` after backslash-escaping the query. Verify how ClickZetta's SQL parser handles backslashes inside single-quoted string literals. If it treats them as escape characters, the escaping is silently lost. In that case, use a different escape character that is not special in string literals, or move the pattern to a bound parameter. Add a test that exercises `%` and `_` in this path.",
+    "commentAnchor": {
+     "file": "api/core/rag/datasource/vdb/clickzetta/clickzetta_vector.py",
+     "lineStart": 988,
+     "lineEnd": 992
+    }
+   },
+   {
+    "title": "Metadata `not contains` omits the explicit escape argument",
+    "severity": "low",
+    "category": "correctness",
+    "body": "Every other branch in `_process_metadata_filter_func` passes `escape=\"\\\\\"` to `like`, but the `not contains` branch calls `notlike(...)` without it. It works on PostgreSQL and MySQL only because backslash is their default LIKE escape. The other branches are explicit, so this one is inconsistent and would break silently if the default changed.\n\n::diff{file=\"api/core/rag/retrieval/dataset_retrieval.py\" lines=\"1204-1208\"}",
+    "files": [
+     "api/core/rag/retrieval/dataset_retrieval.py"
+    ],
+    "fixPrompt": "In `api/core/rag/retrieval/dataset_retrieval.py`, the `not contains` case (around lines 1204-1208) calls `json_field.notlike(f\"%{escaped_value}%\")` without `escape=\"\\\\\"`, unlike the `contains`, `start with`, and `end with` cases. Add `escape=\"\\\\\"` to that call to match the rest of the function.",
+    "commentAnchor": {
+     "file": "api/core/rag/retrieval/dataset_retrieval.py",
+     "lineStart": 1206,
+     "lineEnd": 1207
+    }
+   },
+   {
+    "title": "Helper docstring overstates the security benefit",
+    "severity": "low",
+    "category": "style",
+    "body": "The docstring says the escaping prevents \"SQL injection via LIKE wildcards\". The ORM already binds keyword values as parameters, so there is no SQL injection to prevent here. What the escaping does is stop user `%`/`_` from acting as LIKE wildcards. The inline comments added at the call sites repeat the same claim. Describe the behavior accurately so future reviewers don't believe LIKE escaping is a security boundary.\n\n::code{file=\"api/libs/helper.py\" lines=\"37-46\"}",
+    "files": [
+     "api/libs/helper.py"
+    ],
+    "fixPrompt": "In `api/libs/helper.py`, the `escape_like_pattern` docstring (lines 37-46) says escaping prevents 'SQL injection via LIKE wildcards'. Parameter binding already prevents SQL injection. Reword it to say the function makes user-supplied `%`, `_`, and backslash match literally in LIKE patterns, and that callers must pass the matching `escape` character. Also remove the repeated 'prevent SQL injection' comments added at the call sites in `datasets_segments.py`, `iris_vector.py`, and `clickzetta_vector.py`.",
+    "commentAnchor": {
+     "file": "api/libs/helper.py",
+     "lineStart": 37,
+     "lineEnd": 46
+    }
+   },
+   {
+    "title": "Inconsistent import style for escape_like_pattern across the diff",
+    "severity": "low",
+    "category": "style",
+    "body": "The helper is imported in at least three styles in this PR: a module-level `from libs import helper` in `dataset_service.py` (called as `helper.escape_like_pattern`), a module-level `from libs.helper import escape_like_pattern` in `datasets_segments.py`, and function-local `from libs.helper import escape_like_pattern` in `app_service.py`, `tag_service.py`, `external_knowledge_service.py`, `annotation_service.py`, `conversation.py`, `conversation_service.py`, `workflow_app_service.py`, `clickzetta_vector.py`, `iris_vector.py`, and `dataset_retrieval.py`. Unless a real import cycle requires the local imports, a single module-level import per file is more readable and avoids re-importing inside request-hot code.\n\n::code{file=\"api/services/app_service.py\" lines=\"57-61\"}",
+    "files": [
+     "api/services/app_service.py",
+     "api/services/tag_service.py",
+     "api/services/external_knowledge_service.py"
+    ],
+    "fixPrompt": "Standardize how `escape_like_pattern` is imported. Several files (e.g. `api/services/app_service.py` around line 58, `tag_service.py`, `external_knowledge_service.py`, `annotation_service.py`, `conversation.py`) import it inside functions, while `dataset_service.py` uses `helper.escape_like_pattern` and `datasets_segments.py` imports it at module level. Move these to module-level imports unless a real cycle exists. Confirm any cycle first, since the test-file changes in this PR cite one without showing it.",
+    "commentAnchor": {
+     "file": "api/services/app_service.py",
+     "lineStart": 57,
+     "lineEnd": 61
+    }
+   },
+   {
+    "title": "Unit test pins None behavior that contradicts the `-> str` signature",
+    "severity": "low",
+    "category": "correctness",
+    "body": "`test_escape_none_handling` asserts `escape_like_pattern(None) is None`. The function is annotated `(pattern: str) -> str`, and callers pass non-optional strings. The test locks in an undocumented path rather than the contract. Either type the parameter `str | None` and document the behavior, or drop the test.\n\n::code{file=\"api/tests/unit_tests/libs/test_helper.py\" lines=\"96-101\"}",
+    "files": [
+     "api/tests/unit_tests/libs/test_helper.py",
+     "api/libs/helper.py"
+    ],
+    "fixPrompt": "In `api/tests/unit_tests/libs/test_helper.py`, `test_escape_none_handling` (around lines 96-101) asserts `escape_like_pattern(None) is None`, which contradicts the `-> str` signature in `api/libs/helper.py`. Either change the signature to `str | None` and keep the test, documenting the None behavior, or delete the test so the contract stays `str` only.",
+    "commentAnchor": {
+     "file": "api/tests/unit_tests/libs/test_helper.py",
+     "lineStart": 96,
+     "lineEnd": 101
+    }
+   },
+   {
+    "title": "Local variable uses camelCase in Python",
+    "severity": "low",
+    "category": "style",
+    "body": "`escapedPattern` is camelCase, which is not the Python convention used in the rest of the module. It is a single local, so it is a trivial rename.\n\n::code{file=\"api/libs/helper.py\" lines=\"64-65\"}",
+    "files": [
+     "api/libs/helper.py"
+    ],
+    "fixPrompt": "In `api/libs/helper.py` line 64, rename the local variable `escapedPattern` to `escaped_pattern` (snake_case, matching the surrounding module), and update the `return` on the next line.",
+    "commentAnchor": {
+     "file": "api/libs/helper.py",
+     "lineStart": 64,
+     "lineEnd": 65
+    }
+   },
+   {
+    "title": "Centralized escaping helper with consistent ESCAPE usage and unit tests",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Moving the escaping logic into one `escape_like_pattern` helper is the right design. The ORM call sites now share a single rule: escape the value, pass `escape=\"\\\\\"`. The existing inline escaping in `conversation_service.py` was folded into the same helper rather than left as a second implementation. The helper escapes backslash first, which keeps the later `%` and `_` escapes from being double-escaped, and the unit tests cover that ordering explicitly. Keep the single helper as the one place this logic lives, and fix the raw-SQL backends so they use the same escape character.",
+    "files": [
+     "api/libs/helper.py",
+     "api/services/conversation_service.py",
+     "api/tests/unit_tests/libs/test_helper.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":12,\"title\":\"Code Review Bench PR #30450 - centralize SQL LIKE pattern escaping\",\"author\":\"\",\"baseSha\":\"f699718da6d49180c26477f553d89c6cef2224b9\",\"headSha\":\"fe99d63a964df8696252d6d51e7de0b4c8521a43\"},\"summary\":\"This PR adds `escape_like_pattern()` to `api/libs/helper.py` and applies it to most user-keyword LIKE/ILIKE searches across conversations, annotations, apps, datasets, segments, tags, external knowledge, workflow logs, and metadata fi",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 12
+}

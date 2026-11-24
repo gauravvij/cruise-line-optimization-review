@@ -1,0 +1,338 @@
+{
+ "id": "dify#8",
+ "repo": "dify",
+ "num": 8,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:21:39.022Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Hardcoded devtools loading message text",
+   "description": "The rule requires all user-facing strings to be defined in web/i18n/en-US/ translation files and accessed via useTranslation hook. The code hardcodes 'Loading devtools...' directly in the JSX instead of using a translation key.",
+   "file_path": "web/app/components/devtools/react-scan/loader.tsx",
+   "start_line": 20,
+   "end_line": 20,
+   "problematic_code_snippet": "  return (\n    <Suspense fallback={<div className=\"text-xs text-gray-500\">Loading devtools...</div>}>\n      <ReactScan />\n    </Suspense>\n  )",
+   "rule_name": "Frontend User-Facing Strings Must Use i18n Translations"
+  },
+  {
+   "title": "Devtools rendered before application children causes layout issues",
+   "description": "The TanStackDevtoolsLoader is now rendered before the children components in the QueryClientProvider. This reverses the intended rendering order from the original PR, which had devtools after children. When devtools mount first, they may inject DOM elements before the main application content is rendered, potentially causing layout shifts, visual flashes, or z-index conflicts. Devtools should be rendered as a sibling after main content to avoid interfering with the initial application layout and rendering.",
+   "file_path": "web/context/query-client.tsx",
+   "start_line": 19,
+   "end_line": 23,
+   "problematic_code_snippet": "  return (\n    <QueryClientProvider client={client}>\n      <TanStackDevtoolsLoader />\n      {children}\n    </QueryClientProvider>\n  )"
+  },
+  {
+   "title": "Missing error logging in TanStack devtools lazy import",
+   "description": "The TanStackDevtoolsLoader silently swallows import errors without logging them, making it impossible to debug why the devtools fail to load. This creates an inconsistent error handling pattern compared to the ReactScanLoader (in the same PR), which properly logs errors with console.error before returning a fallback component. When developers encounter issues with TanStack devtools not appearing, they will have no visibility into whether it's due to an import failure, missing dependencies, or other issues.",
+   "file_path": "web/app/components/devtools/tanstack/loader.tsx",
+   "start_line": 6,
+   "end_line": 12,
+   "problematic_code_snippet": "const TanStackDevtoolsWrapper = lazy(() =>\n  import('./devtools').then(module => ({\n    default: module.TanStackDevtoolsWrapper,\n  })).catch(() => {\n    return { default: () => null }\n  }),\n)"
+  },
+  {
+   "title": "console.error violates Frontend Code Must Not Use console Statements rule",
+   "description": "The ReactScanLoader uses console.error which directly violates Rule 25 from AGENTS.md added in this same PR. The rule explicitly states that production frontend code must avoid console.log, console.warn, and console.error statements as enforced by the no-console warning rule. This creates an inconsistency where the code violates a compliance rule that was just introduced, and creates inconsistent error handling compared to TanStackDevtoolsLoader which silently catches errors. The use of console statements in production code should be replaced with proper logging mechanisms.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "const ReactScan = lazy(() =>\n  import('./scan').then(module => ({\n    default: module.ReactScan,\n  })).catch((error) => {\n    console.error('Failed to load React Scan devtools:', error)\n    return { default: () => null }\n  }),\n)"
+  },
+  {
+   "title": "console.error used in frontend code",
+   "description": "Rule 25 prohibits console statements in frontend code. The added code logs an error with console.error when lazy-loading fails.",
+   "file_path": "web/app/components/devtools/react-scan/loader.tsx",
+   "start_line": 9,
+   "end_line": 12,
+   "problematic_code_snippet": "}).catch((error) => {\n    console.error('Failed to load React Scan devtools:', error)\n    return { default: () => null }\n  }),",
+   "rule_name": "Frontend Code Must Not Use console Statements"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "8edc4cf3f413296a7444876cb41cdad7f6cf818f",
+ "diff_chars": 4028,
+ "diff_lines": 125,
+ "user_prompt_chars": 6141,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 50179,
+ "wall_ms": 52405,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 9,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.698428866,
+ "spend_post_usd": 7.707955221,
+ "cost_settled": true,
+ "cost_wait_ms": 352,
+ "cost_usd": 0.00952635499999932,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.00803038,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 14352,
+  "cache_read_input_tokens": 100908,
+  "output_tokens": 10453,
+  "output_tokens_details": {
+   "thinking_tokens": 4209
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 14352
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 10453,
+   "cacheReadInputTokens": 100908,
+   "cacheCreationInputTokens": 14352,
+   "webSearchRequests": 0,
+   "costUSD": 0.00803038,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 4209,
+   "cacheCreationEphemeral5mInputTokens": 14352,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 8,
+   "title": "Code Review Bench PR #30318 - refactor(web): organize devtools components",
+   "author": "unknown",
+   "baseSha": "681571ef2d0f60c66fe37cb359e3c5647a5f10ae",
+   "headSha": "8edc4cf3f413296a7444876cb41cdad7f6cf818f"
+  },
+  "summary": "This PR moves the React Scan and TanStack devtools into `web/app/components/devtools/{react-scan,tanstack}/` and adds a `Loader` component per tool. Each loader owns the `IS_DEV` gate, the `lazy()` import, and the `Suspense` boundary. `layout.tsx` now renders `<ReactScanLoader />` and `query-client.tsx` renders `<TanStackDevtoolsLoader />` in place of the inline lazy/IS_DEV code. The file moves are 100% similarity renames, so history is preserved.\n\nThe refactor is clean and does fix a real bundle issue: the base `layout.tsx` statically imported `react-scan`, which put that library into the production layout chunk even though `scan()` only ran in dev. With `scan.tsx` now behind a `lazy()` import, it becomes a separate chunk that is never requested in production. The remaining concerns are smaller: the module-scope `lazy(() => import(...))` is not gated by `IS_DEV`, so the dev-only chunks are still emitted in production builds; the two loaders handle import failures differently; the React Scan fallback renders visible text into the app body; and the loaders have no tests. The PR description also mentions a barrel `index.ts` that is not in the head commit.",
+  "verdict": "approve",
+  "verdictRationale": "Nothing here is a correctness or security blocker. The IS_DEV gating still works at runtime, the rename preserves history, and the lazy/Suspense wrapping is behaviorally the same as before for TanStack. The issues are a build-output nuance, inconsistent error handling, a visible dev-only fallback, and missing tests, all worth addressing but not merge-blocking.",
+  "architecture": {
+   "overview": "In the base, the root layout statically imports `ReactScan` from `components/react-scan.tsx`, which imports the `react-scan` package at top level. `query-client.tsx` holds a module-level `lazy()` for `@/app/components/devtools` and gates rendering with an inline `IS_DEV &&` check. Both tools are therefore wired ad hoc from two different places, and React Scan's library code sits in the layout's eager import graph.\n\nAfter this PR, each tool has a folder with an implementation file (`scan.tsx`, `devtools.tsx`) and a `loader.tsx`. The loader is a `'use client'` component that returns null unless `IS_DEV`, and otherwise renders the lazily-imported implementation inside `Suspense`. The layout and the query provider each render one loader and no longer know anything about the tool internals.",
+   "steps": [
+    "Entry points are `web/app/layout.tsx` (the root server layout, which now renders `<ReactScanLoader />` inside `<body>`) and `web/context/query-client.tsx` (the client `TanstackQueryInitializer`, which now renders `<TanStackDevtoolsLoader />` inside `QueryClientProvider`).",
+    "Each loader in `react-scan/loader.tsx` and `tanstack/loader.tsx` declares a module-scope `lazy()` that dynamically imports its implementation file (`./scan` or `./devtools`), with a `.catch` that substitutes a null component.",
+    "At render time the loader checks `IS_DEV` and returns null in production. In development it renders the lazy component inside `Suspense`, which is the only place the implementation chunk is requested.",
+    "Implementation files are moved without content changes: `react-scan/scan.tsx` still calls `scan()` under `IS_DEV`, and `tanstack/devtools.tsx` still exports `TanStackDevtoolsWrapper`."
+   ],
+   "diagrams": [
+    {
+     "title": "Devtools loading after this PR",
+     "kind": "flowchart",
+     "description": "Both tools are mounted from a loader. The loader gates on IS_DEV and lazy-loads the implementation, so production never requests the devtools chunks.",
+     "mermaid": "flowchart LR\n  A[\"app/layout.tsx\"] --> B[\"ReactScanLoader\"]\n  C[\"context/query-client.tsx\"] --> D[\"TanStackDevtoolsLoader\"]\n  B --> E{\"IS_DEV?\"}\n  D --> F{\"IS_DEV?\"}\n  E -- no --> G[\"render null\"]\n  F -- no --> H[\"render null\"]\n  E -- yes --> I[\"lazy import ./scan\"]\n  F -- yes --> J[\"lazy import ./devtools\"]\n  I --> K[\"scan() from react-scan\"]\n  J --> L[\"TanStackDevtools panel\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Dev-only devtools chunks are still emitted in production builds",
+    "severity": "medium",
+    "category": "performance",
+    "body": "The `lazy(() => import(...))` calls are at module scope and are not wrapped in an `IS_DEV` check. The `IS_DEV` gate only lives in the component body. The bundler still sees the static `import('./scan')` and `import('./devtools')`, so it emits separate chunks for `react-scan` and `@tanstack/react-devtools` in production. Those chunks are never requested at runtime, so there is no runtime cost, but the PR description says the libraries are 'only loaded in development mode' and 'not included in the main production bundle'. Both claims are true for the main bundle and runtime loading, but the code still ships as inert build artifacts.\n\n::diff{file=\"web/app/components/devtools/react-scan/loader.tsx\" lines=\"6-13\"}\n\n::callout{type=\"info\"}\nThe base code had the same module-scope `lazy()` pattern, so this is not a regression. The PR just does not get the chunk-elimination benefit it describes.\n\nIf you want production builds to skip emitting these chunks entirely, put the `lazy()` behind the same compile-time check so the bundler can drop the `import()`:\n\n::suggestion{file=\"web/app/components/devtools/react-scan/loader.tsx\" lines=\"6-13\"}\nconst ReactScan = IS_DEV\n  ? lazy(() => import('./scan').then(module => ({ default: module.ReactScan })).catch((error) => {\n      console.error('Failed to load React Scan devtools:', error)\n      return { default: () => null }\n    }))\n  : () => null\n\n",
+    "files": [
+     "web/app/components/devtools/react-scan/loader.tsx",
+     "web/app/components/devtools/tanstack/loader.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/devtools/react-scan/loader.tsx` and `web/app/components/devtools/tanstack/loader.tsx`, the module-scope `lazy(() => import(...))` calls are not gated by `IS_DEV`, so Next.js still emits dev-only devtools chunks in production builds. Wrap each `lazy()` call in a compile-time `IS_DEV ? lazy(...) : () => null` check so the bundler can drop the dynamic import in production. Keep the existing `.catch` error fallbacks. Keep the runtime `if (!IS_DEV) return null` guard in the components. Verify the production build output no longer contains the react-scan or tanstack devtools chunks.",
+    "commentAnchor": {
+     "file": "web/app/components/devtools/react-scan/loader.tsx",
+     "lineStart": 6,
+     "lineEnd": 13
+    }
+   },
+   {
+    "title": "Inconsistent error handling between the two loaders",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "When a chunk import fails, the React Scan loader logs `console.error('Failed to load React Scan devtools:', error)`, while the TanStack loader silently returns a null component with no logging. The two loaders are meant to follow the same pattern, but a failed TanStack devtools import will be invisible to a developer debugging why the panel never appears.\n\n::diff{file=\"web/app/components/devtools/tanstack/loader.tsx\" lines=\"6-11\"}\n\nPick one convention for both loaders. Logging in both is the more useful option, since these are dev-only tools and a silent failure hides the cause.",
+    "files": [
+     "web/app/components/devtools/tanstack/loader.tsx",
+     "web/app/components/devtools/react-scan/loader.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/devtools/tanstack/loader.tsx`, the `.catch` on the lazy import (lines 6-11) silently returns a null component, while `react-scan/loader.tsx` logs with `console.error`. Make the TanStack loader log the error the same way, using a message like 'Failed to load TanStack devtools:'. Keep the null-component fallback so the app still renders.",
+    "commentAnchor": {
+     "file": "web/app/components/devtools/tanstack/loader.tsx",
+     "lineStart": 6,
+     "lineEnd": 11
+    }
+   },
+   {
+    "title": "React Scan fallback renders visible text into the app in dev",
+    "severity": "low",
+    "category": "style",
+    "body": "The React Scan loader's `Suspense` fallback is `<div className=\"text-xs text-gray-500\">Loading devtools...</div>`. It is rendered inside `<body>` in `layout.tsx`, so every dev page load shows this text until the chunk resolves. The TanStack loader uses `fallback={null}`, so the two tools behave differently. Because the devtools are dev-only and the fallback is just a status string, the cleaner choice is `fallback={null}` to match TanStack and avoid a layout shift in the dev page.\n\n::diff{file=\"web/app/components/devtools/react-scan/loader.tsx\" lines=\"19-23\"}",
+    "files": [
+     "web/app/components/devtools/react-scan/loader.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/devtools/react-scan/loader.tsx`, the Suspense fallback (around line 20) renders a visible 'Loading devtools...' div inside the app body rendered by `web/app/layout.tsx`. Change it to `fallback={null}` to match `tanstack/loader.tsx`, since React Scan renders no UI and the fallback only adds dev-only visible text.",
+    "commentAnchor": {
+     "file": "web/app/components/devtools/react-scan/loader.tsx",
+     "lineStart": 19,
+     "lineEnd": 23
+    }
+   },
+   {
+    "title": "New loaders have no test coverage",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The PR adds two new components with branching behavior: the `IS_DEV` gate, the Suspense wrapping, and the import-failure fallback. None of this has tests, and the repo already has component tests such as `web/context/modal-context.test.tsx`. A small Vitest test for each loader would lock in the dev-only gating, which is the main behavior the PR is meant to guarantee, and would catch an accidental `IS_DEV` regression.",
+    "files": [
+     "web/app/components/devtools/react-scan/loader.tsx",
+     "web/app/components/devtools/tanstack/loader.tsx"
+    ],
+    "fixPrompt": "Add Vitest tests for `web/app/components/devtools/react-scan/loader.tsx` and `web/app/components/devtools/tanstack/loader.tsx`. Mock `@/config` so `IS_DEV` can be toggled. Assert that each loader renders nothing when `IS_DEV` is false and does not render its implementation. When `IS_DEV` is true, assert that the lazy implementation is rendered. Follow the setup style of `web/context/modal-context.test.tsx`.",
+    "commentAnchor": {
+     "file": "web/app/components/devtools/tanstack/loader.tsx",
+     "lineStart": 14,
+     "lineEnd": 23
+    }
+   },
+   {
+    "title": "Barrel export described in the PR is not present",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The PR description says `web/app/components/devtools/index.ts` was simplified into clean barrel exports. No `index.ts` exists under `web/app/components/devtools/` at the head commit. The consumers import the loader files directly, which is fine, but the description should be corrected so reviewers are not looking for a file that is not there.",
+    "files": [
+     "web/context/query-client.tsx",
+     "web/app/layout.tsx"
+    ],
+    "fixPrompt": "The PR description says `web/app/components/devtools/index.ts` was simplified into a barrel. That file does not exist at head. Either add the barrel if it was intended, or update the PR description to match the actual change, which has the loaders imported directly from `web/app/components/devtools/tanstack/loader` and `web/app/components/devtools/react-scan/loader`.",
+    "commentAnchor": {
+     "file": "web/context/query-client.tsx",
+     "lineStart": 5,
+     "lineEnd": 5
+    }
+   },
+   {
+    "title": "Moving react-scan out of the layout's static import graph",
+    "severity": "low",
+    "category": "performance",
+    "body": "In the base, `layout.tsx` statically imported `ReactScan` from `components/react-scan.tsx`, which imports `react-scan` at the top level. That put React Scan's library code into the eager layout graph even in production, where `scan()` never ran. This PR removes that static import. `react-scan` is now reached only through the lazy `./scan` chunk, which is a real reduction in the initial client JS for production. This is the part of the bundle claim in the PR description that is actually true.\n\n::diff{file=\"web/app/layout.tsx\" lines=\"8-11\"}",
+    "files": [
+     "web/app/layout.tsx",
+     "web/app/components/devtools/react-scan/loader.tsx"
+    ],
+    "fixPrompt": "No change needed. This is a note for reviewers: `web/app/layout.tsx` no longer statically imports react-scan, so the library is no longer part of the eager layout chunk.",
+    "commentAnchor": {
+     "file": "web/app/layout.tsx",
+     "lineStart": 8,
+     "lineEnd": 11
+    },
+    "severity_note": "info-like"
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":8,\"title\":\"Code Review Bench PR #30318 - refactor(web): organize devtools components\",\"author\":\"unknown\",\"baseSha\":\"681571ef2d0f60c66fe37cb359e3c5647a5f10ae\",\"headSha\":\"8edc4cf3f413296a7444876cb41cdad7f6cf818f\"},\"summary\":\"This PR moves the React Scan and TanStack devtools into `web/app/components/devtools/{react-scan,tanstack}/` and adds a `Loader` component per tool. Each loader owns the `IS_DEV` gate, the `lazy()` import, and the `Suspen",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

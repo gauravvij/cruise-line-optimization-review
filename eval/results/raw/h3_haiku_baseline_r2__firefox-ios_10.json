@@ -1,0 +1,352 @@
+{
+ "id": "firefox-ios#10",
+ "repo": "firefox-ios",
+ "num": 10,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:32:26.623Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Missing Mozilla Public License header",
+   "description": "The rule requires that every .swift file begins with the exact Mozilla Public License header comment block at the top of the file. This file is missing the required header entirely.",
+   "file_path": "BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "import ContentBlockingGenerator\n\n@main\npublic struct MainContentBlockerGenerator {\n    // FXIOS-14548 ContentBlockerGenerator is not thread safe\n    nonisolated(unsafe) static let generator = ContentBlockerGenerator.factory()",
+   "rule_name": "All Swift Files Must Include Mozilla Public License Header"
+  },
+  {
+   "title": "Test completes without waiting for async image download",
+   "description": "The test was converted from async to synchronous but the expectation and wait statement were removed. This causes the test to complete immediately without waiting for the asynchronous image download callback to execute. The XCTAssert statements inside the completion handler will never be verified, resulting in false positive test passes even if the image download fails or produces incorrect results. This is a critical testing bug that undermines test reliability.",
+   "file_path": "BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift",
+   "start_line": 12,
+   "end_line": 37,
+   "problematic_code_snippet": "func testDownloadingSVGImage_withKingfisherProcessor_forStandardSVGCase() {\n    let assetType: AssetType = .svgCase1\n    let expectedRasterSize = CGSize(width: 360, height: 360)\n\n    guard let imageData = try? dataFor(type: assetType) else {\n        XCTFail(\"Could not load test asset\")\n        return\n    }\n\n    guard let mockedURL = try? startMockImageServer(imageData: imageData, forAssetType: assetType) else {\n        XCTFail(\"Check bundle setup for mock server response data\")\n        return\n    }\n\n    let siteDownloader = DefaultSiteImageDownloader()\n    siteDownloader.downloadImage(with: mockedURL, options: [.processor(SVGImageProcessor())]) { result in\n        switch result {\n        case .success(let result):\n            XCTAssertEqual(result.originalData, imageData)\n            XCTAssertEqual(result.url, mockedURL)\n            XCTAssertEqual(result.image.size, expectedRasterSize)\n        case .failure(let error):\n            XCTFail(\"Should not have an error: \\(error) \\(error.errorDescription ?? \"\")\")\n        }\n    }\n}"
+  },
+  {
+   "title": "Closure wrapper loses @Sendable annotation causing concurrency safety violation",
+   "description": "The moreButtonAction parameter is marked as @Sendable @MainActor to ensure thread-safe access in Swift 6 concurrency mode. However, the wrappedAction closure that wraps this action drops the @Sendable annotation, only keeping @MainActor. This breaks the sendability guarantee required by Swift 6, potentially allowing non-Sendable types to be captured and accessed from multiple threads unsafely. In Swift 6 strict concurrency mode, this will cause compiler errors or runtime crashes when the closure captures non-Sendable state.",
+   "file_path": "firefox-ios/Client/Frontend/Home/Homepage/SectionHeader/LabelButtonHeaderView.swift",
+   "start_line": 95,
+   "end_line": 115,
+   "problematic_code_snippet": "func configure(\n    state: SectionHeaderConfiguration,\n    moreButtonAction: (@Sendable @MainActor (UIButton) -> Void)? = nil,\n    textColor: UIColor?,\n    theme: Theme\n) {\n    self.title = state.title\n    titleLabel.accessibilityIdentifier = state.a11yIdentifier\n\n    moreButton.isHidden = state.isButtonHidden\n    if !state.isButtonHidden {\n        let wrappedAction: (@MainActor (UIButton) -> Void)? = { button in\n            moreButtonAction?(button)\n        }\n        let moreButtonViewModel = ActionButtonViewModel(\n            title: state.buttonTitle ?? .BookmarksSavedShowAllText,\n            a11yIdentifier: state.buttonA11yIdentifier,\n            touchUpAction: wrappedAction\n        )\n        moreButton.configure(\n            viewModel: moreButtonViewModel\n        )\n    }"
+  },
+  {
+   "title": "Async test assertion never verified due to missing expectation",
+   "description": "The test was updated to use @Sendable closures for Swift 6 concurrency compliance, but the expectation and wait statements were removed. The test now completes immediately without waiting for the asynchronous requestMediaCapturePermission callback. The XCTAssertEqual inside the decisionHandler closure will never execute, causing the test to always pass even when the media capture permission logic is broken. This is particularly problematic because this test validates critical permission handling behavior.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+   "start_line": 35,
+   "end_line": 43,
+   "problematic_code_snippet": "func testRequestMediaCaptureSuccess() {\n    let subject = createSubject(isActive: true)\n\n    let decisionHandler: @Sendable (WKPermissionDecision) -> Void = { (decision: WKPermissionDecision) in\n        XCTAssertEqual(decision, .prompt)\n    }\n\n    subject.requestMediaCapturePermission(decisionHandler: decisionHandler)\n}"
+  },
+  {
+   "title": "Unsafe concurrency annotation on non-thread-safe static property",
+   "description": "The static generator property is marked with nonisolated(unsafe) despite the comment explicitly stating 'ContentBlockerGenerator is not thread safe'. This annotation bypasses Swift 6's concurrency safety checks and allows the non-thread-safe ContentBlockerGenerator to be accessed from multiple isolation domains without protection. This creates a potential data race condition where multiple threads could access the generator simultaneously, leading to undefined behavior, crashes, or data corruption. The unsafe annotation should only be used when the developer can guarantee thread safety through other means, which the comment explicitly contradicts.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "@main\npublic struct MainContentBlockerGenerator {\n    // FXIOS-14548 ContentBlockerGenerator is not thread safe\n    nonisolated(unsafe) static let generator = ContentBlockerGenerator.factory()"
+  },
+  {
+   "title": "Static property missing explicit access control modifier",
+   "description": "Rule 11 requires explicit access control on properties/methods. The modified static property `generator` is declared without an explicit access modifier (e.g., `private`, `internal`, `public`).",
+   "file_path": "BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift",
+   "start_line": 6,
+   "end_line": 7,
+   "problematic_code_snippet": "// FXIOS-14548 ContentBlockerGenerator is not thread safe\nnonisolated(unsafe) static let generator = ContentBlockerGenerator.factory()",
+   "rule_name": "Rule 11: Properties and Methods Must Have Appropriate Access Control"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "5a63a2c1d1f2bd0954b49700f42ae74caa8d9e31",
+ "diff_chars": 21086,
+ "diff_lines": 503,
+ "user_prompt_chars": 23076,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 65312,
+ "wall_ms": 67664,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 3,
+ "turn_trace": {
+  "assistant_lines": 10,
+  "unique_message_ids": 3,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.829013011,
+ "spend_post_usd": 7.840953926,
+ "cost_settled": true,
+ "cost_wait_ms": 357,
+ "cost_usd": 0.011940915000000274,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.011431145,
+ "usage": {
+  "input_tokens": 6,
+  "cache_creation_input_tokens": 24041,
+  "cache_read_input_tokens": 91492,
+  "output_tokens": 15021,
+  "output_tokens_details": {
+   "thinking_tokens": 7156
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 24041
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 6,
+   "outputTokens": 15021,
+   "cacheReadInputTokens": 91492,
+   "cacheCreationInputTokens": 24041,
+   "webSearchRequests": 0,
+   "costUSD": 0.011431145,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 7156,
+   "cacheCreationEphemeral5mInputTokens": 24041,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 10,
+   "title": "Code Review Bench PR #31468 - Refactor FXIOS-14466 FXIOS-14463 [Swift 6 Migration] Migrate ShareTo and BrowserKit Package to Swift 6",
+   "author": "",
+   "baseSha": "5930c1e71345c4a33d5a0bc196761eaf3871e414",
+   "headSha": "5a63a2c1d1f2bd0954b49700f42ae74caa8d9e31"
+  },
+  "summary": "This PR moves the BrowserKit package to `swift-tools-version: 6.2` and removes the per-target `StrictConcurrency`, `RegionBasedIsolation` and `InferSendableFromCaptures` flags that Swift 6 language mode now enables by default. It also sets `SWIFT_VERSION = 6.0` on the ShareTo extension configurations in `project.pbxproj`. The Swift-source changes are small: a `nonisolated(unsafe)` annotation on the content-blocker generator, `@Sendable` annotations on test closures, and a wrapper closure in `LabelButtonHeaderView`.\n\nThe package-manifest cleanup looks right. The main problem is in the SVG image-processor tests. One test lost its expectation and its wait, so its assertions can run after the test has already returned, which means it can no longer fail. The migration also removed the `@MainActor` guard on the GCDWebServer mock, which existed to prevent a known first-initialization crash. Two smaller issues are the deleted MPL license header on `MainContentBlockerGenerator.swift` and the use of `nonisolated(unsafe)` on a generator the code itself describes as not thread-safe. Those need fixing before merge.",
+  "verdict": "request_changes",
+  "verdictRationale": "The standard SVG test now calls `downloadImage` with no expectation or wait, so the completion handler's assertions can run after the test has finished and the test cannot fail. That is a test-quality regression that gives false confidence. The removed main-actor guard on the mock server reintroduces a known crash risk that the original comment documented. The license-header removal and the `nonisolated(unsafe)` suppression are smaller but should be addressed in the same PR.",
+  "architecture": {
+   "overview": "BrowserKit is a local Swift package (`BrowserKit/Package.swift`) made of many targets. Each target declares its own `swiftSettings` for concurrency checking. Before this PR, every target opted into `StrictConcurrency` and `RegionBasedIsolation` experimental flags by hand. The manifest is now `swift-tools-version: 6.2`, and Swift 6 language mode enables those checks by default, so the PR deletes the per-target flags. The ShareTo app extension targets in `firefox-ios/Client.xcodeproj/project.pbxproj` get an explicit `SWIFT_VERSION = 6.0`.\n\nThe SiteImageView test suite exercises the image pipeline end to end: a test loads a bundled SVG or ICO asset, serves it from an in-process `GCDWebServer`, downloads it through `DefaultSiteImageDownloader` with `SVGImageProcessor` attached, and asserts on the decoded result. This PR converts those tests from `async` with `@MainActor` helpers to synchronous methods using `XCTestExpectation`. One of the conversions drops the expectation entirely, which breaks that test's wait-for-callback pattern.",
+   "steps": [
+    "Start at `BrowserKit/Package.swift`. The manifest moves to tools version 6.2, and per-target `StrictConcurrency` and `RegionBasedIsolation` flags are removed because Swift 6 language mode enables them by default. The `InferSendableFromCaptures` upcoming feature is also dropped for the same reason.",
+    "In the SiteImageView tests, `SVGImageProcessorTests` drives `DefaultSiteImageDownloader` with `SVGImageProcessor`. The mock server built by `startMockImageServer` used to be `@MainActor` so that `GCDWebServer` initializes on the main thread. That guard is removed in this PR.",
+    "Each test body now uses a synchronous `XCTestExpectation` and `wait(for:)` in place of `await fulfillment`. The standard SVG test drops both, so it returns before the download callback runs.",
+    "The WebEngine tests change the decision-handler closures to `@Sendable`. `DefaultUIHandler.requestMediaCapturePermission` invokes the `@MainActor` decision handler synchronously, so the assertion in `testRequestMediaCaptureSuccess` still runs, but only because the handler is synchronous.",
+    "In the ExecutableContentBlockingGenerator target, `MainContentBlockerGenerator.generator` is marked `nonisolated(unsafe)` with a comment that `ContentBlockerGenerator` is not thread-safe. The file's MPL license header is also removed.",
+    "In ComponentLibrary, `LabelButtonHeaderView.configure` wraps an optional action in a non-optional closure before passing it to `ActionButtonViewModel`. `ActionButton` already calls `touchUpAction` with optional chaining, so the wrapper changes no behavior and is probably unnecessary."
+   ],
+   "diagrams": [
+    {
+     "title": "SiteImageView test path and where the PR changes it",
+     "kind": "flowchart",
+     "description": "How a SiteImageView test feeds a bundled asset through the mock server and downloader to an assertion, marking the nodes this PR touches.",
+     "mermaid": "flowchart LR\n    A[\"SVGImageProcessorTests\"] --> B[\"startMockImageServer<br/>GCDWebServer (@MainActor guard removed)\"]\n    B --> C[\"mockedURL on localhost\"]\n    A --> D[\"DefaultSiteImageDownloader.downloadImage\"]\n    C --> D\n    D --> E[\"SVGImageProcessor\"]\n    E --> F[\"completion handler\"]\n    F --> G[\"XCTAssert* / XCTestExpectation.fulfill\"]\n    A -. \"standard SVG case: no wait, callback runs after return\" .-> F"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Standard SVG test can no longer fail",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`testDownloadingSVGImage_withKingfisherProcessor_forStandardSVGCase` removed both its `XCTestExpectation` and its `wait(for:)`, but it still calls `downloadImage` and asserts inside the completion handler. The test method returns as soon as `downloadImage` schedules the request. The XCTAssert calls then run after the test has ended, so a wrong size or wrong data will not fail this test. The sibling tests in the same file all keep their expectation.\n\n::diff{file=\"BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift\" lines=\"12-37\"}\n\n::callout{type=\"warning\"}\nThis is a silent loss of coverage on the standard SVG path, which is the most basic case in the suite. Restore the expectation and the wait, as the other three tests do.\n\n::suggestion{file=\"BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift\" lines=\"26-36\"}\n        let exp = expectation(description: \"Image download and parse\")\n\n        let siteDownloader = DefaultSiteImageDownloader()\n        siteDownloader.downloadImage(with: mockedURL, options: [.processor(SVGImageProcessor())]) { result in\n            switch result {\n            case .success(let result):\n                XCTAssertEqual(result.originalData, imageData)\n                XCTAssertEqual(result.url, mockedURL)\n                XCTAssertEqual(result.image.size, expectedRasterSize)\n                exp.fulfill()\n            case .failure(let error):\n                XCTFail(\"Should not have an error: \\(error) \\(error.errorDescription ?? \"\")\")\n                exp.fulfill()\n            }\n        }\n        wait(for: [exp], timeout: 2.0)\n",
+    "files": [
+     "BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift`, the test `testDownloadingSVGImage_withKingfisherProcessor_forStandardSVGCase` (around lines 12-37) lost its `XCTestExpectation` and its `wait(for:)` call during the async-to-sync migration. Its `downloadImage` completion handler still asserts, so the assertions can run after the test has returned and the test can never fail. Restore the expectation: create it before `downloadImage`, call `fulfill()` in both the success and failure branches, and add `wait(for: [exp], timeout: 2.0)` after the call. Match the other tests in the same file, such as `testDownloadingSVGImage_withKingfisherProcessor_forSpecialSVGCase`.",
+    "commentAnchor": {
+     "file": "BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift",
+     "lineStart": 12,
+     "lineEnd": 37
+    }
+   },
+   {
+    "title": "Main-actor guard for GCDWebServer init removed along with its explanation",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The PR deletes `@MainActor` from `startMockImageServer` and deletes the comment above it. That comment said `GCDWebServer` must be initialized for the first time on the main thread, and that the `@MainActor` guard keeps the file from crashing when run alone. The test methods are no longer `async` or main-actor-isolated, so nothing else now enforces that ordering. XCTest usually runs synchronous methods on the main thread, so this may not crash in practice, but the guarantee is gone and the reason for it is no longer recorded. If the suite is run in a different order or setup, the first `GCDWebServer` init can happen off the main thread.\n\n::diff{file=\"BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift\" lines=\"206-209\"}\n\n::callout{type=\"warning\"}\nEither keep `@MainActor` on the helper, or keep the original comment and state the invariant some other way. Removing it silently is the problem.\n\n",
+    "files": [
+     "BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift`, the `startMockImageServer(imageData:forAssetType:)` helper (around line 208) had its `@MainActor` attribute and the comment explaining that `GCDWebServer` must first be initialized on the main thread removed in this PR. Restore `@MainActor` on the helper, or otherwise guarantee main-thread initialization, and restore the explanatory comment. The migration to synchronous tests must not remove that ordering guarantee.",
+    "commentAnchor": {
+     "file": "BrowserKit/Tests/SiteImageViewTests/SVGImageProcessorTests.swift",
+     "lineStart": 208,
+     "lineEnd": 208
+    }
+   },
+   {
+    "title": "MPL license header removed from MainContentBlockerGenerator.swift",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The MPL 2.0 license header at the top of `MainContentBlockerGenerator.swift` has been deleted. Other BrowserKit source files keep it. A quick grep finds about 404 Swift files under `BrowserKit/Sources` with that header, so this file is out of step with the rest of the codebase. This is a change to a Mozilla source file. The diff does not explain why it was removed, and it looks like an accidental edit.\n\n::diff{file=\"BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift\" lines=\"1-6\"}\n\n",
+    "files": [
+     "BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift`, restore the three-line MPL 2.0 license header that this PR removed from the top of the file. Use the same header as the other files under `BrowserKit/Sources` (\"This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0...\"). Do not change anything else in the file.",
+    "commentAnchor": {
+     "file": "BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift",
+     "lineStart": 1,
+     "lineEnd": 3
+    }
+   },
+   {
+    "title": "nonisolated(unsafe) suppresses a known thread-safety problem",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`static let generator` is now marked `nonisolated(unsafe)`, and the comment directly above it says `ContentBlockerGenerator` is not thread-safe. The annotation tells the compiler to trust that access is safe. That is an unchecked promise, and it hides the warning that would otherwise surface the problem. Today this is a single-run CLI `@main` entry point, so the practical risk is low. The problem is that the annotation turns a documented hazard into a silent one, and the PR description says there were no warnings, which suggests the annotation was added to clear one.\n\n::diff{file=\"BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift\" lines=\"5-6\"}\n\n::callout{type=\"info\"}\nIf the generator is only ever used from `main`, make that an explicit invariant, for example by creating it inside `main` or the entry method instead of as shared static state. Otherwise, keep the annotation and say in the comment why access is serialized.\n\n",
+    "files": [
+     "BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift`, `static let generator` is marked `nonisolated(unsafe)` even though its comment says `ContentBlockerGenerator` is not thread-safe. Remove the unchecked annotation. Create the generator where it is used, inside the `@main` entry path, so it is not shared static state. If that is not possible, document in the comment exactly why access is serialized, citing FXIOS-14548. Match the style of the rest of the BrowserKit executable target.",
+    "commentAnchor": {
+     "file": "BrowserKit/Sources/ExecutableContentBlockingGenerator/MainContentBlockerGenerator.swift",
+     "lineStart": 5,
+     "lineEnd": 6
+    }
+   },
+   {
+    "title": "Media-capture test passes only because the handler is synchronous",
+    "severity": "low",
+    "category": "correctness",
+    "body": "`testRequestMediaCaptureSuccess` dropped its `XCTestExpectation` and its `wait`, like the SVG test above. Here the assertion still runs, because `DefaultUIHandler.requestMediaCapturePermission` calls the decision handler synchronously. The test is still weaker than the sibling tests. If someone later makes that callback asynchronous, this test will pass without checking anything, and nothing will flag the change.\n\n::diff{file=\"BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift\" lines=\"35-43\"}\n\n",
+    "files": [
+     "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift`, `testRequestMediaCaptureSuccess` (around lines 35-43) no longer waits for its decision handler. The current behavior is synchronous, so the assertion does run, but the test would silently pass if the handler became asynchronous. Restore an `XCTestExpectation` that is fulfilled in the handler and waited on, matching `testRequestMediaCaptureIsActiveFalse` in the same file.",
+    "commentAnchor": {
+     "file": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+     "lineStart": 35,
+     "lineEnd": 43
+    }
+   },
+   {
+    "title": "Wrapper closure in LabelButtonHeaderView looks unnecessary",
+    "severity": "low",
+    "category": "style",
+    "body": "The change wraps `moreButtonAction` in a new `@MainActor` closure before passing it to `ActionButtonViewModel`. `ActionButton.touchUpInside` already calls `viewModel?.touchUpAction?(sender)`, so a nil action is already a no-op. An optional `@Sendable @MainActor` function value should also convert directly to an optional `@MainActor` function type. The wrapper therefore adds an indirection without a clear reason. If the compiler rejected the direct assignment, the comment or the diff should say so. Please check whether the wrapper can be removed.\n\n::diff{file=\"firefox-ios/Client/Frontend/Home/Homepage/SectionHeader/LabelButtonHeaderView.swift\" lines=\"106-112\"}\n\n",
+    "files": [
+     "firefox-ios/Client/Frontend/Home/Homepage/SectionHeader/LabelButtonHeaderView.swift",
+     "BrowserKit/Sources/ComponentLibrary/ActionButton.swift"
+    ],
+    "fixPrompt": "In `firefox-ios/Client/Frontend/Home/Homepage/SectionHeader/LabelButtonHeaderView.swift`, `configure(state:moreButtonAction:textColor:theme:)` wraps `moreButtonAction` in a new closure (`wrappedAction`, around lines 106-108) before building `ActionButtonViewModel`. Try passing `moreButtonAction` directly as `touchUpAction`, which should compile because a `@Sendable @MainActor` function value converts to a plain `@MainActor` one. `ActionButton` is nil-safe, so behavior does not change. If the compiler rejects the direct assignment, keep the wrapper and add a comment explaining why.",
+    "commentAnchor": {
+     "file": "firefox-ios/Client/Frontend/Home/Homepage/SectionHeader/LabelButtonHeaderView.swift",
+     "lineStart": 106,
+     "lineEnd": 112
+    }
+   },
+   {
+    "title": "Package manifest cleanup removes flags that Swift 6 language mode now enables",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Moving to `swift-tools-version: 6.2` and deleting the per-target `StrictConcurrency`, `RegionBasedIsolation` and `InferSendableFromCaptures` flags is consistent with the Swift 6 migration. Those checks are now the default for these targets. Leaving a single shared language-mode setting in place is easier to maintain than per-target experimental flags that drift out of date. Empty `swiftSettings` arrays remain, which is harmless but could be removed in a follow-up.",
+    "files": [
+     "BrowserKit/Package.swift"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":10,\"title\":\"Code Review Bench PR #31468 - Refactor FXIOS-14466 FXIOS-14463 [Swift 6 Migration] Migrate ShareTo and BrowserKit Package to Swift 6\",\"author\":\"\",\"baseSha\":\"5930c1e71345c4a33d5a0bc196761eaf3871e414\",\"headSha\":\"5a63a2c1d1f2bd0954b49700f42ae74caa8d9e31\"},\"summary\":\"This PR moves the BrowserKit package to `swift-tools-version: 6.2` and removes the per-target `StrictConcurrency`, `RegionBasedIsolation` and `InferSendableFromC",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

@@ -1,0 +1,236 @@
+{
+ "id": "Ghost#12",
+ "repo": "Ghost",
+ "num": 12,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T15:58:05.687Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Documentation references npm instead of yarn",
+   "description": "The rule requires all package management commands to use yarn, but the code documentation references npm commands for installing and running Tinybird tools",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 61,
+   "end_line": 67,
+   "problematic_code_snippet": "/**\n * Service for managing Tinybird JWT tokens and authentication\n *\n * To run Tinybird tests locally:\n * npm install -g @tinybird/cli\n * npm run docker:dev:analytics\n */",
+   "rule_name": "Package Manager Must Be Yarn v1"
+  },
+  {
+   "title": "Token caching stores entire object instead of token string",
+   "description": "In the getToken method, when caching the JWT token, the code now stores the entire tokenData object (containing both 'token' and 'exp' properties) instead of just extracting the token string. This causes the returned token structure to be malformed as {token: {token: string, exp: number}, exp: number} instead of the expected {token: string, exp: number}. This will break any consumers of the Tinybird API (like the /api/tinybird/token endpoint and stats/tinybird.js) that expect a string token value, causing authentication failures when making requests to Tinybird pipes.",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 97,
+   "end_line": 99,
+   "problematic_code_snippet": "if (!this._serverToken || this._isJWTExpired(this._serverToken)) {\n    const tokenData = this._generateToken({name, expiresInMinutes});\n    this._serverToken = tokenData;\n    this._serverTokenExp = tokenData.exp;\n}"
+  },
+  {
+   "title": "JWT signature validation bypassed in token expiration check",
+   "description": "The _isJWTExpired method now uses jwt.decode() instead of jwt.verify() to check token expiration. While jwt.verify() validates the token's signature and ensures it hasn't been tampered with, jwt.decode() only decodes the token without any cryptographic validation. This creates a security vulnerability where expired, tampered, or forged tokens could be accepted as valid. An attacker could potentially modify token claims (like extending expiration or changing site_uuid in scopes) and the system would accept the malicious token, bypassing authentication controls for Tinybird API access.",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 162,
+   "end_line": 170,
+   "problematic_code_snippet": "_isJWTExpired(token, bufferSeconds = 300) {\n    try {\n        const decoded = jwt.decode(token);\n        if (typeof decoded !== 'object' || !decoded.exp) {\n            return true;\n        }\n        const now = Math.floor(Date.now() / 1000);\n        const timeRemaining = decoded.exp - now;\n        return timeRemaining < bufferSeconds;"
+  },
+  {
+   "title": "JWT token structure changed by removing noTimestamp option",
+   "description": "The _generateToken method previously created JWT tokens with {noTimestamp: true} to exclude the 'iat' (issued at) claim from the token payload. This option has been removed, causing the JWT library to automatically include the 'iat' timestamp in the token. This changes the token structure that Tinybird expects and may cause authentication failures if Tinybird's API validates or expects a specific token payload structure without the 'iat' claim. The changed token format could also affect token caching behavior and invalidate existing token validation logic.",
+   "file_path": "ghost/core/core/server/services/tinybird/TinybirdService.js",
+   "start_line": 147,
+   "end_line": 147,
+   "problematic_code_snippet": "const token = jwt.sign(payload, this.tinybirdConfig.adminToken);"
+  },
+  {
+   "title": "Type mismatch in _isJWTExpired call after token caching change",
+   "description": "The _isJWTExpired method expects a string token parameter, but after line 98 changes this._serverToken from storing just the token string to storing the entire tokenData object, line 96 now passes an object {token: string, exp: number} to _isJWTExpired instead of a string. This causes jwt.decode() at line 164 to fail when trying to decode an object instead of a JWT string. The method will always return true (treating the token as expired) on subsequent calls, forcing unnecessary token regeneration on every request and breaking the token caching mechanism entirely.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "if (!this._serverToken || this._isJWTExpired(this._serverToken)) {\n    const tokenData = this._generateToken({name, expiresInMinutes});\n    this._serverToken = tokenData;\n    this._serverTokenExp = tokenData.exp;\n}"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "6fdbd46582bcf0885572a8c2025bd99ad633e2d0",
+ "diff_chars": 35514,
+ "diff_lines": 675,
+ "user_prompt_chars": 36359,
+ "exit_code": 1,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 107056,
+ "wall_ms": 109198,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "ListAgents",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 11,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 23,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 11
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.572655371,
+ "spend_post_usd": 5.606387251,
+ "cost_settled": true,
+ "cost_wait_ms": 336,
+ "cost_usd": 0.03373188000000038,
+ "cost_flag": null,
+ "subtype": "error_max_structured_output_retries",
+ "is_error": true,
+ "num_turns": 12,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.022642045,
+ "usage": {
+  "input_tokens": 16,
+  "cache_creation_input_tokens": 41567,
+  "cache_read_input_tokens": 350057,
+  "output_tokens": 20882,
+  "output_tokens_details": {
+   "thinking_tokens": 6189
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 41567
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 25221,
+   "cacheReadInputTokens": 410412,
+   "cacheCreationInputTokens": 47405,
+   "webSearchRequests": 0,
+   "costUSD": 0.022642045,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 6189,
+   "cacheCreationEphemeral5mInputTokens": 47405,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": null,
+ "result_text_head": null,
+ "schema_valid": false,
+ "schema_errors": [
+  "structured_output missing"
+ ],
+ "n_findings": 0
+}

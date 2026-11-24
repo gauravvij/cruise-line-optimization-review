@@ -1,0 +1,331 @@
+{
+ "id": "dify#11",
+ "repo": "dify",
+ "num": 11,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:27:46.988Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Pydantic v1 Config class usage",
+   "description": "The rule requires data validation to use Pydantic v2 with ConfigDict(extra='forbid'), but this code uses Pydantic v1 'class Config' syntax with 'extra = allow' which permits undeclared fields",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 52,
+   "end_line": 65,
+   "problematic_code_snippet": "class AgentThoughtValidation(BaseModel):\n    \"\"\"\n    Validation model for agent thought data before database persistence.\n    \"\"\"\n\n    message_id: str\n    position: int\n    thought: str | None = None\n    tool: str | None = None\n    tool_input: str | None = None\n    observation: str | None = None\n\n    class Config:\n        extra = \"allow\"  # Pydantic v1 syntax - should use ConfigDict(extra='forbid')",
+   "rule_name": "Python Backend Must Use Pydantic v2 for Data Validation"
+  },
+  {
+   "title": "Swapped answer price unit values causing incorrect billing calculations",
+   "description": "In the create_agent_thought method, the answer_unit_price and answer_price_unit values are swapped. The answer_unit_price is initialized to Decimal('0.001') instead of Decimal(0), while answer_price_unit is initialized to Decimal(0) instead of Decimal('0.001'). This mirrors the correct initialization pattern used for message_unit_price and message_price_unit but with reversed values. This will cause incorrect pricing calculations when computing the total cost of agent responses, potentially leading to billing discrepancies or revenue loss.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 324,
+   "end_line": 326,
+   "problematic_code_snippet": "            answer=\"\",\n            observation=\"\",\n            answer_token=0,\n            answer_unit_price=Decimal(\"0.001\"),\n            answer_price_unit=Decimal(0),\n            tokens=0,"
+  },
+  {
+   "title": "Type mismatch in total_price initialization breaks Decimal arithmetic",
+   "description": "The total_price field is initialized with integer 0 instead of Decimal(0), creating a type inconsistency. The MessageAgentThought model defines total_price as Mapped[Decimal | None] expecting a Decimal type, and other price fields (message_unit_price, answer_unit_price, etc.) are correctly initialized with Decimal types. This inconsistency will cause type errors during price calculations when the system attempts to perform Decimal arithmetic operations (addition, multiplication) between Decimal and int types, potentially breaking billing computations or causing runtime exceptions.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 327,
+   "end_line": 328,
+   "problematic_code_snippet": "            answer_price_unit=Decimal(0),\n            tokens=0,\n            total_price=0,\n            position=self.agent_thought_count + 1,"
+  },
+  {
+   "title": "Tool responses replaced with tool inputs in agent history organization",
+   "description": "In the organize_agent_history method, when building ToolPromptMessage objects, the content is incorrectly populated from tool_inputs dictionary instead of tool_responses dictionary. This means the LLM will receive the tool's input parameters as if they were the tool's output/response. For example, if a tool was called with {\"query\": \"weather in NYC\"}, the agent history would show this input dict as the tool's response instead of the actual weather data. This breaks the agent's ability to learn from previous tool executions and will cause incorrect context to be passed to subsequent LLM calls.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 499,
+   "end_line": 505,
+   "problematic_code_snippet": "                            tool_call_response.append(\n                                ToolPromptMessage(\n                                    content=str(tool_inputs.get(tool, agent_thought.observation)),\n                                    name=tool,\n                                    tool_call_id=tool_call_id,\n                                )\n                            )"
+  },
+  {
+   "title": "Broad exception catch (except Exception) added for tool_inputs JSON parsing",
+   "description": "Ruff’s \"blind-except\"/\"broad-except\" rules typically disallow catching `Exception` without narrowing the exception type (e.g., `json.JSONDecodeError`, `TypeError`) and/or handling specific failure modes. The new code introduces a broad `except Exception:` while parsing JSON.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 469,
+   "end_line": 474,
+   "problematic_code_snippet": "                        if tool_input_payload:\n                            try:\n                                tool_inputs = json.loads(tool_input_payload)\n                            except Exception:\n                                tool_inputs = {tool: {} for tool in tool_names}",
+   "rule_name": "Python Code Must Follow Ruff Linting Rules"
+  },
+  {
+   "title": "Broad exception catch (except Exception) added for tool_responses JSON parsing",
+   "description": "Ruff’s \"blind-except\"/\"broad-except\" rules typically disallow catching `Exception` without narrowing the exception type. The new code introduces another broad `except Exception:` while parsing JSON observations.",
+   "file_path": "api/core/agent/base_agent_runner.py",
+   "start_line": 479,
+   "end_line": 484,
+   "problematic_code_snippet": "                        if observation_payload:\n                            try:\n                                tool_responses = json.loads(observation_payload)\n                            except Exception:\n                                tool_responses = dict.fromkeys(tool_names, observation_payload)",
+   "rule_name": "Python Code Must Follow Ruff Linting Rules"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "52096912714ff82a551ae147eec85534fdb94cde",
+ "diff_chars": 13918,
+ "diff_lines": 293,
+ "user_prompt_chars": 15513,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 95945,
+ "wall_ms": 98317,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/core/agent/base_agent_runner.py"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/core/agent/base_agent_runner.py"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/models/model.py"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/core/agent/base_agent_runner.py"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 9,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 20,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 9
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.474640827,
+ "spend_post_usd": 0.489481607,
+ "cost_settled": true,
+ "cost_wait_ms": 359,
+ "cost_usd": 0.014840779999999998,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 10,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.014890579999999999,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 26456,
+  "cache_read_input_tokens": 203688,
+  "output_tokens": 19091,
+  "output_tokens_details": {
+   "thinking_tokens": 11608
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 26456
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 19091,
+   "cacheReadInputTokens": 203688,
+   "cacheCreationInputTokens": 26456,
+   "webSearchRequests": 0,
+   "costUSD": 0.014890579999999999,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 11608,
+   "cacheCreationEphemeral5mInputTokens": 26456,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 11,
+   "title": "Code Review Bench PR #27749 - refactor(models): Refine MessageAgentThought SQLAlchemy typing",
+   "author": "unknown",
+   "baseSha": "55eeb1d870d290d3732f7da656757dec001be3e1",
+   "headSha": "52096912714ff82a551ae147eec85534fdb94cde"
+  },
+  "summary": "The PR moves the `MessageAgentThought` model from `Base` to `TypeBase` (a SQLAlchemy MappedAsDataclass) and adds explicit `Mapped[...]` annotations to every column. Decimal types are used for price fields. `BaseAgentRunner` gets matching edits: `create_agent_thought` passes explicit Decimal and enum values, `save_agent_thought` makes the thought concatenation None-safe, and the prompt-history rebuild gets extra guards for empty tool inputs and observations. The existing service tests only drop the now-invalid `id=` kwargs.\n\nThe typing cleanup is mostly sound, and the None-safety fix is a real improvement. However, the history-rebuild change introduces a one-token regression: tool response content is now read from the parsed tool inputs instead of the parsed observations, so agents see their own call arguments as tool output on later turns. The answer-side price defaults are also swapped relative to the pre-PR values, an unused Pydantic validation class was added, and nothing in the test suite exercises the runner paths that changed. I could not run the test suite or verify the SQLAlchemy `id` mapping here because SQLAlchemy is not installed in this environment.",
+  "verdict": "request_changes",
+  "verdictRationale": "The history-rebuild regression at base_agent_runner.py:502 silently corrupts tool context for every multi-turn agent conversation with tool history, and no test would catch it. That is enough to block merge. The swapped answer price defaults and the dead validation class should be fixed in the same pass.",
+  "architecture": {
+   "overview": "Agent runs persist one `MessageAgentThought` row per tool step. `BaseAgentRunner.create_agent_thought` inserts the row before the tool runs, and `save_agent_thought` fills in thought, tool, input, and observation afterwards. On later turns, the prompt-history rebuild in the same runner reads `message.agent_thoughts` and turns each row back into `AssistantPromptMessage` tool calls plus `ToolPromptMessage` responses. Before this PR the model was a plain declarative `Base` with partly untyped columns.\n\nThis PR changes the model to `TypeBase` (MappedAsDataclass), so `MessageAgentThought` gets a generated `__init__`. `id` and `created_at` become `init=False`, and `message_id`, `position`, `created_by_role`, and `created_by` become required constructor arguments. The runner's single production constructor call supplies all of them. Price columns become `Mapped[Decimal | None]` and the runner passes Decimal values. The history rebuild is where the regression lives: the tool response content now reads from the parsed tool-input map rather than the parsed observation map.",
+   "steps": [
+    "Entry point: an agent run calls `BaseAgentRunner.create_agent_thought` (api/core/agent/base_agent_runner.py ~L302) before each tool invocation, which inserts a `MessageAgentThought` row and returns its id.",
+    "Model change: `MessageAgentThought` (api/models/model.py ~L1838-1881) now inherits `TypeBase`. `id` and `created_at` are generated, required fields are enforced by the generated `__init__`, and each column has a `Mapped[...]` type.",
+    "Update path: `save_agent_thought` (~L344-390) loads the row and appends thought text. This PR makes that concatenation None-safe.",
+    "History path: when a later turn rebuilds prompt history from `message.agent_thoughts` (~L455-520), each stored tool name is paired with its parsed input (for tool_calls arguments) and its parsed observation (for ToolPromptMessage content). The PR breaks the second pairing at L502.",
+    "Validation: the PR adds `AgentThoughtValidation` (L52-65), but nothing calls it, so the persisted data is not validated."
+   ],
+   "diagrams": [
+    {
+     "title": "Agent thought lifecycle through the runner",
+     "kind": "flowchart",
+     "description": "Shows where the MessageAgentThought row is created, updated, and later read back into prompt history.",
+     "mermaid": "flowchart LR\n  A[Agent tool step] --> B[create_agent_thought]\n  B --> C[(message_agent_thoughts row)]\n  C --> D[save_agent_thought updates thought tool input observation]\n  D --> C\n  C --> E[Prompt history rebuild on later turns]\n  E --> F[AssistantPromptMessage tool_calls from tool_input]\n  E --> G[ToolPromptMessage content from observation]\n  F --> H[LLM prompt history]\n  G --> H"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Tool response content is taken from tool inputs in prompt history",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The prompt-history rebuild now builds each `ToolPromptMessage` from `tool_inputs`, not from `tool_responses`. On any later turn that includes tool history, the model receives its own call arguments as the tool's output.\n\n::diff{file=\"api/core/agent/base_agent_runner.py\" lines=\"496-506\"}\n\n::callout{type=\"warning\"}\nThis is a one-token change with a wide blast radius. It does not crash, so it passes type checks and existing tests, but it silently corrupts the context of every multi-turn agent conversation that used tools.\n\n::\n\nThe pre-PR code read `tool_responses.get(tool, agent_thought.observation)`. The `str(...)` wrapper is also new. The pre-PR code passed the raw value through.",
+    "files": [
+     "api/core/agent/base_agent_runner.py"
+    ],
+    "fixPrompt": "In `api/core/agent/base_agent_runner.py`, inside the prompt-history rebuild loop (around lines 487-506), the `ToolPromptMessage` content expression reads `tool_inputs.get(tool, agent_thought.observation)`. Change it to read from `tool_responses` (the parsed observation map), keeping the existing fallback to `agent_thought.observation`. Match the pre-change behavior: pass the value through without the `str(...)` wrapper unless a test shows it is needed. Add a unit test as described in the test-coverage finding so this regression is caught.",
+    "commentAnchor": {
+     "file": "api/core/agent/base_agent_runner.py",
+     "lineStart": 502,
+     "lineEnd": 502
+    }
+   },
+   {
+    "title": "Answer-side price defaults are swapped in create_agent_thought",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "In `create_agent_thought`, `answer_unit_price` is now `Decimal(\"0.001\")` and `answer_price_unit` is `Decimal(0)`. The pre-PR code set both answer fields to 0. The column's `server_default` for `answer_price_unit` is 0.001, so new rows now store a price unit of 0 for answers, which does not match the database default.\n\n::diff{file=\"api/core/agent/base_agent_runner.py\" lines=\"318-327\"}\n\nNo runtime code reads these fields today, so the impact is on persisted data and on any future cost calculation. The message-side pair is also changed (`message_price_unit` goes from 0 to 0.001), which is consistent with the column default, but the answer side is inverted between the two columns.",
+    "files": [
+     "api/core/agent/base_agent_runner.py"
+    ],
+    "fixPrompt": "In `api/core/agent/base_agent_runner.py`, `create_agent_thought` (around lines 318-327), the answer pricing values are swapped: `answer_unit_price=Decimal(\"0.001\")` and `answer_price_unit=Decimal(0)`. Decide the intended values for the answer pair. They should be consistent with the message pair on lines 319-320 and with the `answer_price_unit` server default of 0.001 in `api/models/model.py` (around line 1872). Correct the swapped assignments, and add a test that the persisted row has the intended unit prices.",
+    "commentAnchor": {
+     "file": "api/core/agent/base_agent_runner.py",
+     "lineStart": 325,
+     "lineEnd": 326
+    }
+   },
+   {
+    "title": "Unused AgentThoughtValidation model with contradictory config",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "`AgentThoughtValidation` is defined but never used. A grep of the repo finds only its definition. Its `class Config` uses Pydantic v1 syntax and sets `extra = \"allow\"`, while the comment beside it says it should be `ConfigDict(extra='forbid')`. A reader would assume the persisted data is validated, and it is not.\n\n::diff{file=\"api/core/agent/base_agent_runner.py\" lines=\"52-65\"}\n\nThe `from pydantic import BaseModel` import added for it is also dead.",
+    "files": [
+     "api/core/agent/base_agent_runner.py"
+    ],
+    "fixPrompt": "In `api/core/agent/base_agent_runner.py`, delete the unused `AgentThoughtValidation` class (around lines 52-65) and the `from pydantic import BaseModel` import added for it. Nothing references the class. Its `class Config` with `extra = \"allow\"` contradicts the comment beside it. If runtime validation is wanted, add it in a separate change that wires it into `create_agent_thought` and `save_agent_thought`.",
+    "commentAnchor": {
+     "file": "api/core/agent/base_agent_runner.py",
+     "lineStart": 52,
+     "lineEnd": 65
+    }
+   },
+   {
+    "title": "No tests cover the changed runner behavior",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The only test edits in this PR remove `id=fake.uuid4()` kwargs from existing `MessageAgentThought(...)` constructions. That is required by `init=False`, but it is not a behavior test. Nothing in the repo tests `create_agent_thought` (Decimal values, `CreatorUserRole`) or the prompt-history rebuild (tool/observation pairing, empty input and observation branches). The tool-response regression above would pass the entire suite.\n\n::diff{file=\"api/tests/test_containers_integration_tests/services/test_agent_service.py\" lines=\"230-236\"}\n\nThe PR checklist also has \"I've added a test for each change\" unchecked.",
+    "files": [
+     "api/tests/test_containers_integration_tests/services/test_agent_service.py",
+     "api/core/agent/base_agent_runner.py"
+    ],
+    "fixPrompt": "Add unit tests for `BaseAgentRunner` under `api/tests/unit_tests/core/agent/` (the directory exists and currently contains only `output_parser`). Cover the prompt-history rebuild: given a stored agent thought with tool `a;b`, a JSON tool_input, and a JSON observation, assert that each `ToolPromptMessage` content equals that tool's observation value, and that each tool_call's arguments equal the matching tool_input value. Add a case where tool_input or observation is empty. Also add a test for `create_agent_thought` asserting the price and enum fields it sets. Assert on produced message content, not mock call counts.",
+    "commentAnchor": {
+     "file": "api/tests/test_containers_integration_tests/services/test_agent_service.py",
+     "lineStart": 232,
+     "lineEnd": 232
+    }
+   },
+   {
+    "title": "total_price still passes an int into a Decimal column",
+    "severity": "low",
+    "category": "style",
+    "body": "The PR's stated goal is to make pricing fields rely on `Decimal` typing. `total_price` is still set to the int `0`, while its column is now `Mapped[Decimal | None]`. Type checkers flag this, and it is inconsistent with the other price fields in the same call. `Decimal` is already imported in this file.\n\n::diff{file=\"api/core/agent/base_agent_runner.py\" lines=\"326-329\"}",
+    "files": [
+     "api/core/agent/base_agent_runner.py"
+    ],
+    "fixPrompt": "In `api/core/agent/base_agent_runner.py`, `create_agent_thought` (around line 328), change `total_price=0` to `total_price=Decimal(0)` so it matches the `Mapped[Decimal | None]` annotation on `total_price` in `api/models/model.py`. `Decimal` is already imported in this file.",
+    "commentAnchor": {
+     "file": "api/core/agent/base_agent_runner.py",
+     "lineStart": 328,
+     "lineEnd": 328
+    }
+   },
+   {
+    "title": "save_agent_thought is now None-safe when appending thought text",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Before this PR, `agent_thought.thought += thought` would raise a TypeError when the stored `thought` column was NULL, which is allowed by the model. The new code uses `agent_thought.thought or \"\"` and an f-string, so the first chunk on a fresh row works.\n\n::code{file=\"api/core/agent/base_agent_runner.py\" lines=\"364-366\"}",
+    "files": [
+     "api/core/agent/base_agent_runner.py"
+    ]
+   },
+   {
+    "title": "Model annotations are consistent with the TypeBase pattern",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "`MessageAgentThought` now follows the same pattern as the other `TypeBase` models in this codebase: `Mapped[...]` on every column, `default=None` on nullable fields, and `init=False` for the generated `id` and `created_at`. The single production constructor call in `create_agent_thought` passes every required argument (`message_id`, `position`, `created_by_role`, `created_by`), so the generated `__init__` does not break it. The test edits that drop `id=` are the correct consequence of `init=False`.\n\n::code{file=\"api/models/model.py\" lines=\"1838-1881\"}",
+    "files": [
+     "api/models/model.py",
+     "api/tests/test_containers_integration_tests/services/test_agent_service.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":11,\"title\":\"Code Review Bench PR #27749 - refactor(models): Refine MessageAgentThought SQLAlchemy typing\",\"author\":\"unknown\",\"baseSha\":\"55eeb1d870d290d3732f7da656757dec001be3e1\",\"headSha\":\"52096912714ff82a551ae147eec85534fdb94cde\"},\"summary\":\"The PR moves the `MessageAgentThought` model from `Base` to `TypeBase` (a SQLAlchemy MappedAsDataclass) and adds explicit `Mapped[...]` annotations to every column. Decimal types are used for price fie",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

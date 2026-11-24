@@ -1,0 +1,274 @@
+{
+ "id": "tauri#10",
+ "repo": "tauri",
+ "num": 10,
+ "tag": "e2_haiku_medium",
+ "model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "promptVariant": "baseline",
+ "num_of_issues": 7,
+ "issues": [
+  {
+   "title": "Inconsistent spacing around function arguments",
+   "description": "The code contains inconsistent spacing around commas in function arguments that violates the project's rustfmt configuration. Specifically, missing space after comma and extra spaces after comma in method calls.",
+   "file_path": "crates/tauri/src/webview/webview_window.rs",
+   "start_line": 1315,
+   "end_line": 1322,
+   "problematic_code_snippet": "  pub fn window_features(mut self, features: NewWindowFeatures) -> Self {\n    if let Some(position) = features.position() {\n      self.window_builder = self.window_builder.position(position.x,position.y);\n    }\n\n    if let Some(size) = features.size() {\n      self.window_builder = self.window_builder.inner_size(size.width,    size.height);\n    }",
+   "rule_name": "Rust Code Must Be Formatted According to Project rustfmt Configuration"
+  },
+  {
+   "title": "Cookie deletion incorrectly calls SetCookie instead of DeleteCookie",
+   "description": "The delete_cookie function is sending a WebviewMessage::SetCookie message instead of WebviewMessage::DeleteCookie. This causes the cookie to be set/updated instead of being deleted when the delete_cookie API is called. Any code attempting to delete cookies will fail to remove them, and may inadvertently persist or update cookies that should be removed. This breaks the entire cookie deletion functionality and creates a security concern where sensitive cookies cannot be properly removed.",
+   "file_path": "crates/tauri-runtime-wry/src/lib.rs",
+   "start_line": 1712,
+   "end_line": 1722,
+   "problematic_code_snippet": "  fn delete_cookie(&self, cookie: Cookie<'_>) -> Result<()> {\n    send_user_message(\n      &self.context,\n      Message::Webview(\n        *self.window_id.lock().unwrap(),\n        self.webview_id,\n        WebviewMessage::SetCookie(cookie.into_owned()),\n      ),\n    )?;\n    Ok(())\n  }"
+  },
+  {
+   "title": "Window size applied before position in window_features causing incorrect window placement",
+   "description": "In the window_features method, the size configuration is now applied before the position configuration, reversing the original order. This can lead to incorrect window positioning behavior because some window managers calculate the final window position based on the current window size. When the size is set after the position, the position may be recalculated or adjusted incorrectly. This particularly affects windows opened through the on_new_window handler when both size and position are specified in NewWindowFeatures.",
+   "file_path": "crates/tauri/src/webview/webview_window.rs",
+   "start_line": 1315,
+   "end_line": 1322,
+   "problematic_code_snippet": "  pub fn window_features(mut self, features: NewWindowFeatures) -> Self {\n    if let Some(size) = features.size() {\n      self.window_builder = self.window_builder.inner_size(size.width,    size.height);\n    }\n\n    if let Some(position) = features.position() {\n      self.window_builder = self.window_builder.position(position.x,position.y);\n    }"
+  },
+  {
+   "title": "Changed window naming pattern breaks window label consistency",
+   "description": "The window label format for dynamically created windows has been changed from \"new-{number}\" to \"new-window-{number}\". This breaks the established naming convention and will cause any code that attempts to retrieve or manipulate these windows using the expected label format to fail. For example, code trying to access \"new-0\" or \"new-1\" will not find the windows, as they are now named \"new-window-0\" and \"new-window-1\". This affects window management, event handling, and any window lookup operations that depend on the label pattern.",
+   "file_path": "examples/api/src-tauri/src/lib.rs",
+   "start_line": 87,
+   "end_line": 94,
+   "problematic_code_snippet": "            let number = created_window_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);\n\n            let builder = tauri::WebviewWindowBuilder::new(\n              &app_,\n              format!(\"new-window-{number}\"),\n              tauri::WebviewUrl::External(\"about:blank\".parse().unwrap()),\n            )\n            .window_features(features)"
+  },
+  {
+   "title": "Public re-export lacks rustdoc documentation",
+   "description": "A new public API item (`pub use tauri_runtime::Cookie;`) was added without a `///` documentation comment. Line comments (`// ...`) do not satisfy the rule requiring rustdoc comments for public APIs.",
+   "file_path": "crates/tauri/src/webview/mod.rs",
+   "start_line": 22,
+   "end_line": 23,
+   "problematic_code_snippet": "// Remove this re-export in v3\npub use tauri_runtime::Cookie;",
+   "rule_name": "Public APIs Must Include Documentation Comments"
+  },
+  {
+   "title": "New code uses unwrap() on fallible operations",
+   "description": "Added code introduces multiple `unwrap()` calls on fallible operations (`parse().unwrap()`, `set_title(...).unwrap()`, and `build().unwrap()`), which violates the rule prohibiting panics/unwraps in favor of explicit error handling via `Result`.",
+   "file_path": "examples/api/src-tauri/src/lib.rs",
+   "start_line": 90,
+   "end_line": 107,
+   "problematic_code_snippet": "let builder = tauri::WebviewWindowBuilder::new(\n  &app_,\n  format!(\"new-window-{number}\"),\n  tauri::WebviewUrl::External(\"about:blank\".parse().unwrap()),\n)\n.window_features(features)\n.on_document_title_changed(|window, title| {\n  window.set_title(&title).unwrap();\n})\n.title(url.as_str());\n\nlet window = builder.build().unwrap();",
+   "rule_name": "Functions Should Return Result Types for Fallible Operations"
+  },
+  {
+   "title": "User-facing API change without a .changes entry",
+   "description": "This PR changes a user-facing API (renaming/replacing `with_window_features` with `window_features` and updating docs/examples accordingly) but does not add any markdown change file under `.changes/` in the diff, violating the requirement to include a covector change file for releasable functionality/API changes.",
+   "file_path": "",
+   "start_line": 0,
+   "end_line": 0,
+   "problematic_code_snippet": ".with_window_features(features)\n→\n.window_features(features)",
+   "rule_name": "Changes Requiring a Version Bump Must Include a Change File"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "eca39593e85c5c2e8ddd4ba50afc262e7940e313",
+ "diff_chars": 5997,
+ "diff_lines": 153,
+ "user_prompt_chars": 7878,
+ "exit_code": 0,
+ "timed_out": false,
+ "latency_ms": 56773,
+ "wall_ms": 60525,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 6,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "cost_usd": 0.008132735000000224,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.0090616,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 12376,
+  "cache_read_input_tokens": 143710,
+  "output_tokens": 12153,
+  "output_tokens_details": {
+   "thinking_tokens": 5848
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 12376
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 12153,
+   "cacheReadInputTokens": 143710,
+   "cacheCreationInputTokens": 12376,
+   "webSearchRequests": 0,
+   "costUSD": 0.0090616,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5848,
+   "cacheCreationEphemeral5mInputTokens": 12376,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 10,
+   "title": "Code Review Bench PR #14020 - fix: a few regressions from previous PRs",
+   "author": "unknown",
+   "baseSha": "41fe83d5324bff78ee13b027d50beea337d3aa71",
+   "headSha": "eca39593e85c5c2e8ddd4ba50afc262e7940e313"
+  },
+  "summary": "The PR claims three cleanups: drop a redundant clone, restore the `tauri_runtime::Cookie` re-export, and register the API example's `on_new_window` handler only on desktop. It also renames `WebviewWindowBuilder::with_window_features` to `window_features` and reorders its size and position calls.\n\nThe cookie change is wrong. In the wry runtime, `WebviewDispatch::delete_cookie` now sends `WebviewMessage::SetCookie` instead of `DeleteCookie`. The \"redundant clone\" removal is what flipped it, so every `delete_cookie` call now sets the cookie. Nothing in the diff's tests would catch this. The Cookie re-export and the example change are sound, but the rename and the reordering are not mentioned in the PR description, and the whitespace in the reordered lines would fail `cargo fmt --check`.",
+  "verdict": "request_changes",
+  "verdictRationale": "A critical regression: `delete_cookie` in `tauri-runtime-wry` now dispatches `SetCookie`, so deleting a cookie silently sets it. That has to be fixed before merge. The rename of a public builder method and the formatting problems are real but secondary.",
+  "architecture": {
+   "overview": "Cookie operations on a webview go through the `tauri-runtime` `WebviewDispatch` trait. The implementation in `tauri-runtime-wry` wraps each call in a `WebviewMessage` and sends it over the event loop to the wry webview. `tauri::Webview` and `WebviewWindow` expose `set_cookie`/`delete_cookie` on top of that, and they re-export the `cookie` crate's `Cookie` type. Each message variant has a matching handler arm in the event loop. The `on_new_window` path in `tauri::webview` also builds a `WebviewWindowBuilder` from `NewWindowFeatures`, which the builder applies through `window_features`.\n\nThis PR touches three areas. The wry dispatcher's `delete_cookie` now sends `SetCookie`, which breaks the delete path, while the handler arm for `DeleteCookie` is unchanged. The `tauri::webview` module re-exports `tauri_runtime::Cookie` again and drops its direct `cookie` import. The builder method `with_window_features` is renamed to `window_features`, with its size and position calls reordered. The API example moves its `on_new_window` registration into the desktop-only block.",
+   "steps": [
+    "Entry point: user code calls `Webview::delete_cookie` or `WebviewWindow::delete_cookie` in `crates/tauri/src/webview/mod.rs`, which forwards to the runtime's `WebviewDispatch`.",
+    "Wry dispatcher in `crates/tauri-runtime-wry/src/lib.rs` wraps the cookie in a `WebviewMessage` and posts it to the event loop. This PR changes `delete_cookie` (around line 1718) to send `SetCookie`, so the delete intent is lost here.",
+    "Event loop handler (around lines 3731-3740) matches the variant: `SetCookie` calls `webview.set_cookie` and `DeleteCookie` calls `webview.delete_cookie`. The handler is correct, but it never receives a delete request anymore.",
+    "Type surface: `tauri::webview` now re-exports `tauri_runtime::Cookie` (same type as the `cookie` crate's `Cookie`) so public signatures keep resolving the same type.",
+    "Builder: `WebviewWindowBuilder::window_features` (renamed from `with_window_features`) applies `NewWindowFeatures` to the window builder. The PR reorders its size and position calls and adds extra whitespace.",
+    "Example: `examples/api` now registers `on_new_window` only inside the `cfg(all(desktop, not(test)))` block and uses `window_features`."
+   ],
+   "diagrams": [
+    {
+     "title": "Cookie delete path after this PR",
+     "kind": "flowchart",
+     "description": "Shows how a delete request flows from the public API to the webview, and where the PR changes the message variant.",
+     "mermaid": "flowchart LR\n  A[\"Webview::delete_cookie / WebviewWindow::delete_cookie\"] --> B[\"WryWebviewDispatcher::delete_cookie\"]\n  B -->|\"PR: sends SetCookie (was DeleteCookie)\"| C[\"Message::Webview(WebviewMessage::SetCookie)\"]\n  C --> D[\"Event loop handler\"]\n  D -->|\"SetCookie arm\"| E[\"webview.set_cookie\"]\n  D -->|\"DeleteCookie arm (now unreachable from delete_cookie)\"| F[\"webview.delete_cookie\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "delete_cookie now sends SetCookie, so deleting a cookie sets it",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `WryWebviewDispatcher::delete_cookie`, the message was changed from `WebviewMessage::DeleteCookie` to `WebviewMessage::SetCookie`. That's the reverse of what the description asks for. The `DeleteCookie` arm in the event loop at `crates/tauri-runtime-wry/src/lib.rs` (around line 3737) now runs only for messages sent by code that isn't this method, so `delete_cookie` does the opposite of its name.\n\n::diff{file=\"crates/tauri-runtime-wry/src/lib.rs\" lines=\"1715-1721\"}\n\nThe `.clone()` removal is fine on its own. It was the variant swap that broke the method. Any caller of `Webview::delete_cookie` or `WebviewWindow::delete_cookie` will now write the cookie into the webview.\n\n::callout{type=\"warning\"}\nNo test in this PR exercises `delete_cookie`. An end-to-end check that a cookie is gone after `delete_cookie` would have caught this.\n\n",
+    "files": [
+     "crates/tauri-runtime-wry/src/lib.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-runtime-wry/src/lib.rs`, the `delete_cookie` method of `WryWebviewDispatcher` (around line 1718) sends `WebviewMessage::SetCookie(cookie.into_owned())`. It must send `WebviewMessage::DeleteCookie(cookie.into_owned())` so the event loop's `DeleteCookie` arm (around line 3737) runs. Keep `set_cookie` unchanged. Dropping the `.clone()` is fine, since `into_owned()` consumes the borrowed cookie. Add a test or doc check that `delete_cookie` routes to `DeleteCookie`.",
+    "commentAnchor": {
+     "file": "crates/tauri-runtime-wry/src/lib.rs",
+     "lineStart": 1718,
+     "lineEnd": 1718
+    }
+   },
+   {
+    "title": "Public builder method renamed without a changelog or migration note",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "`WebviewWindowBuilder::with_window_features` is renamed to `window_features` in `crates/tauri/src/webview/webview_window.rs`. The PR description doesn't mention it, and no `.changes` entry records it. If the method has shipped anywhere, the rename breaks callers at compile time. The `on_new_window` feature it supports appears to be unreleased, which limits the impact, but the rename should still be stated in the description and the change log. The `with_` prefix matches the rest of the builder API, so the rename also goes against the existing convention.\n\n::diff{file=\"crates/tauri/src/webview/webview_window.rs\" lines=\"1313-1316\"}\n\nIf the rename is intended, say so and add a change file. If not, revert it and keep `with_window_features`, which the doc examples and the example app used before this PR.",
+    "files": [
+     "crates/tauri/src/webview/webview_window.rs",
+     "crates/tauri/src/webview/mod.rs",
+     "examples/api/src-tauri/src/lib.rs"
+    ],
+    "fixPrompt": "In `crates/tauri/src/webview/webview_window.rs`, the builder method was renamed from `with_window_features` to `window_features` (around line 1315). The PR description doesn't mention this rename and no `.changes` file records it. Either revert the rename to `with_window_features` (and update the doc example around line 300, `crates/tauri/src/webview/mod.rs` around line 525, and `examples/api/src-tauri/src/lib.rs` around line 94) to keep the existing name, or keep the rename and add a `.changes` entry that documents it. The `with_` prefix matches the rest of the builder API.",
+    "commentAnchor": {
+     "file": "crates/tauri/src/webview/webview_window.rs",
+     "lineStart": 1315,
+     "lineEnd": 1315
+    }
+   },
+   {
+    "title": "Unformatted lines and unrelated reordering in window_features",
+    "severity": "low",
+    "category": "style",
+    "body": "The rewritten size and position calls have stray whitespace (`inner_size(size.width,    size.height)` and `position(position.x,position.y)`). Tauri CI runs `cargo fmt --check`, so this will fail. The PR also swaps the order of the size and position calls without explaining why. Both changes are unrelated to the three bullets in the description.\n\n::diff{file=\"crates/tauri/src/webview/webview_window.rs\" lines=\"1316-1321\"}\n\n::suggestion{file=\"crates/tauri/src/webview/webview_window.rs\" lines=\"1316-1321\"}\n    if let Some(position) = features.position() {\n      self.window_builder = self.window_builder.position(position.x, position.y);\n    }\n\n    if let Some(size) = features.size() {\n      self.window_builder = self.window_builder.inner_size(size.width, size.height);\n    }\n\n",
+    "files": [
+     "crates/tauri/src/webview/webview_window.rs"
+    ],
+    "fixPrompt": "In `crates/tauri/src/webview/webview_window.rs`, inside `window_features` (around lines 1316-1321), remove the extra spaces in `inner_size(size.width,    size.height)` and `position(position.x,position.y)`, so they read `inner_size(size.width, size.height)` and `position(position.x, position.y)`. Restore the original order (position first, then size) from the base commit unless the reorder is deliberate and explained. Run `cargo fmt` to confirm.",
+    "commentAnchor": {
+     "file": "crates/tauri/src/webview/webview_window.rs",
+     "lineStart": 1316,
+     "lineEnd": 1321
+    }
+   },
+   {
+    "title": "Example window label changed without mention",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The example's new-window label changed from `new-{number}` to `new-window-{number}`. This is harmless, but it isn't in the description, and it changes the identifiers that any external test or script might match on. A label change like this belongs in its own commit or in the description.\n\n::code{file=\"examples/api/src-tauri/src/lib.rs\" lines=\"84-103\"}",
+    "files": [
+     "examples/api/src-tauri/src/lib.rs"
+    ],
+    "fixPrompt": "In `examples/api/src-tauri/src/lib.rs`, the `on_new_window` handler (around line 91) changed the window label from `new-{number}` to `new-window-{number}`. Either revert the label to `new-{number}` to keep this PR scoped to the stated fixes, or mention the change in the PR description.",
+    "commentAnchor": {
+     "file": "examples/api/src-tauri/src/lib.rs",
+     "lineStart": 91,
+     "lineEnd": 91
+    }
+   },
+   {
+    "title": "Cookie re-export restored with the cookie import cleaned up",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "`tauri::webview` now re-exports `tauri_runtime::Cookie` and drops its direct `use cookie::Cookie;`. That's consistent. `tauri_runtime` already re-exports the `cookie` crate's `Cookie`, so the public types stay identical, and the existing `Cookie<'static>` signatures in `webview/mod.rs` resolve to the new re-export. The comment marks it for removal in v3, which is useful for future maintainers.\n\n::code{file=\"crates/tauri/src/webview/mod.rs\" lines=\"19-24\"}",
+    "files": [
+     "crates/tauri/src/webview/mod.rs"
+    ]
+   },
+   {
+    "title": "on_new_window example now desktop-only, as the description asks",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Moving the `on_new_window` registration into the existing `cfg(all(desktop, not(test)))` block means the example no longer registers a handler on mobile. The `window_features` call it uses is also desktop-gated, so this matches the stated intent. The `app_` clone and the counter now live inside that block too, so they only exist where they're used.\n\n::code{file=\"examples/api/src-tauri/src/lib.rs\" lines=\"68-104\"}",
+    "files": [
+     "examples/api/src-tauri/src/lib.rs"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":10,\"title\":\"Code Review Bench PR #14020 - fix: a few regressions from previous PRs\",\"author\":\"unknown\",\"baseSha\":\"41fe83d5324bff78ee13b027d50beea337d3aa71\",\"headSha\":\"eca39593e85c5c2e8ddd4ba50afc262e7940e313\"},\"summary\":\"The PR claims three cleanups: drop a redundant clone, restore the `tauri_runtime::Cookie` re-export, and register the API example's `on_new_window` handler only on desktop. It also renames `WebviewWindowBuilder::with_windo",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

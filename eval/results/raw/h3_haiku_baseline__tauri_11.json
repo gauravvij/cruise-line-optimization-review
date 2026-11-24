@@ -1,0 +1,385 @@
+{
+ "id": "tauri#11",
+ "repo": "tauri",
+ "num": 11,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T17:03:35.387Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Needless return statement in function",
+   "description": "The rule requires all Rust code to pass 'cargo clippy --all-targets --all-features -- -D warnings' without any warnings. The code contains an unnecessary explicit return statement that Clippy will flag with the needless_return lint.",
+   "file_path": "crates/tauri-bundler/src/utils/http_utils.rs",
+   "start_line": 73,
+   "end_line": 73,
+   "problematic_code_snippet": "  #[cfg(not(feature = \"platform-certs\"))]\n  let agent: ureq::Agent = ureq::Agent::config_builder()\n    .proxy(ureq::Proxy::try_from_env())\n    .build()\n    .into();\n  return agent;\n}",
+   "rule_name": "Rust Code Must Pass Clippy Linting with Warnings Denied"
+  },
+  {
+   "title": "GitHub mirror URL construction missing path component",
+   "description": "The generate_github_mirror_url_from_base function is supposed to construct a mirror URL by combining the base CDN URL with the GitHub asset path. However, the code removed the cdn.set_path(github_url) call, meaning the mirror URL will only return the base CDN URL without the asset path. This causes downloads from configured GitHub mirrors to fail because they'll request the wrong URL. When users configure TAURI_BUNDLER_TOOLS_GITHUB_MIRROR to use a mirror server, all downloads will fail with 404 errors since the asset path is missing from the constructed URL.",
+   "file_path": "crates/tauri-bundler/src/utils/http_utils.rs",
+   "start_line": 33,
+   "end_line": 40,
+   "problematic_code_snippet": "fn generate_github_mirror_url_from_base(github_url: &str) -> Option<String> {\n  std::env::var(\"TAURI_BUNDLER_TOOLS_GITHUB_MIRROR\")\n    .ok()\n    .and_then(|cdn| Url::parse(&cdn).ok())\n    .map(|cdn| {\n      cdn.to_string()\n    })\n}"
+  },
+  {
+   "title": "WebView2 offline installer bypasses platform certificate verification",
+   "description": "The download_webview2_offline_installer function was modified to use ureq::get() directly instead of calling the download() helper function. This bypasses the new platform certificate verification feature introduced in this PR. While webview2_guid_path correctly uses base_ureq_agent() which includes platform cert verification, the actual file download in lines 65-68 uses the default ureq::get which doesn't respect platform certificates. This inconsistency means WebView2 downloads will fail on systems that require custom certificate authorities (corporate environments, China, etc.) defeating the purpose of this PR.",
+   "file_path": "crates/tauri-bundler/src/bundle/windows/util.rs",
+   "start_line": 65,
+   "end_line": 68,
+   "problematic_code_snippet": "    let response = ureq::get(url).call().map_err(Box::new)?;\n    let mut bytes = Vec::new();\n    response.into_body().into_reader().read_to_end(&mut bytes)?;\n    std::fs::write(&file_path, bytes)?;"
+  },
+  {
+   "title": "Inverted condition prevents lock version display for multiple crate versions",
+   "description": "The condition on line 194 checks if lock exists AND packages are NOT empty, but this logic is backwards. The code should handle the case where multiple versions exist in the lock file (when crate_lock_packages.len() != 1 as per line 170). The correct behavior is to show lock versions when the lock exists but no single matching package was found earlier. By inverting the is_empty check, the code now only executes when packages DO exist, which is the opposite of the intended scenario. This breaks the display of version information when there are dependency conflicts or multiple versions of the same crate.",
+   "file_path": "crates/tauri-cli/src/helpers/cargo_manifest.rs",
+   "start_line": 194,
+   "end_line": 204,
+   "problematic_code_snippet": "    if lock.is_some() && !crate_lock_packages.is_empty() {\n      let lock_version = crate_lock_packages\n        .iter()\n        .map(|p| p.version.clone())\n        .collect::<Vec<String>>()\n        .join(\", \");\n\n      if !lock_version.is_empty() {\n        version.lock_version = Some(lock_version);\n      }\n    }"
+  },
+  {
+   "title": "crate_latest_version missing proxy configuration with platform-certs",
+   "description": "The crate_latest_version function's platform-certs implementation is missing .proxy(ureq::Proxy::try_from_env()) configuration on line 128. This is inconsistent with the base_ureq_agent() pattern used elsewhere in the PR. Users behind corporate proxies or in restricted network environments will be unable to check for crate updates when the platform-certs feature is enabled, as the HTTP requests will fail to respect proxy environment variables.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "let agent = ureq::Agent::config_builder()\n  .tls_config(\n    ureq::tls::TlsConfig::builder()\n      .root_certs(ureq::tls::RootCerts::PlatformVerifier)\n      .build(),\n  )\n  .build()\n  .new_agent();"
+  },
+  {
+   "title": "GitHub mirror downloads bypass platform certificate verification",
+   "description": "When TAURI_BUNDLER_TOOLS_GITHUB_MIRROR or TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE environment variables are configured, the generate_github_alternative_url function returns ureq::agent() instead of base_ureq_agent(). This bypasses the new platform certificate verification feature introduced in this PR. Downloads from configured GitHub mirrors will fail on systems requiring custom certificate authorities (corporate environments, restricted regions like China), completely defeating the purpose of this PR for mirror configurations.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "generate_github_mirror_url_from_template(url)\n  .or_else(|| generate_github_mirror_url_from_base(url))\n  .map(|alt_url| (ureq::agent(), alt_url))"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "8f50d71a1d6df9ad3fcbbbddbdc49c815f843f31",
+ "diff_chars": 8707,
+ "diff_lines": 289,
+ "user_prompt_chars": 9646,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 83370,
+ "wall_ms": 85224,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 9,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.372314471,
+ "spend_post_usd": 6.382135976,
+ "cost_settled": true,
+ "cost_wait_ms": 325,
+ "cost_usd": 0.009821504999999675,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.013887555,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 25541,
+  "cache_read_input_tokens": 118113,
+  "output_tokens": 19026,
+  "output_tokens_details": {
+   "thinking_tokens": 10544
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 25541
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 19026,
+   "cacheReadInputTokens": 118113,
+   "cacheCreationInputTokens": 25541,
+   "webSearchRequests": 0,
+   "costUSD": 0.013887555,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 10544,
+   "cacheCreationEphemeral5mInputTokens": 25541,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 11,
+   "title": "Code Review Bench PR #13824 - feat(bundler/cli): Add feature flag to use system certificates",
+   "author": "",
+   "baseSha": "5c1b0ded34b84dfe40e73944b6d7d3ac14c0f6b0",
+   "headSha": "8f50d71a1d6df9ad3fcbbbddbdc49c815f843f31"
+  },
+  "summary": "The PR adds a `platform-certs` cargo feature (on by default in `tauri-bundler` and `tauri-cli`) that switches ureq to `RootCerts::PlatformVerifier`, so bundler tool downloads, WebView2 lookups, and the CLI's crates.io version checks trust the OS certificate store. That is the right goal for corporate proxies and TLS-inspecting networks, and the TLS setup is centralized in `base_ureq_agent()`. However, the diff also contains unrelated behavior changes and at least two real regressions. The GitHub mirror base-URL path is dropped, which silently breaks `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR`. The WebView2 offline installer download bypasses the new agent entirely, so the feature doesn't apply to one of the main downloads it targets.\n\nThe `crate_version` condition is flipped from `is_empty()` to `!is_empty()` without mention in the changelog, and no tests cover the new agent path or the changed mirror logic. The author's open question about default-on versus opt-in is a real design decision that the diff answers by enabling the feature by default, which changes trust roots and adds platform dependencies for every user.",
+  "verdict": "request_changes",
+  "verdictRationale": "Two regressions should be fixed before merge: the mirror base-URL change breaks a documented env var, and the WebView2 offline installer download doesn't use the new certificate-aware agent. Both are small reverts. The default-on decision and the unrelated `crate_version` fix need an explicit call from the maintainers, and the new code paths need tests.",
+  "architecture": {
+   "overview": "Before this PR, every bundler download went through `download()` in `http_utils.rs`. It picks an agent and URL through `create_agent_and_url`, which can rewrite `https://github.com/...` URLs to a mirror via `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR_TEMPLATE` or `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR`. The default agent is built inline with only the environment proxy. The CLI's `crate_latest_version` used `ureq::get` directly, and the WebView2 helpers in `bundle/windows/util.rs` each built their own agent.\n\nThe PR adds a single `base_ureq_agent()` that sets `RootCerts::PlatformVerifier` when the `platform-certs` feature is on. The feature is enabled by default in both crates. `webview2_guid_path` and `download()` now use this agent, while the CLI builds a parallel agent inside `crate_latest_version`. The PR also changes the mirror URL logic and `download_webview2_offline_installer`, and flips a lock-version condition in `crate_version`.",
+   "steps": [
+    "Entry points: `tauri-cli` and `tauri-bundler` call `download()` (mirror-aware) and `webview2_guid_path`/`download_webview2_offline_installer` during Windows bundling. The CLI calls `crate_latest_version` for `tauri info`.",
+    "Agent construction: `base_ureq_agent()` is the new single place where the platform-verifier TLS config is attached, gated by `cfg(feature = \"platform-certs\")`. It also keeps the env proxy.",
+    "Mirror routing: `create_agent_and_url` tries the template and base-URL mirrors for GitHub URLs. The PR removes the path-append from the base-URL mirror, and the fallback agent is still a bare `ureq::agent()`.",
+    "Bypasses: `download_webview2_offline_installer` now calls `ureq::get` directly, and `crate_latest_version` builds its own agent. Both sit outside the centralized helper.",
+    "Defaults and lockfile: both crates enable `platform-certs` by default, pulling `ureq/platform-verifier`, `rustls-platform-verifier`, and a second `jni` 0.19 into the lockfile."
+   ],
+   "diagrams": [
+    {
+     "title": "Agent selection after this PR",
+     "kind": "flowchart",
+     "description": "Shows which download paths receive the platform-verifier agent and which bypass it.",
+     "mermaid": "flowchart LR\n  A[\"download() in http_utils.rs\"] --> B{\"GitHub URL with mirror env?\"}\n  B -- no --> C[\"base_ureq_agent with PlatformVerifier and env proxy\"]\n  B -- yes --> D[\"ureq::agent bare, no platform verifier\"]\n  E[\"webview2_guid_path\"] --> C\n  F[\"download_webview2_offline_installer\"] --> G[\"ureq::get default agent\"]\n  H[\"crate_latest_version in cargo_manifest.rs\"] --> I[\"inline agent with PlatformVerifier\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Mirror base-URL change drops the requested GitHub path",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`generate_github_mirror_url_from_base` used to append the requested GitHub URL to the mirror base via `set_path`. The PR removes that call, so every GitHub download routed through `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR` now requests the mirror's root URL and never the asset. This env var is documented in `ENVIRONMENT_VARIABLES.md` as the fix for GitHub access in mainland China, so this is a silent break of a shipped feature.\n\nThe change is also unrelated to the PR title. It leaves `github_url` unused, which triggers an unused-variable warning, and the closure reduces to `cdn.to_string()`.\n\n::diff{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"33-40\"}\n\n::callout{type=\"warning\"}\nIf the old prefix behavior was wrong, fix it in its own PR with a test. Otherwise restore the original path append.\n\n::suggestion{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"33-40\"}\nfn generate_github_mirror_url_from_base(github_url: &str) -> Option<String> {\n  std::env::var(\"TAURI_BUNDLER_TOOLS_GITHUB_MIRROR\")\n    .ok()\n    .and_then(|cdn| Url::parse(&cdn).ok())\n    .map(|mut cdn| {\n      cdn.set_path(github_url);\n      cdn.to_string()\n    })\n}\n",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/utils/http_utils.rs`, `generate_github_mirror_url_from_base` (lines 33-40) no longer appends the GitHub URL path to the mirror base, so `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR` now redirects every download to the mirror root. Restore the original `set_path(github_url)` behavior by reverting this hunk. This PR should only touch TLS handling, so leave the mirror logic alone. If the original behavior needs fixing, do it in a separate change with a unit test for the base-URL mirror.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 33,
+     "lineEnd": 40
+    }
+   },
+   {
+    "title": "WebView2 offline installer download bypasses the new certificate-aware agent",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`download_webview2_offline_installer` used to call `download(url)`, which builds its agent through `base_ureq_agent()`. The PR replaces that with `ureq::get(url)`, which uses ureq's default agent. That agent has no `PlatformVerifier` root store, so on the corporate or TLS-inspecting networks this PR targets, the offline WebView2 installer fetch still fails with the same certificate error.\n\nThe original call already went through the centralized agent, so this change is a regression in both TLS and proxy handling, not just an incomplete fix. The new code also duplicates the body-reading logic that `download()` already provides.\n\n::diff{file=\"crates/tauri-bundler/src/bundle/windows/util.rs\" lines=\"62-69\"}\n\n::suggestion{file=\"crates/tauri-bundler/src/bundle/windows/util.rs\" lines=\"63-68\"}\n  if !file_path.exists() {\n    create_dir_all(dir_path)?;\n    std::fs::write(&file_path, download(url)?)?;\n  }\n",
+    "files": [
+     "crates/tauri-bundler/src/bundle/windows/util.rs",
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/bundle/windows/util.rs`, `download_webview2_offline_installer` (around lines 62-69) now calls `ureq::get(url)` directly, which bypasses `base_ureq_agent()` and so loses the platform-verifier TLS config and the env proxy. Revert to calling the existing `download(url)` helper in `crates/tauri-bundler/src/utils/http_utils.rs` and drop the manual `read_to_end` block and the now-unused `std::io::Read` import. Confirm the WebView2 installer URLs are not GitHub URLs, so mirror behavior is unchanged.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/bundle/windows/util.rs",
+     "lineStart": 65,
+     "lineEnd": 67
+    }
+   },
+   {
+    "title": "Default-on platform-certs changes trust roots and dependencies for everyone",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "This answers the author's question about defaults: the diff enables `platform-certs` by default in `tauri-bundler` and `tauri-cli`. Every user then gets OS-trust-store TLS for all bundler and CLI downloads, not only users behind a proxy. Their trust roots change silently, and the default build compiles in `rustls-platform-verifier`, `jni` 0.19 (a second copy beside 0.21), and extra `security-framework` features.\n\nAn opt-in feature (off by default, documented in `ENVIRONMENT_VARIABLES.md` or the CLI docs) is the lower-risk choice. Alternatively, keep it on by default but state the trust-root change prominently in the changelog. The current changelog entry only says the bundler \"will now read TLS Certificates installed on the system\", which doesn't say the store replaces the bundled roots.\n\n::diff{file=\"crates/tauri-cli/Cargo.toml\" lines=\"140-149\"}\n",
+    "files": [
+     "crates/tauri-cli/Cargo.toml",
+     "crates/tauri-bundler/Cargo.toml",
+     ".changes/feat-bundler-platform-certs.md"
+    ],
+    "fixPrompt": "Decide whether `platform-certs` should be on by default. In `crates/tauri-cli/Cargo.toml` (line 141) and `crates/tauri-bundler/Cargo.toml` (line 77), the feature is currently in `default`. Either remove it from `default` so it's opt-in, or keep it and update `.changes/feat-bundler-platform-certs.md` to state that the OS certificate store now replaces the bundled roots for all downloads. Also document the feature in the CLI environment/feature docs.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/Cargo.toml",
+     "lineStart": 140,
+     "lineEnd": 141
+    }
+   },
+   {
+    "title": "Unrelated `crate_version` condition flip ships without tests or changelog",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The condition in `crate_version` changes from `lock.is_some() && crate_lock_packages.is_empty()` to `!crate_lock_packages.is_empty()`. The old branch effectively never set `lock_version` in the multi-entry path, so the fix is probably correct, but it changes `tauri info` output for every project with multiple lock entries of the same crate. The PR title and changelog say nothing about it, and no test covers it.\n\n::diff{file=\"crates/tauri-cli/src/helpers/cargo_manifest.rs\" lines=\"191-197\"}\n\nIt should go in its own PR with a changelog entry and a test, or be dropped from this change.",
+    "files": [
+     "crates/tauri-cli/src/helpers/cargo_manifest.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/helpers/cargo_manifest.rs`, `crate_version` (around line 194) has its lock-version condition flipped from `is_empty()` to `!is_empty()`. This is unrelated to the platform-certs feature. Split it into its own change, add a unit test for a lockfile with multiple entries for the same crate, and add a changelog entry for `tauri-cli`. Otherwise revert this hunk in this PR.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/helpers/cargo_manifest.rs",
+     "lineStart": 194,
+     "lineEnd": 194
+    }
+   },
+   {
+    "title": "New TLS paths have no test coverage",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The existing tests in `http_utils.rs` only cover `generate_github_mirror_url_from_template`. Nothing exercises `base_ureq_agent()`, the base-URL mirror (which the PR broke), the WebView2 download path, or the `crate_version` change. Any of these could regress without a failing test.\n\nAt minimum, add a unit test asserting that the base mirror appends the GitHub path (this would have caught the regression above). A `cfg(feature = \"platform-certs\")` test that builds the agent and checks it does not panic would be a cheap smoke test. Testing the actual cert behavior would need a local TLS fixture, which is optional here.\n\n::code{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"56-73\"}\n",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "Add unit tests in the `tests` module of `crates/tauri-bundler/src/utils/http_utils.rs`. Cover (1) the base-URL mirror: with `TAURI_BUNDLER_TOOLS_GITHUB_MIRROR` set, a GitHub URL should resolve to a URL that contains the original asset path, and (2) `base_ureq_agent()` constructs without panicking under both `platform-certs` and non-`platform-certs` builds. Follow the existing env-var test pattern in that module, and clean up env vars after each test.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 56,
+     "lineEnd": 73
+    }
+   },
+   {
+    "title": "Mirror fallback agent skips proxy and platform certificates",
+    "severity": "low",
+    "category": "correctness",
+    "body": "When a GitHub URL is rewritten to a mirror, `generate_github_alternative_url` returns `ureq::agent()`, a bare default agent. That skips both the env proxy and the new platform verifier from `base_ureq_agent()`. Corporate users who need the mirror are exactly the ones who need the trust store, so the fallback path behaves differently from the rest of the PR.\n\n::diff{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"42-49\"}\n\nSwitch it to `base_ureq_agent()` so every bundler download uses one agent configuration.\n",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/utils/http_utils.rs`, `generate_github_alternative_url` (around line 49) returns `ureq::agent()` for mirror URLs. Replace that with `base_ureq_agent()` so mirror downloads get the same proxy and platform-verifier configuration as the rest of the bundler. Keep the rest of the mirror logic unchanged.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 49,
+     "lineEnd": 49
+    }
+   },
+   {
+    "title": "Redundant `return` and duplicated cfg blocks in `base_ureq_agent`",
+    "severity": "low",
+    "category": "style",
+    "body": "`base_ureq_agent` duplicates the whole builder chain across two `cfg` blocks and ends with `return agent;`. The `return` is a clippy `needless_return` warning, which will fail CI if clippy runs with `-D warnings`. The duplication also means the proxy setting has to stay in sync across both builds.\n\nBuild the config once, add only the TLS step under the cfg, and return the final expression.\n\n::code{file=\"crates/tauri-bundler/src/utils/http_utils.rs\" lines=\"56-73\"}\n\nAfter the change, the function should end with the agent expression and drop the explicit `return`.",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-bundler/src/utils/http_utils.rs`, simplify `base_ureq_agent` (lines 56-73). Remove the duplicated builder chain under the two cfg blocks and the trailing `return agent;`. Build the config once with the env proxy, and add the `tls_config(... RootCerts::PlatformVerifier ...)` step under `#[cfg(feature = \"platform-certs\")]`. Return the built agent as the final expression. Make sure both feature configurations still compile.",
+    "commentAnchor": {
+     "file": "crates/tauri-bundler/src/utils/http_utils.rs",
+     "lineStart": 56,
+     "lineEnd": 73
+    }
+   },
+   {
+    "title": "CLI builds its own TLS agent instead of sharing the bundler helper",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`crate_latest_version` in the CLI duplicates the TLS builder from `base_ureq_agent()` in the bundler. It can't call that helper directly because it is `pub(crate)` in another crate. The two copies can drift, and the CLI copy already omits the proxy call the bundler version sets explicitly. It currently relies on ureq's default env-proxy behavior.\n\nExpose one shared helper from `tauri-bundler` (or a small shared module) and use it from both places.\n\n::code{file=\"crates/tauri-cli/src/helpers/cargo_manifest.rs\" lines=\"120-131\"}\n",
+    "files": [
+     "crates/tauri-cli/src/helpers/cargo_manifest.rs",
+     "crates/tauri-bundler/src/utils/http_utils.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/helpers/cargo_manifest.rs`, `crate_latest_version` (lines 120-131) builds its own ureq agent with `RootCerts::PlatformVerifier`, duplicating `base_ureq_agent()` in `crates/tauri-bundler/src/utils/http_utils.rs`. Expose one public helper from `tauri-bundler` for the agent, and call it from both places so the proxy and TLS configuration stay in sync. Keep the `cfg(feature = \"platform-certs\")` gating consistent across both crates.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/helpers/cargo_manifest.rs",
+     "lineStart": 120,
+     "lineEnd": 131
+    }
+   },
+   {
+    "title": "Centralizing the TLS agent in one helper is a clean design",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The PR puts the platform-verifier configuration in one `base_ureq_agent()` function and routes `download()` and `webview2_guid_path` through it. The feature gate is handled with `cfg` on both the feature and non-feature branches, so the default path compiles without the extra dependencies. The changelog entry is also scoped correctly to the three packages that changed.",
+    "files": [
+     "crates/tauri-bundler/src/utils/http_utils.rs",
+     "crates/tauri-bundler/src/bundle/windows/util.rs",
+     ".changes/feat-bundler-platform-certs.md"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":11,\"title\":\"Code Review Bench PR #13824 - feat(bundler/cli): Add feature flag to use system certificates\",\"author\":\"\",\"baseSha\":\"5c1b0ded34b84dfe40e73944b6d7d3ac14c0f6b0\",\"headSha\":\"8f50d71a1d6df9ad3fcbbbddbdc49c815f843f31\"},\"summary\":\"The PR adds a `platform-certs` cargo feature (on by default in `tauri-bundler` and `tauri-cli`) that switches ureq to `RootCerts::PlatformVerifier`, so bundler tool downloads, WebView2 lookups, and the CLI's",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 9
+}

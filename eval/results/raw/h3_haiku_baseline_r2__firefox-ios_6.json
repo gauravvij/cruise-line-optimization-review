@@ -1,0 +1,333 @@
+{
+ "id": "firefox-ios#6",
+ "repo": "firefox-ios",
+ "num": 6,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:28:02.956Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Using assert instead of XCTAssert",
+   "description": "The rule requires test methods to use assertions from the XCTest framework (XCTAssert family), but standard Swift assert() functions were used instead of XCTAssertTrue()",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/NotificationManagerTests.swift",
+   "start_line": 25,
+   "end_line": 30,
+   "problematic_code_snippet": "    func testRequestAuthorization() {\n        notificationManager.requestAuthorization { [center] (granted, error) in\n            assert(granted, \"Authorization should be granted\")\n            assert(center?.requestAuthorizationWasCalled ?? false, \"requestAuthorization should be called\")\n        }\n    }",
+   "rule_name": "Test Classes Must Use XCTest Framework with Proper Structure"
+  },
+  {
+   "title": "Incorrect tearDown order in StoriesFeedDiffableDataSourceTests",
+   "description": "The tearDown method calls super.tearDown() before cleaning up test dependencies. In XCTest, super.tearDown() should be called after cleaning up resources to ensure proper cleanup order. Calling super.tearDown() first can cause issues when the parent class attempts to access or clean up resources that are about to be deallocated. The DependencyHelperMock().reset() and collectionView/diffableDataSource cleanup should happen before calling the parent's tearDown to prevent potential crashes or state inconsistencies between tests.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Frontend/StoriesFeed/StoriesFeedDiffableDataSourceTests.swift",
+   "start_line": 28,
+   "end_line": 33,
+   "problematic_code_snippet": "    override func tearDown() async throws {\n        try await super.tearDown()\n        diffableDataSource = nil\n        collectionView = nil\n        DependencyHelperMock().reset()\n    }"
+  },
+  {
+   "title": "Test state cleanup after super.tearDown in RatingPromptManagerTests",
+   "description": "The tearDown method calls super.tearDown() before cleaning up test-specific state (prefs, subject, userDefaults, etc.). This is problematic because XCTest's tearDown should clean up test-specific resources before calling super.tearDown(). By calling super.tearDown() first, any state or resources that should be cleaned up might leak into subsequent tests or cause undefined behavior. Specifically, calling prefs.clearAll() and subject.reset() after super.tearDown() violates the expected tearDown lifecycle and can lead to test isolation issues where one test's state affects another.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/RatingPromptManagerTests.swift",
+   "start_line": 36,
+   "end_line": 45,
+   "problematic_code_snippet": "    override func tearDown() async throws {\n        try await super.tearDown()\n        prefs.clearAll()\n        subject.reset()\n        prefs = nil\n        logger = nil\n        urlOpenerSpy = nil\n        userDefaults = nil\n        crashTracker = nil\n        subject = nil\n    }"
+  },
+  {
+   "title": "Missing @MainActor annotation in EditBookmarkViewModelTests",
+   "description": "The EditBookmarkViewModelTests class is missing the @MainActor annotation that was added in the PR for Swift 6 concurrency compliance. This test class uses UI components (UITableView) and interacts with MainActor-isolated types. Without the @MainActor annotation, the tests may experience data races or undefined behavior when accessing MainActor-isolated properties, particularly since the setUp and tearDown methods are now async and the test methods interact with UI components. This violates Swift 6 concurrency requirements and can lead to runtime crashes or unpredictable test behavior.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Library/Bookmarks/EditBookmarkViewModelTests.swift",
+   "start_line": 11,
+   "end_line": 11,
+   "problematic_code_snippet": "class EditBookmarkViewModelTests: XCTestCase {\n    let folder = MockFxBookmarkNode(type: .folder,\n                                    guid: \"1235\",\n                                    position: 1,"
+  },
+  {
+   "title": "UI-related test lifecycle method not annotated with @MainActor",
+   "description": "This test creates/configures a UIViewController in setUp, which is UI work. Rule 9 requires UI-related code to be annotated with @MainActor (either on the class or the method). The modified setUp() signature is not annotated and the class is not marked @MainActor in the diff.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Frontend/SyncContentSettingsViewControllerTests.swift",
+   "start_line": 14,
+   "end_line": 21,
+   "problematic_code_snippet": "override func setUp() async throws {\n    try await super.setUp()\n    DependencyHelperMock().bootstrapDependencies()\n    profile = MockProfile()\n    LegacyFeatureFlagsManager.shared.initializeDeveloperFeatures(with: profile)\n    syncContentSettingsVC = SyncContentSettingsViewController(windowUUID: windowUUID)\n    syncContentSettingsVC?.profile = profile\n}",
+   "rule_name": "UI-Related Code Must Be Annotated with @MainActor"
+  },
+  {
+   "title": "Mock class not marked final",
+   "description": "Per Rule 12, classes that are not intended for subclassing should be marked `final`. This mock type appears to be a concrete test helper and is modified in this PR, but remains non-final.",
+   "file_path": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Mocks/MockUserNotificationCenter.swift",
+   "start_line": 6,
+   "end_line": 6,
+   "problematic_code_snippet": "class MockUserNotificationCenter: UserNotificationCenterProtocol, @unchecked Sendable {",
+   "rule_name": "Classes That Should Not Be Subclassed Must Be Marked Final"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "f579cf9cc314c4c9293d48be0a27bd803ce312f6",
+ "diff_chars": 22785,
+ "diff_lines": 491,
+ "user_prompt_chars": 24924,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 75675,
+ "wall_ms": 78066,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 7,
+ "turn_trace": {
+  "assistant_lines": 14,
+  "unique_message_ids": 7,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.778968016,
+ "spend_post_usd": 7.794947446,
+ "cost_settled": true,
+ "cost_wait_ms": 326,
+ "cost_usd": 0.015979429999999795,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.01572463,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 32978,
+  "cache_read_input_tokens": 256848,
+  "output_tokens": 18065,
+  "output_tokens_details": {
+   "thinking_tokens": 5403
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 32978
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 18065,
+   "cacheReadInputTokens": 256848,
+   "cacheCreationInputTokens": 32978,
+   "webSearchRequests": 0,
+   "costUSD": 0.01572463,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5403,
+   "cacheCreationEphemeral5mInputTokens": 32978,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 6,
+   "title": "Code Review Bench PR #31130 - Refactor FXIOS-14344 [Swift 6 migration] Fixing warnings in unit tests",
+   "author": "unknown",
+   "baseSha": "a654234aadf8494a048afcd9b3d10916465da547",
+   "headSha": "f579cf9cc314c4c9293d48be0a27bd803ce312f6"
+  },
+  "summary": "This is a test-only change that migrates many XCTestCase subclasses from sync setUp()/tearDown() to async throws overrides, adds @MainActor to several view-controller and data-source test classes, and adds Sendable markers to a few mocks. The async lifecycle migration and the @MainActor additions are the right direction for Swift 6 and are applied consistently in most files.\n\nTwo changes need work before merge. First, EditBookmarkViewModelTests had its class-level @MainActor removed, but EditBookmarkViewModel.selectFolder is @MainActor, so the synchronous selectFolder tests now call main-actor-isolated code from a nonisolated context. That is the kind of diagnostic this PR is meant to eliminate. Second, NotificationManagerTests.testRequestAuthorization replaced XCTAssertTrue with Swift assert. That turns a failing assertion into a process trap instead of a test failure, and the check disappears in optimized builds. NotificationManager already exposes an async throws requestAuthorization(), which avoids the callback entirely.",
+  "verdict": "request_changes",
+  "verdictRationale": "The EditBookmarkViewModelTests isolation regression is likely to produce new concurrency diagnostics in the area this PR is meant to clean up. The assert-based rewrite in NotificationManagerTests makes a failure crash the test run instead of reporting cleanly, and it removes the check in release configurations. Both fixes are small and should land before merge.",
+  "architecture": {
+   "overview": "The app's unit tests live under firefox-ios-tests/Tests/ClientTests and subclass XCTestCase. Each class sets up and tears down fixtures in setUp/tearDown and relies on DependencyHelperMock().bootstrapDependencies() and reset() for shared dependency state. Production types such as EditBookmarkViewModel are partly main-actor isolated, and the protocols they depend on (TabQueue, UserNotificationCenterProtocol) use @Sendable and @MainActor closure types. Under Swift 6 strict concurrency, test classes and mocks must agree with those isolation boundaries.\n\nThis PR does not change production code. It moves test lifecycle overrides to async throws so that await super.setUp() and await super.tearDown() run on the test's executor, adds @MainActor to view-controller and data-source test classes whose subjects are main-actor bound, and adds Sendable markers to mocks so they satisfy protocol closure signatures. The one structural regression is that EditBookmarkViewModelTests drops its class-level @MainActor while still calling main-actor methods.",
+   "steps": [
+    "Start at the XCTest entry point: setUp and tearDown wrap every test method. This PR changes those overrides from sync to async throws and moves super calls.",
+    "Check the isolation annotations: @MainActor is added to StoriesFeedDiffableDataSourceTests, EditBookmarkDataSourceTests, MainMenuViewControllerTests, MicrosurveyViewControllerTests, and NativeErrorPageViewControllerTests, matching the production types they exercise.",
+    "The regression is in EditBookmarkViewModelTests: its class-level @MainActor is removed, but EditBookmarkViewModel.selectFolder is @MainActor, so the synchronous tests that call it now cross an isolation boundary.",
+    "Mocks get Sendable markers. MockTabQueue.getQueuedTabs matches the TabQueue protocol requirement. MockUserNotificationCenter is marked @unchecked Sendable to silence a warning.",
+    "NotificationManagerTests changes its assertions from XCTest macros to Swift assert, which changes how failures surface, not just the compiler warning."
+   ],
+   "diagrams": [
+    {
+     "title": "Test lifecycle and isolation after this PR",
+     "kind": "flowchart",
+     "description": "How a test method is wrapped by the migrated async setUp/tearDown and which isolation boundary each piece sits on.",
+     "mermaid": "flowchart TD\n    A[XCTest runner] --> B[override setUp async throws]\n    B --> C[await super.setUp]\n    C --> D[Fixture creation]\n    D --> E[Test method]\n    E --> F[Subject under test]\n    F --> G{Isolation}\n    G -->|@MainActor class| H[Main actor executor]\n    G -->|nonisolated class| I[Background executor]\n    E --> J[override tearDown async throws]\n    J --> K[Fixture cleanup]\n    K --> L[await super.tearDown]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "EditBookmarkViewModelTests drops @MainActor but calls main-actor methods",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The class-level @MainActor is removed from EditBookmarkViewModelTests, but EditBookmarkViewModel.selectFolder is declared @MainActor (lines 81-82 of EditBookmarkViewModel.swift). The synchronous test methods such as testSelectFolder_callsOnFolderStatusUpdate call it from a nonisolated context. Under Swift 6 this is an error, and under Swift 5 with strict concurrency it is a warning. Either way it is an actor-isolation diagnostic in the area this PR is meant to clean up.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/ClientTests/Library/Bookmarks/EditBookmarkViewModelTests.swift\" lines=\"11-11\"}\n\n::callout{type=\"warning\"}\nEditBookmarkDataSourceTests and StoriesFeedDiffableDataSourceTests keep @MainActor on the class, so this is inconsistent. Restoring the annotation is also compatible with the new async setUp/tearDown.\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Library/Bookmarks/EditBookmarkViewModelTests.swift",
+     "firefox-ios/Client/Frontend/Library/Bookmarks/Edit Bookmark/EditBookmarkViewModel.swift"
+    ],
+    "fixPrompt": "In firefox-ios/firefox-ios-tests/Tests/ClientTests/Library/Bookmarks/EditBookmarkViewModelTests.swift, the class declaration at line 11 no longer has @MainActor, but EditBookmarkViewModel.selectFolder and related methods in EditBookmarkViewModel.swift are @MainActor. Restore @MainActor on EditBookmarkViewModelTests so the synchronous tests that call selectFolder stay on the main actor. Keep the async setUp/tearDown as they are. Follow the pattern in EditBookmarkDataSourceTests.swift, which puts @MainActor on its class.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Library/Bookmarks/EditBookmarkViewModelTests.swift",
+     "lineStart": 11,
+     "lineEnd": 11
+    }
+   },
+   {
+    "title": "Swift assert replaces XCTAssert in async-callback test",
+    "severity": "high",
+    "category": "correctness",
+    "body": "testRequestAuthorization changes XCTAssertTrue to Swift assert(...). A failing assert traps the whole test process, which aborts the test run instead of recording a failure for this test. In optimized builds, assert compiles to nothing, so the check disappears.\n\nThe mock completes synchronously, so the closure does run, but the test has no clean failure path. The [center] capture is also unnecessary, because the callback fires before the test returns.\n\nNotificationManager already has an async throws requestAuthorization() overload, which removes the callback entirely.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/NotificationManagerTests.swift\" lines=\"26-29\"}\n\n::suggestion{file=\"firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/NotificationManagerTests.swift\" lines=\"25-29\"}\nfunc testRequestAuthorization() async throws {\n    let granted = try await notificationManager.requestAuthorization()\n    XCTAssertTrue(granted)\n    XCTAssertTrue(center.requestAuthorizationWasCalled)\n}\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/NotificationManagerTests.swift",
+     "firefox-ios/Client/NotificationManager.swift"
+    ],
+    "fixPrompt": "In firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/NotificationManagerTests.swift, testRequestAuthorization (lines 25-30) replaced XCTAssertTrue with Swift assert inside a completion callback. A failed assert traps the test process instead of reporting a test failure, and it is stripped from optimized builds. Rewrite the test to use the existing async throws overload NotificationManager.requestAuthorization(), then use XCTAssertTrue on the returned value and on center.requestAuthorizationWasCalled. Do not capture self in a @Sendable closure.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/NotificationManagerTests.swift",
+     "lineStart": 26,
+     "lineEnd": 29
+    }
+   },
+   {
+    "title": "Inconsistent super.tearDown placement across migrated files",
+    "severity": "low",
+    "category": "style",
+    "body": "The migrated tearDown methods disagree on where super is called. RatingPromptManagerTests and StoriesFeedDiffableDataSourceTests call try await super.tearDown() first, while EditBookmarkViewModelTests, IntroViewControllerTests, and HistoryPanelTests call it last. The XCTest convention is to call super last in tearDown, mirroring setUp calling super first. Pick one order and apply it across the PR.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/RatingPromptManagerTests.swift\" lines=\"36-37\"}\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/RatingPromptManagerTests.swift",
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Frontend/StoriesFeed/StoriesFeedDiffableDataSourceTests.swift"
+    ],
+    "fixPrompt": "Several test files in this PR call try await super.tearDown() at different points in their tearDown() async throws method. RatingPromptManagerTests.swift (around line 36) and StoriesFeedDiffableDataSourceTests.swift call it first. EditBookmarkViewModelTests.swift, IntroViewControllerTests.swift, and HistoryPanelTests.swift call it last. Standardize on calling super.tearDown() last, which mirrors setUp calling super.setUp() first. Change only the files touched by this PR.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Helpers/RatingPromptManagerTests.swift",
+     "lineStart": 36,
+     "lineEnd": 37
+    }
+   },
+   {
+    "title": "Mock silenced with @unchecked Sendable rather than fixed",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "MockUserNotificationCenter is now @unchecked Sendable and holds mutable state (getSettingsWasCalled, requestAuthorizationWasCalled, pendingRequests, and so on). The compiler can no longer check it for data races, and the annotation does not make it thread-safe. This is probably fine for tests that run serially, but the reason should be recorded in a comment so the pattern does not spread. The final change on MockURLAuthenticationChallengeSender is a pure warning suppression with no behavioral effect.\n\n::diff{file=\"firefox-ios/firefox-ios-tests/Tests/ClientTests/Mocks/MockUserNotificationCenter.swift\" lines=\"9-9\"}\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Mocks/MockUserNotificationCenter.swift"
+    ],
+    "fixPrompt": "In firefox-ios/firefox-ios-tests/Tests/ClientTests/Mocks/MockUserNotificationCenter.swift, the class is now declared @unchecked Sendable to silence a Swift 6 warning. Add a short comment above the class explaining that it is only used from serial test code on one executor, so the unchecked conformance is safe here. If that assumption does not hold for every test that uses it, make the mock's mutable state actor-isolated instead.",
+    "commentAnchor": {
+     "file": "firefox-ios/firefox-ios-tests/Tests/ClientTests/Mocks/MockUserNotificationCenter.swift",
+     "lineStart": 9,
+     "lineEnd": 9
+    }
+   },
+   {
+    "title": "Lifecycle and isolation migration applied consistently to most classes",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Most of the migration is mechanical and correct. setUp/tearDown move to async throws, super is called in both, and cleanup order is preserved. The @MainActor additions on StoriesFeedDiffableDataSourceTests, EditBookmarkDataSourceTests, MainMenuViewControllerTests, MicrosurveyViewControllerTests, and NativeErrorPageViewControllerTests line up with the production types they exercise. The MockTabQueue.getQueuedTabs signature also matches the TabQueue protocol requirement.\n\n",
+    "files": [
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Frontend/StoriesFeed/StoriesFeedDiffableDataSourceTests.swift",
+     "firefox-ios/firefox-ios-tests/Tests/ClientTests/Mocks/MockProfile.swift"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":6,\"title\":\"Code Review Bench PR #31130 - Refactor FXIOS-14344 [Swift 6 migration] Fixing warnings in unit tests\",\"author\":\"unknown\",\"baseSha\":\"a654234aadf8494a048afcd9b3d10916465da547\",\"headSha\":\"f579cf9cc314c4c9293d48be0a27bd803ce312f6\"},\"summary\":\"This is a test-only change that migrates many XCTestCase subclasses from sync setUp()/tearDown() to async throws overrides, adds @MainActor to several view-controller and data-source test",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

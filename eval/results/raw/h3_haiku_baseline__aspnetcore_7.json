@@ -1,0 +1,316 @@
+{
+ "id": "aspnetcore#7",
+ "repo": "aspnetcore",
+ "num": 7,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:04:06.481Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Missing braces in for loop",
+   "description": "The rule requires all control flow statements (if, else, for, foreach, while, do-while) to use curly braces even for single-line bodies, but the inner for loop omits curly braces",
+   "file_path": "src/Components/Web.JS/src/Rendering/JSRootComponents.ts",
+   "start_line": 146,
+   "end_line": 147,
+   "problematic_code_snippet": "    for (const [initializerIdentifier, componentIdentifiers] of Object.entries(jsComponentInitializers)) {\n      const initializerFunc = DotNet.findJSFunction(initializerIdentifier, 0) as JSComponentInitializerCallback;\n      for (const componentIdentifier of componentIdentifiers)\n        initializerFunc(componentIdentifier, jsComponentParameters[componentIdentifier]);\n    }",
+   "rule_name": "Use Curly Braces for All Control Flow Statements"
+  },
+  {
+   "title": "Inverted renderer type check prevents circuit restart",
+   "description": "The condition checking for different renderer types has been inverted from `!==` to `===`. This causes the function to throw an error when the SAME renderer type tries to re-enable JS root components (e.g., during circuit restart), which is the exact scenario that should be allowed. The original intent was to throw an error only when a DIFFERENT renderer type attempts to enable root components. This bug breaks circuit restart functionality, causing applications to fail when users reconnect after a circuit disconnect.",
+   "file_path": "src/Components/Web.JS/src/Rendering/JSRootComponents.ts",
+   "start_line": 126,
+   "end_line": 130,
+   "problematic_code_snippet": "if (manager && currentRendererId === rendererId) {\n    // A different renderer type (e.g., Server vs WebAssembly) is trying to enable JS root components.\n    // This is a multi-host scenario which is not supported for dynamic root components.\n    throw new Error('Dynamic root components have already been enabled.');\n  }"
+  },
+  {
+   "title": "Missing parameter update causes stale data on circuit restart",
+   "description": "The assignment `jsComponentParametersByIdentifier = jsComponentParameters;` has been removed from the re-enabling logic. When a circuit restarts and `enableJSRootComponents` is called again with new parameters, the global `jsComponentParametersByIdentifier` is not updated. This causes the application to continue using stale parameters from the previous circuit. The `DynamicRootComponent` class constructor and methods rely on `jsComponentParametersByIdentifier` to retrieve component parameter definitions, so they will operate with outdated metadata after a circuit restart.",
+   "file_path": "src/Components/Web.JS/src/Rendering/JSRootComponents.ts",
+   "start_line": 132,
+   "end_line": 137,
+   "problematic_code_snippet": "// When the same renderer type re-enables (e.g., circuit restart or new circuit on same page),\n  // accept the new manager. The old manager's DotNetObjectReference is no longer valid anyway\n  // because the old circuit is gone. We don't dispose the old manager - doing so would cause\n  // JSDisconnectedException because the circuit that created it no longer exists.\n  currentRendererId = rendererId;\n  manager = managerInstance;"
+  },
+  {
+   "title": "Test method missing Arrange/Act/Assert comments",
+   "description": "The added test method does not contain explicit '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate the AAA phases, violating the required test structure convention.",
+   "file_path": "src/Components/test/E2ETest/Tests/StatePersistenceTest.cs",
+   "start_line": 282,
+   "end_line": 295,
+   "problematic_code_snippet": "    [Theory]\n    [InlineData(\"ServerNonPrerendered\")]\n    [InlineData(\"WebAssemblyNonPrerendered\")]\n    public void PersistentStateIsSupportedInDynamicJSRoots(string renderMode)\n    {\n        Navigate($\"subdir/WasmMinimal/dynamic-js-root.html?renderMode={renderMode}\");\n\n        Browser.Equal(\"Counter\", () => Browser.Exists(By.TagName(\"h1\")).Text);\n        Browser.Equal(\"Current count: 0\", () => Browser.Exists(By.CssSelector(\"p[role='status']\")).Text);\n\n        Browser.Click(By.CssSelector(\"button.btn-primary\"));\n        Browser.Equal(\"Current count: 1\", () => Browser.Exists(By.CssSelector(\"p[role='status']\")).Text);\n    }",
+   "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "7bb6a08b45aaa16e27bd0ac736717998e086cd7f",
+ "diff_chars": 10303,
+ "diff_lines": 178,
+ "user_prompt_chars": 13187,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 73238,
+ "wall_ms": 76068,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 12,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.658403846,
+ "spend_post_usd": 5.672664966,
+ "cost_settled": true,
+ "cost_wait_ms": 346,
+ "cost_usd": 0.01426112000000046,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.01398073,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 27292,
+  "cache_read_input_tokens": 118193,
+  "output_tokens": 18773,
+  "output_tokens_details": {
+   "thinking_tokens": 4719
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 27292
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 18773,
+   "cacheReadInputTokens": 118193,
+   "cacheCreationInputTokens": 27292,
+   "webSearchRequests": 0,
+   "costUSD": 0.01398073,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 4719,
+   "cacheCreationEphemeral5mInputTokens": 27292,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 7,
+   "title": "Code Review Bench PR #64536 - Allow JS root components to reinitialize on circuit restart",
+   "author": "unknown",
+   "baseSha": "505a3640dd513895a8b088dfe102b63bf24c5a38",
+   "headSha": "7bb6a08b45aaa16e27bd0ac736717998e086cd7f"
+  },
+  "summary": "The PR lets `enableJSRootComponents` accept a second call so JS root components can be re-enabled after a Blazor Server circuit restart. It adds a `rendererId` parameter threaded from `WebRendererInteropMethods.ts`, tracks `currentRendererId` and `hasInitializedJsComponents` in `JSRootComponents.ts`, and skips JS initializers on later calls. On the test side it deletes the extra `StatePersistanceJSRootTest` fixture, moves `PersistentStateIsSupportedInDynamicJSRoots` into `StatePersistenceTest.cs`, and registers the `dynamic-js-root-counter` component unconditionally in `RazorComponentEndpointsStartup`.\n\nThe intent is sound, but the head commit has two defects in `JSRootComponents.ts` that break the feature. First, the line that stored `jsComponentParameters` into `jsComponentParametersByIdentifier` was removed, so `Blazor.rootComponents.add()` now reads from an undefined map and throws on every call. Second, the multi-host guard is inverted: it throws when the renderer IDs match (the restart case the PR is meant to allow) and silently overwrites the manager when they differ (the case the PR says must throw). The E2E test that moved into `StatePersistenceTest.cs` calls `Blazor.rootComponents.add` on page load, so it would fail against this head. The test-side cleanup itself is reasonable.",
+  "verdict": "request_changes",
+  "verdictRationale": "Two correctness bugs in the core change block the feature. The removed parameter-map assignment makes every `Blazor.rootComponents.add` call throw a TypeError, and the inverted `currentRendererId === rendererId` guard contradicts both the code comment and the PR's stated multi-host and restart semantics. Both need fixing before the restart behaviour can be trusted, and the existing E2E test should catch the first one once it runs.",
+  "architecture": {
+   "overview": "Dynamic JS root components are wired up when a Blazor Web or Server renderer attaches. `attachWebRendererInterop` in `WebRendererInteropMethods.ts` receives the renderer's interop manager plus the JS component parameter and initializer maps from .NET. When those maps are non-empty it calls `enableJSRootComponents` in `JSRootComponents.ts`. That function stores a module-level `manager` (a DotNetObject for the .NET-side `RootComponentManager`), runs the registered custom-element initializers, and exposes `Blazor.rootComponents.add()`. Before this PR the function rejected any second call with 'Dynamic root components have already been enabled.', which blocked circuit restarts on the same page.\n\nThe PR adds `rendererId` to the call and keeps module state across calls. A later call from the same renderer replaces `manager`, and initializers run only once, gated by `hasInitializedJsComponents`. The intended contract is: same renderer re-enables (restart), different renderer type throws (multi-host). The head commit does not implement that contract correctly, as described in the findings.",
+   "steps": [
+    "Entry point: the framework calls `attachWebRendererInterop(rendererId, interopMethods, jsComponentParameters, jsComponentInitializers)` in `WebRendererInteropMethods.ts`. This is the boundary between the .NET renderer and the browser module.",
+    "The PR threads `rendererId` into `enableJSRootComponents`. That function now has three pieces of state: `manager`, `currentRendererId`, and `hasInitializedJsComponents`. The guard at line 126 decides whether to reject a second call, and the initializer loop at lines 139-150 runs only once.",
+    "Dropped state: the head removed the assignment to `jsComponentParametersByIdentifier`. `RootComponentsFunctions.add` at line 30 reads that map, so the restart path never gets parameter metadata, and the first-time path never gets it either.",
+    "Test side: the `dynamic-js-root.html` asset calls `Blazor.rootComponents.add` on load. The PR moves its E2E test into `StatePersistenceTest.cs` and removes the dedicated fixture. Registration in `RazorComponentEndpointsStartup.cs` is now unconditional, so the test no longer needs a special server site.",
+    "Coverage gap: no test exercises a circuit restart or a multi-host attempt, so neither the restart path nor the rejection path is covered."
+   ],
+   "diagrams": [
+    {
+     "title": "Dynamic JS root enable flow after this PR",
+     "kind": "flowchart",
+     "description": "Shows how a renderer attach reaches enableJSRootComponents, the guard, and the one-time initializer pass, and how add() uses the stored manager and parameter map.",
+     "mermaid": "flowchart TD\n  A[\"attachWebRendererInterop in WebRendererInteropMethods.ts\"] --> B{\"jsComponentParameters and initializers non-empty?\"}\n  B -- no --> Z[\"Skip JS root setup\"]\n  B -- yes --> C[\"enableJSRootComponents in JSRootComponents.ts\"]\n  C --> D{\"manager set and currentRendererId equals rendererId?\"}\n  D -- yes --> E[\"Throw: already enabled\"]\n  D -- no --> F[\"Set currentRendererId and manager\"]\n  F --> G{\"hasInitializedJsComponents?\"}\n  G -- no --> H[\"Run JS initializers once, set flag\"]\n  G -- yes --> I[\"Skip initializers\"]\n  H --> J[\"Blazor.rootComponents.add uses manager and jsComponentParametersByIdentifier\"]\n  I --> J"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Parameter map never assigned, so Blazor.rootComponents.add always throws",
+    "severity": "critical",
+    "category": "correctness",
+    "files": [
+     "src/Components/Web.JS/src/Rendering/JSRootComponents.ts"
+    ],
+    "body": "The head commit removed the line `jsComponentParametersByIdentifier = jsComponentParameters;` from `enableJSRootComponents`. The base commit had it. The variable is declared at line 14 and is never written anywhere else in the file, so it stays `undefined`.\n\nThe only reader is `RootComponentsFunctions.add` at line 30: `jsComponentParametersByIdentifier[componentIdentifier]`. Indexing `undefined` throws a TypeError. That means every `Blazor.rootComponents.add(...)` call fails, including the first-load call in `dynamic-js-root.html`. Restart support is moot if the feature can't add a component at all.\n\n::diff{file=\"src/Components/Web.JS/src/Rendering/JSRootComponents.ts\" lines=\"120-151\"}\n\n::callout{type=\"warning\"}\nThe removed line sat right above the initializer loop, so it's easy to lose in the restructuring into `if (!hasInitializedJsComponents)`. Restore it unconditionally, outside that block, so the latest circuit's parameter map is always stored.\n\n::suggestion{file=\"src/Components/Web.JS/src/Rendering/JSRootComponents.ts\" lines=\"136-139\"}\ncurrentRendererId = rendererId;\n  manager = managerInstance;\n  jsComponentParametersByIdentifier = jsComponentParameters;\n\n  if (!hasInitializedJsComponents) {",
+    "fixPrompt": "In `src/Components/Web.JS/src/Rendering/JSRootComponents.ts`, inside `enableJSRootComponents`, the assignment `jsComponentParametersByIdentifier = jsComponentParameters;` was dropped in this PR, so `RootComponentsFunctions.add` (around line 30) reads from an undefined map and throws on every call. Restore that assignment so it runs on every call, right after `manager = managerInstance;` and outside the `if (!hasInitializedJsComponents)` block, so a restarted circuit's parameter map replaces the stale one. Keep the one-time initializer loop as it is. Check that `Blazor.rootComponents.add` works in the E2E test `PersistentStateIsSupportedInDynamicJSRoots` afterward.",
+    "commentAnchor": {
+     "file": "src/Components/Web.JS/src/Rendering/JSRootComponents.ts",
+     "lineStart": 136,
+     "lineEnd": 139
+    }
+   },
+   {
+    "title": "Multi-host guard is inverted, which breaks restart and allows silent overwrite",
+    "severity": "critical",
+    "category": "correctness",
+    "files": [
+     "src/Components/Web.JS/src/Rendering/JSRootComponents.ts",
+     "src/Components/Web.JS/src/Rendering/WebRendererInteropMethods.ts"
+    ],
+    "body": "The guard at line 126 is `if (manager && currentRendererId === rendererId)`. The comment directly under it says a different renderer type should throw, and the PR description says the same: a different `rendererId` (Server 0 vs WASM 1) must throw, and the same `rendererId` on restart must be accepted.\n\nThe condition is the opposite of that. Take the two cases:\n\n- **Circuit restart, same renderer ID:** `manager` is set and the IDs match, so the function throws 'Dynamic root components have already been enabled.' That's the bug the PR is supposed to fix.\n- **Second host with a different renderer ID:** the IDs differ, so the guard passes and `manager` is silently replaced. The PR says this should throw, and the developer-responsibility note depends on the error being visible.\n\nIt's the same unsupported-multi-host situation as before, but now it fails quietly.\n\n::diff{file=\"src/Components/Web.JS/src/Rendering/JSRootComponents.ts\" lines=\"124-131\"}\n\n::callout{type=\"warning\"}\nThe PR describes two separate semantics, and the guard needs to implement both. Throw only when a manager exists and the renderer differs. Allow a re-enable when the renderer matches. Check which renderer-ID semantics apply across circuits; if IDs are not stable per renderer type, the comparison also needs a different key than `rendererId` alone.\n\n::suggestion{file=\"src/Components/Web.JS/src/Rendering/JSRootComponents.ts\" lines=\"126-130\"}\nif (manager && currentRendererId !== rendererId) {\n    // A different renderer (e.g., Server vs WebAssembly) is trying to enable JS root components.\n    // This is a multi-host scenario which is not supported for dynamic root components.\n    throw new Error('Dynamic root components have already been enabled.');\n  }",
+    "fixPrompt": "In `src/Components/Web.JS/src/Rendering/JSRootComponents.ts`, `enableJSRootComponents` (around lines 126-130) has an inverted guard. It throws when `currentRendererId === rendererId`, which blocks the same-renderer circuit restart this PR is meant to allow. It should throw only when a manager already exists and the renderer differs (`currentRendererId !== rendererId`), matching the comment and the PR description. Before changing it, confirm in the .NET side (`WebRendererInteropMethods`/renderer ID allocation) whether renderer IDs are stable across circuit restarts for the same renderer type. If they aren't, the comparison needs a different identity than the numeric `rendererId`. Then add or update tests for both the restart and multi-host paths.",
+    "commentAnchor": {
+     "file": "src/Components/Web.JS/src/Rendering/JSRootComponents.ts",
+     "lineStart": 126,
+     "lineEnd": 130
+    }
+   },
+   {
+    "title": "Restart and multi-host paths have no test coverage",
+    "severity": "medium",
+    "category": "correctness",
+    "files": [
+     "src/Components/test/E2ETest/Tests/StatePersistenceTest.cs"
+    ],
+    "body": "The only test touched is `PersistentStateIsSupportedInDynamicJSRoots`. It loads the page once and clicks the counter, so it checks the first `enableJSRootComponents` call and nothing else. The two behaviours this PR is about are untested:\n\n- A second circuit on the same page (restart) re-enabling JS root components without throwing. The inverted guard above would make this fail.\n- A second renderer type on the same page throwing 'already enabled'.\n\nThe test would likely have caught the missing parameter-map assignment, since it calls `Blazor.rootComponents.add` on load. Because the test asserts on the rendered counter text, it should fail loudly against this head. The gap is that nothing covers the restart path.\n\n::code{file=\"src/Components/test/E2ETest/Tests/StatePersistenceTest.cs\" lines=\"279-291\"}\n\n::callout{type=\"info\"}\nA restart test could navigate to the dynamic root page, trigger a circuit shutdown (for example, by disabling the reconnection cache as `DisableReconnectionCache` does), reload, and assert the counter renders again. A multi-host test would need a WASM host on the same page and is more expensive, so a JS unit test on `enableJSRootComponents` with a fake manager may be a cheaper way to cover the guard.",
+    "fixPrompt": "Add test coverage for the circuit-restart path of `enableJSRootComponents` in `src/Components/Web.JS/src/Rendering/JSRootComponents.ts`. Extend `PersistentStateIsSupportedInDynamicJSRoots` in `src/Components/test/E2ETest/Tests/StatePersistenceTest.cs`, or add a sibling test, so it covers: a second circuit on the same page re-enabling JS root components without error, and `Blazor.rootComponents.add` still working after restart. Also consider a lightweight JS unit test that calls `enableJSRootComponents` twice with the same and different `rendererId`, asserting the guard behaviour and that initializers run once. Follow the existing test patterns in `StatePersistenceTest.cs`.",
+    "commentAnchor": {
+     "file": "src/Components/test/E2ETest/Tests/StatePersistenceTest.cs",
+     "lineStart": 279,
+     "lineEnd": 291
+    }
+   },
+   {
+    "title": "JS root registration is now unconditional for every RazorComponentEndpoints app",
+    "severity": "medium",
+    "category": "maintainability",
+    "files": [
+     "src/Components/test/testassets/Components.TestServer/RazorComponentEndpointsStartup.cs",
+     "src/Components/test/testassets/Components.TestServer/Program.cs"
+    ],
+    "body": "The `--RegisterDynamicJSRootComponent` flag was removed, so `RegisterForJavaScript<ComponentWithPersistentState>(\"dynamic-js-root-counter\")` now runs for every app that uses `RazorComponentEndpointsStartup<App>`. That makes JS root components enabled everywhere that startup is used, not only in the scenario that needs them. Any test using that startup now goes through `attachWebRendererInterop`'s `enableJSRootComponents` path, which changes the baseline for unrelated tests.\n\nThe PR description says this reverts the #64159 test architecture, and the removed `Razor Component Endpoints with JS Root Component` site in `Program.cs` is consistent with that. Still, the simpler design is to keep the test-only registration and make the restart test use a dedicated site or flag. Otherwise, reviewers should confirm that the other `RazorComponentEndpointsStartup` tests still pass with JS root components enabled.\n\n::diff{file=\"src/Components/test/testassets/Components.TestServer/RazorComponentEndpointsStartup.cs\" lines=\"51-55\"}",
+    "fixPrompt": "In `src/Components/test/testassets/Components.TestServer/RazorComponentEndpointsStartup.cs`, the `RegisterForJavaScript<ComponentWithPersistentState>(\"dynamic-js-root-counter\")` call inside `AddInteractiveServerComponents` is now unconditional. That enables JS root components for every app using this startup. Decide whether that's intended. If it is, confirm the other E2E tests using `RazorComponentEndpointsStartup` still pass. If not, restore a configuration gate (for example a `RegisterDynamicJSRootComponent` setting) and ensure `StatePersistenceTest.PersistentStateIsSupportedInDynamicJSRoots` sets it through its fixture.",
+    "commentAnchor": {
+     "file": "src/Components/test/testassets/Components.TestServer/RazorComponentEndpointsStartup.cs",
+     "lineStart": 51,
+     "lineEnd": 55
+    }
+   },
+   {
+    "title": "Test cleanup consolidates the dynamic JS root test into the persistence suite",
+    "severity": "info",
+    "category": "maintainability",
+    "files": [
+     "src/Components/test/E2ETest/Tests/StatePersistenceTest.cs",
+     "src/Components/test/E2ETest/Tests/StatePersistanceJSRootTest.cs"
+    ],
+    "body": "Removing the one-test `StatePersistanceJSRootTest` fixture and folding its scenario into `StatePersistenceTest` cuts a per-fixture server site and a near-duplicate test class. The moved test is unchanged, so its behaviour is preserved. The PR description explains why this was reverted, and that context helps reviewers.\n\nThe matching `Program.cs` site removal leaves no dangling references to `RegisterDynamicJSRootComponent`, which I confirmed with a repo-wide search."
+   },
+   {
+    "title": "Module-level state keeps the stale manager for fast replacement",
+    "severity": "info",
+    "category": "correctness",
+    "files": [
+     "src/Components/Web.JS/src/Rendering/JSRootComponents.ts"
+    ],
+    "body": "The comment at lines 132-135 explains why the old `DotNetObjectReference` is not disposed. Disposing it would hit the old, already-gone circuit and raise `JSDisconnectedException`. Replacing the reference and leaving the old one alone is a reasonable trade-off, and the comment records the reasoning. Once the two defects above are fixed, the one-time initializer gate (`hasInitializedJsComponents`) is a sensible way to avoid re-registering custom elements on restart."
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":7,\"title\":\"Code Review Bench PR #64536 - Allow JS root components to reinitialize on circuit restart\",\"author\":\"unknown\",\"baseSha\":\"505a3640dd513895a8b088dfe102b63bf24c5a38\",\"headSha\":\"7bb6a08b45aaa16e27bd0ac736717998e086cd7f\"},\"summary\":\"The PR lets `enableJSRootComponents` accept a second call so JS root components can be re-enabled after a Blazor Server circuit restart. It adds a `rendererId` parameter threaded from `WebRendererInt",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

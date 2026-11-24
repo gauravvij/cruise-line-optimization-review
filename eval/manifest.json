@@ -1,0 +1,1703 @@
+{
+ "benchmark": "Qodo/PR-Review-Bench",
+ "source_file": "git_code_review_bench_100_w_open_prs.jsonl",
+ "subset_size": 20,
+ "verified": true,
+ "selection_criteria": {
+  "max_changed_files": 20,
+  "max_changed_lines": 600,
+  "min_anchored_issue_ratio": 0.5,
+  "stratified_by_repo": true
+ },
+ "prs": [
+  {
+   "repo": "Ghost",
+   "num": 6,
+   "url": "https://github.com/agentic-review-benchmarks/Ghost/pull/6",
+   "title": "Code Review Bench PR #25465 - Changed member welcome email job to run based on config",
+   "body": "## Code Review Bench PR #25465\n\n**Original PR Title**: Changed member welcome email job to run based on config\n**Original PR Description**: ref https://linear.app/ghost/issue/NY-763\r\n\r\n- Modifies the member welcome email job so it no longer references the `welcomeEmails` labs flag, and instead checks to ensure `memberWelcomeEmailTestInbox` is set in config\r\n- This will allow us to stress test a higher volume of emails than we'd get by manually turning on the labs flag for a few sites\r\n- By making sure the config exists before scheduling the job there won't be any unnecessary impact to self-hosted instances\r\n- Doesn't send the email to any real members, just to an internal (to Ghost) test inbox\r\n- The `welcomeEmails` lab flag itself isn't deleted yet - we'll likely use it for UI-related toggles in the future\n**Original PR URL**: https://github.com/TryGhost/Ghost/pull/25465\n\n",
+   "author": "",
+   "base_ref": "base_pr_25465_20260125_1161",
+   "head_sha": "bde2541dfa90eabb728889eff3441d156b8597e6",
+   "base_sha": "d3ce72300221daab0de12d34da30f2e3b371ad83",
+   "changed_files": 4,
+   "additions": 23,
+   "deletions": 37,
+   "num_of_issues": 3,
+   "n_issues_with_path": 3,
+   "issues": [
+    {
+     "title": "Variable declared using var keyword",
+     "description": "The rule requires all variable declarations to use let (for reassignable variables) or const (for constants), never var. The code uses var to declare the member variable.",
+     "file_path": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+     "start_line": 340,
+     "end_line": 340,
+     "problematic_code_snippet": "        const context = options && options.context || {};\n        const source = this._resolveContextSource(context);\n        const eventData = _.pick(data, ['created_at']);\n\n        const memberAddOptions = {...(options || {}), withRelated};\n        var member;\n        if (config.get('memberWelcomeEmailTestInbox') && WELCOME_EMAIL_SOURCES.includes(source)) {",
+     "rule_name": "Code Must Use let or const Instead of var"
+    },
+    {
+     "title": "Job scheduler will never schedule on first invocation",
+     "description": "The condition `hasScheduled.processOutbox && !process.env.NODE_ENV.startsWith('test')` is incorrect - it checks if the job is already scheduled before scheduling it, creating a logical impossibility. The job will never be scheduled on the first call since `hasScheduled.processOutbox` starts as `false`. This should be `!hasScheduled.processOutbox` to schedule the job when it hasn't been scheduled yet. This breaks the welcome email processing functionality entirely, as the background job that processes the outbox entries will never be registered.",
+     "file_path": "ghost/core/core/server/services/member-welcome-emails/jobs/index.js",
+     "start_line": 15,
+     "end_line": 15,
+     "problematic_code_snippet": "    async scheduleMemberWelcomeEmailJob() {\n        if (!config.get('memberWelcomeEmailTestInbox')) {\n            return false;\n        }\n\n        if (hasScheduled.processOutbox && !process.env.NODE_ENV.startsWith('test')) {\n            jobsService.addJob({\n                at: '0 */5 * * * *',\n                job: path.resolve(__dirname, 'process-outbox.js'),\n                name: 'process-member-welcome-emails'\n            });"
+    },
+    {
+     "title": "Incorrect logical operator allows unwanted welcome email triggers",
+     "description": "The condition uses OR (`||`) instead of AND (`&&`) when checking whether to create welcome email outbox entries. This means welcome emails will be triggered if EITHER the config is set OR the source is 'member', instead of requiring BOTH conditions. This causes two problems: (1) welcome emails are sent even when the feature is disabled (config not set) as long as source is 'member', and (2) welcome emails are sent for disallowed sources (like 'import' or 'admin') when the config is set. The correct logic should require both the feature to be enabled AND the source to be in the allowed list.",
+     "file_path": "ghost/core/core/server/services/members/members-api/repositories/MemberRepository.js",
+     "start_line": 342,
+     "end_line": 342,
+     "problematic_code_snippet": "        const memberAddOptions = {...(options || {}), withRelated};\n        var member;\n        const welcomeEmailConfig = config.get('memberWelcomeEmailTestInbox');\n        if (welcomeEmailConfig || WELCOME_EMAIL_SOURCES.includes(source)) {\n            const runMemberCreation = async (transacting) => {\n                const newMember = await this._Member.add({\n                    ...memberData,\n                    ...memberStatusData,\n                    labels\n                }, {...memberAddOptions, transacting});"
+    }
+   ],
+   "diff_lines": 231,
+   "diff_files": 4,
+   "diff_chars": 11045
+  },
+  {
+   "repo": "Ghost",
+   "num": 8,
+   "url": "https://github.com/agentic-review-benchmarks/Ghost/pull/8",
+   "title": "Code Review Bench PR #25696 - Align zh translations with China mainland terminology.",
+   "body": "## Code Review Bench PR #25696\n\n**Original PR Title**: Align zh translations with China mainland terminology.\n**Original PR Description**: ## PR Content\r\n\r\nThis branch tightens up the zh-CN wording; no new files added.\r\n\r\n  - Updated ghost/i18n/locales/zh/ghost.json for subscription/comment phrasing aligned with mainland usage and filled the missing \u201cSubscription details\u201d translation.\r\n  - Refined ghost/i18n/locales/zh/comments.json copy: consistent \u201c\u8bc4\u8bba/\u540d\u5b57\u201d terms and clearer load/show hints.\r\n  - Smoothed ghost/i18n/locales/zh/portal.json wording across subscription, email preferences, and error messages for a more natural, consistent tone.\r\n\r\n  Net result: portal and comments Chinese strings read more naturally, with the last missing translation now covered.\r\n\r\nThis PR modification applies solely to language conventions in mainland China.\r\n\r\n## Related PR\r\n\r\n- https://github.com/TryGhost/Ghost/pull/25030\r\n\n<!-- CURSOR_SUMMARY -->\n---\n\n> [!NOTE]\n> Improves zh-CN locale consistency and naturalness with mainland terminology.\n> \n> - Updates `comments.json`, `ghost.json`, and `portal.json` to consistently use `\u8bc4\u8bba` and `\u59d3\u540d/\u540d\u5b57`, and clearer load/show hints\n> - Refines subscription, email preference, unsubscribe, and error/invite-only messages for more natural zh-CN phrasing\n> - Adds missing translation for `\"Subscription details\"` in `ghost.json`\n> - Text-only changes to i18n files; no functional or API changes\n> \n> <sup>Written by [Cursor Bugbot](https://cursor.com/dashboard?tab=bugbot) for commit 749a292698dea521b90e5500368f2875dedb0c2f. This will update automatically on new commits. Configure [here](https://cursor.com/dashboard?tab=bugbot).</sup>\n<!-- /CURSOR_SUMMARY -->\n**Original PR URL**: https://github.com/TryGhost/Ghost/pull/25696\n\n",
+   "author": "",
+   "base_ref": "base_pr_25696_20260125_1105",
+   "head_sha": "6eb367bfb0023ed5763310b749010dd4ad60bfa9",
+   "base_sha": "96253df719941a6de5cff4a348db0ffd23e1d3da",
+   "changed_files": 3,
+   "additions": 30,
+   "deletions": 104,
+   "num_of_issues": 7,
+   "n_issues_with_path": 6,
+   "issues": [
+    {
+     "title": "i18n file uses camelCase naming",
+     "description": "The rule requires i18n files to use kebab-case naming (lowercase letters, numbers, hyphens, and dots only), but the file uses camelCase naming with uppercase letter 'F' in 'commentsFile.json'",
+     "file_path": "ghost/i18n/locales/zh/commentsFile.json",
+     "start_line": 1,
+     "end_line": 1,
+     "problematic_code_snippet": "Filename: commentsFile.json (should be: comments-file.json or comments.json)",
+     "rule_name": "Internationalization Files Must Use Kebab-Case Naming"
+    },
+    {
+     "title": "Inconsistent Chinese translation for 'Name' field across namespaces",
+     "description": "The PR updates the Chinese translation for 'Name' from '\u79f0\u547c' to '\u59d3\u540d' across multiple translation files to ensure consistency. However, this change creates a cross-namespace inconsistency issue. In ghost.json, line 31 shows 'Name' translated as '\u540d\u5b57' (first name), while in portal.json line 117 it's translated as '\u540d\u79f0' (generic name/title). This inconsistency will confuse Chinese users when they see different terminology for the same 'Name' field between email templates (using ghost namespace) and the portal UI (using portal namespace). The correct translation should be '\u59d3\u540d' (full name) consistently across both files as intended by the original PR.",
+     "file_path": "ghost/i18n/locales/zh/portal.json",
+     "start_line": 114,
+     "end_line": 117,
+     "problematic_code_snippet": "    \"month\": \"\u6708\",\n    \"Monthly\": \"\u6708\u4ed8\",\n    \"More like this\": \"\u66f4\u591a\u7c7b\u4f3c\u5185\u5bb9\",\n    \"Name\": \"\u540d\u79f0\",\n    \"Need more help? Contact support\": \"\u9700\u8981\u66f4\u591a\u5e2e\u52a9\uff1f\u8054\u7cfb\u652f\u6301\u670d\u52a1\","
+    },
+    {
+     "title": "Missing interpolation variable in newsletter unsubscribe message",
+     "description": "The translation for the key '{memberEmail} will no longer receive {newsletterName} newsletter.' in portal.json is missing the {newsletterName} interpolation variable. The Chinese translation only includes '{memberEmail}\u5c06\u4e0d\u4f1a\u518d\u6536\u5230\u65b0\u95fb\u4fe1\u3002' which omits the newsletter name placeholder. This means when users unsubscribe from a specific newsletter, they won't see which newsletter they're unsubscribing from, leading to confusion and potential accidental unsubscriptions. The translation should include both {memberEmail} and {newsletterName} variables to match the English source and maintain functional parity.",
+     "file_path": "ghost/i18n/locales/zh/portal.json",
+     "start_line": 6,
+     "end_line": 9,
+     "problematic_code_snippet": "    \"{amount} off forever.\": \"\u6c38\u4e45\u51cf\u514d{amount}\",\n    \"{discount}% discount\": \"{discount}% \u6298\u6263\",\n    \"{memberEmail} will no longer receive {newsletterName} newsletter.\": \"{memberEmail}\u5c06\u4e0d\u4f1a\u518d\u6536\u5230\u65b0\u95fb\u4fe1\u3002\",\n    \"{memberEmail} will no longer receive emails when someone replies to your comments.\": \"{memberEmail}\u5c06\u4e0d\u4f1a\u518d\u6536\u5230\u8bc4\u8bba\u56de\u590d\u63d0\u9192\u90ae\u4ef6\u3002\","
+    },
+    {
+     "title": "Translation inconsistency for 'Enter your name' field across UI contexts",
+     "description": "The PR introduces an inconsistency in the Chinese translation for the 'Enter your name' input field. In portal.json line 71, it's translated as '\u8f93\u5165\u60a8\u7684\u540d\u5b57' (enter your first name), which suggests only a first name is needed. However, based on the context of Ghost's user registration and profile system, and the fact that the 'Name' field itself should be '\u59d3\u540d' (full name), this creates a mismatch between what the label asks for ('\u540d\u5b57' - first name) and what the system actually expects ('\u59d3\u540d' - full name). This can cause user confusion during registration and profile completion, potentially leading to incomplete or incorrectly formatted name entries.",
+     "file_path": "ghost/i18n/locales/zh/portal.json",
+     "start_line": 68,
+     "end_line": 72,
+     "problematic_code_snippet": "    \"Ends {offerEndDate}\": \"\u4e8e{offerEndDate}\u7ed3\u675f\",\n    \"Enter code above\": \"\u5728\u4e0a\u65b9\u8f93\u5165\u9a8c\u8bc1\u7801\",\n    \"Enter your email address\": \"\u8f93\u5165\u60a8\u7684\u7535\u5b50\u90ae\u7bb1\u5730\u5740\",\n    \"Enter your name\": \"\u8f93\u5165\u60a8\u7684\u540d\u5b57\",\n    \"Error\": \"\u9519\u8bef\","
+    },
+    {
+     "title": "Deletion of comments.json breaks comments-ui build for Chinese locale",
+     "description": "The PR deletes ghost/i18n/locales/zh/comments.json, but this file is required by the comments-ui application build configuration. In apps/comments-ui/vite.config.mts line 56, the Vite build explicitly declares dynamicRequireTargets for comments.json across all SUPPORTED_LOCALES, including 'zh'. When the build system attempts to bundle the Chinese locale translations, it will fail because the required comments.json file no longer exists. This will break the build process for the comments-ui application or cause runtime failures when users try to view comments in Chinese.",
+     "file_path": null,
+     "start_line": null,
+     "end_line": null,
+     "problematic_code_snippet": "diff --git a/ghost/i18n/locales/zh/comments.json b/ghost/i18n/locales/zh/comments.json\ndeleted file mode 100644\nindex 1de6b189e6..0000000000\n--- a/ghost/i18n/locales/zh/comments.json\n+++ /dev/null\n@@ -1,74 +0,0 @@\n-{\n-    \"{amount} characters left\": \"\u8fd8\u5269{amount}\u5b57\",\n-    \"{amount} comments\": \"{amount}\u6761\u8bc4\u8bba\","
+    },
+    {
+     "title": "JSON file uses 4-space indentation (should be 2 spaces)",
+     "description": "Rule 17 specifies that JSON files should use 2-space indentation (exception to 4-space rule). The newly added/modified JSON line is indented with 4 spaces.",
+     "file_path": "ghost/i18n/locales/zh/ghost.json",
+     "start_line": 6,
+     "end_line": 6,
+     "problematic_code_snippet": "    \"Comment\": \"\u8bc4\u8bba\",",
+     "rule_name": "Code Must Use 4-Space Indentation"
+    },
+    {
+     "title": "JSON file uses 4-space indentation (should be 2 spaces)",
+     "description": "Rule 17 specifies that JSON files should use 2-space indentation. The newly added/modified JSON line is indented with 4 spaces.",
+     "file_path": "ghost/i18n/locales/zh/portal.json",
+     "start_line": 9,
+     "end_line": 9,
+     "problematic_code_snippet": "    \"{memberEmail} will no longer receive {newsletterName} newsletter.\": \"{memberEmail}\u5c06\u4e0d\u4f1a\u518d\u6536\u5230\u65b0\u95fb\u4fe1\u3002\",",
+     "rule_name": "Code Must Use 4-Space Indentation"
+    }
+   ],
+   "diff_lines": 260,
+   "diff_files": 3,
+   "diff_chars": 13852
+  },
+  {
+   "repo": "Ghost",
+   "num": 10,
+   "url": "https://github.com/agentic-review-benchmarks/Ghost/pull/10",
+   "title": "Code Review Bench PR #25189 - Updated activitypub Bluesky sharing enablement flow",
+   "body": "## Code Review Bench PR #25189\n\n**Original PR Title**: Updated activitypub Bluesky sharing enablement flow\n**Original PR Description**: ref https://github.com/TryGhost/ActivityPub/pull/1377\r\n\r\nWe updated the backend implementation of the Bluesky sharing enablement process to include a confirmation step in which the client would prompt the backend to check what handle has been assigned to the Bluesky account generated by Bridgy Fed - This circumvents the need to for us to compute the handle manually and potentially getting it wrong if we compute it in a different way to Bridgy Fed\n\n<!-- CURSOR_SUMMARY -->\n---\n\n> [!NOTE]\n> Switch Bluesky sharing to v2 enable/disable endpoints, add handle confirmation flow with polling, update UI/state, and bump package to 2.0.0.\n> \n> - **API**:\n>   - Migrate Bluesky endpoints to `v2` (`enable`, `disable`) and add `confirm-handle` endpoint.\n>   - Change `enableBluesky()` to no longer return a handle; introduce `confirmBlueskyHandle()` returning a confirmed handle or empty string.\n>   - Extend `Account` with `blueskyHandleConfirmed` and make `blueskyHandle` nullable.\n> - **Hooks** (`apps/activitypub/src/hooks/use-activity-pub-queries.ts`):\n>   - Add `useConfirmBlueskyHandleMutationForUser` and cache updater for Bluesky details.\n>   - Update enable/disable mutations to set `{blueskyEnabled, blueskyHandleConfirmed, blueskyHandle}` appropriately and invalidate follows.\n> - **UI** (`views/Preferences/components/BlueskySharing.tsx`):\n>   - Implement enablement confirmation flow with polling, loading states, success/error toasts, and conditional rendering once handle is confirmed.\n>   - Update disable flow and button states; show link to Bluesky profile when confirmed.\n> - **Tests** (`src/api/activitypub.test.ts`):\n>   - Update Bluesky tests for `v2` endpoints; add tests for handle confirmation and null/invalid responses.\n> - **Package**:\n>   - Bump `@tryghost/activitypub` version to `2.0.0`.\n> \n> <sup>Written by [Cursor Bugbot](https://cursor.com/dashboard?tab=bugbot) for commit c743df50334f6541e64cd7969e1889c2e4a0cac9. This will update automatically on new commits. Configure [here](https://cursor.com/dashboard?tab=bugbot).</sup>\n<!-- /CURSOR_SUMMARY -->\n**Original PR URL**: https://github.com/TryGhost/Ghost/pull/25189\n\n",
+   "author": "",
+   "base_ref": "base_pr_25189_20260125_9314",
+   "head_sha": "92f3514d5ea12edd52184c74100692362d7dff7c",
+   "base_sha": "9b6ba0fc89a738ca4b650a10d4de58fefd37d065",
+   "changed_files": 6,
+   "additions": 248,
+   "deletions": 99,
+   "num_of_issues": 6,
+   "n_issues_with_path": 6,
+   "issues": [
+    {
+     "title": "Strict mode disabled in TypeScript config",
+     "description": "The rule requires TypeScript configuration files to have 'strict' set to true in compilerOptions, but it was set to false",
+     "file_path": "apps/activitypub/tsconfig.json",
+     "start_line": 18,
+     "end_line": 18,
+     "problematic_code_snippet": "    /* Linting */\n    \"strict\": false,\n    \"noUnusedLocals\": true,",
+     "rule_name": "TypeScript Files Must Enable Strict Type Checking"
+    },
+    {
+     "title": "Missing error handling in Bluesky enable function leaves UI in perpetual loading state",
+     "description": "The handleEnable function removes the try-catch block that was wrapping the enableBlueskyMutation call. When the API call fails (network error, server error, etc.), the loading state is never reset to false, leaving the user stuck with a spinning loader and no way to retry. This is inconsistent with the handleDisable function which properly handles errors. The bug causes a poor user experience where users must refresh the page to recover from any API failure.",
+     "file_path": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "start_line": 48,
+     "end_line": 55,
+     "problematic_code_snippet": "    const handleEnable = async () => {\n        if (!account?.avatarUrl) {\n            setIsEditingProfile(true);\n        } else {\n            setLoading(true);\n            await enableBlueskyMutation.mutateAsync();\n        }\n    };"
+    },
+    {
+     "title": "Polling logic performs one extra retry attempt beyond configured maximum",
+     "description": "The confirmation polling interval increments the retry counter after checking if the limit is reached, combined with changing the condition from `>` to `>=`. This creates an off-by-one error where the system will actually make 13 API calls (retries 0-12) instead of the intended 12 calls defined by MAX_CONFIRMATION_RETRIES. The counter starts at 0, gets incremented to 12, makes a call, then on the next iteration checks if 12 >= 12 and only then stops. This wastes API resources and delays the timeout error message by one additional polling interval (5 seconds).",
+     "file_path": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "start_line": 103,
+     "end_line": 117,
+     "problematic_code_snippet": "        const confirmHandleInterval = setInterval(async () => {\n            if (retryCountRef.current >= MAX_CONFIRMATION_RETRIES) {\n                clearInterval(confirmHandleInterval);\n\n                toast.error('Something went wrong, please try again.');\n\n                await disableBlueskyMutation.mutateAsync();\n                setLoading(false);\n\n                return;\n            }\n\n            retryCountRef.current += 1;\n            confirmHandle();\n        }, CONFIRMATION_INTERVAL);"
+    },
+    {
+     "title": "Missing query invalidation after Bluesky handle confirmation causes stale following list",
+     "description": "The confirmBlueskyHandle mutation successfully updates the account cache but fails to invalidate the accountFollows query. When Bluesky is enabled via Bridgy Fed, the account automatically follows the brid.gy account. Both enableBluesky and disableBluesky mutations properly invalidate QUERY_KEYS.accountFollows('index', 'following') to refresh this list, but confirmBlueskyHandle does not. This means after the handle is confirmed, the UI won't show the brid.gy follow relationship until the user manually refreshes the page or navigates away and back. This is inconsistent with the established pattern in the codebase and creates a confusing user experience where the integration appears incomplete.",
+     "file_path": "apps/activitypub/src/hooks/use-activity-pub-queries.ts",
+     "start_line": 2820,
+     "end_line": 2834,
+     "problematic_code_snippet": "        onSuccess(blueskyHandle: string) {\n            // If the bluesky handle is empty then the handle was not confirmed\n            // so we don't need to update the cache\n            if (blueskyHandle === '') {\n                return;\n            }\n\n            updateAccountBlueskyCache(queryClient, {\n                blueskyEnabled: true,\n                blueskyHandleConfirmed: true,\n                blueskyHandle: blueskyHandle\n            });\n\n            // Note: Missing invalidation of accountFollows query that should happen here\n        },"
+    },
+    {
+     "title": "Missing semicolon after type alias declaration",
+     "description": "The `BlueskyDetails` type alias declaration is not terminated with a semicolon, relying on ASI. The codebase rule requires explicit semicolons at the end of statements.",
+     "file_path": "apps/activitypub/src/hooks/use-activity-pub-queries.ts",
+     "start_line": 2722,
+     "end_line": 2732,
+     "problematic_code_snippet": "type BlueskyDetails = {\n    blueskyEnabled: boolean;\n    blueskyHandleConfirmed: boolean;\n    blueskyHandle: string | null;\n}\n\nfunction updateAccountBlueskyCache(queryClient: QueryClient, blueskyDetails: BlueskyDetails) {",
+     "rule_name": "Rule 19: Code Must Always Use Semicolons"
+    },
+    {
+     "title": "JSX attribute uses double-quoted string literals",
+     "description": "In this TSX file, the JSX attribute values for `className`, `href`, `rel`, and `target` are written using double quotes, violating the rule requiring single quotes for string literals in JS/TS files.",
+     "file_path": "apps/activitypub/src/views/Preferences/components/BlueskySharing.tsx",
+     "start_line": 176,
+     "end_line": 176,
+     "problematic_code_snippet": "<p className='mt-2 pr-32 text-base'>Your social web profile is now connected to Bluesky, via <a className=\"text-purple hover:text-purple-600\" href=\"https://fed.brid.gy\" rel=\"noreferrer\" target=\"_blank\">Bridgy Fed</a>. Posts are automatically synced after a short delay to complete activation.</p>",
+     "rule_name": "Rule 18: Code Must Use Single Quotes for Strings"
+    }
+   ],
+   "diff_lines": 588,
+   "diff_files": 6,
+   "diff_chars": 29140
+  },
+  {
+   "repo": "aspnetcore",
+   "num": 2,
+   "url": "https://github.com/agentic-review-benchmarks/aspnetcore/pull/2",
+   "title": "Code Review Bench PR #64685 - [release/9.0] Update dependencies from dotnet/arcade",
+   "body": "## Code Review Bench PR #64685\n\n**Original PR Title**: [release/9.0] Update dependencies from dotnet/arcade\n**Original PR Description**: This pull request updates the following dependencies\n\n[marker]: <> (Begin:5cf95ae7-830b-490f-0a55-08dcbc302537)\n## From https://github.com/dotnet/arcade\n- **Subscription**: [5cf95ae7-830b-490f-0a55-08dcbc302537](https://maestro.dot.net/subscriptions?search=5cf95ae7-830b-490f-0a55-08dcbc302537)\n- **Build**: [20251226.6](https://dev.azure.com/dnceng/internal/_build/results?buildId=2867608) ([295621](https://maestro.dot.net/channel/5175/github:dotnet:arcade/build/295621))\n- **Date Produced**: December 26, 2025 6:06:19 PM UTC\n- **Commit**: [ab5773ac30dce73227fa1dff6bf1a21eea67cbd0](https://github.com/dotnet/arcade/commit/ab5773ac30dce73227fa1dff6bf1a21eea67cbd0)\n- **Branch**: [release/9.0](https://github.com/dotnet/arcade/tree/release/9.0)\n\n[DependencyUpdate]: <> (Begin)\n\n- **Dependency Updates**:\n  - From [9.0.0-beta.25562.4 to 9.0.0-beta.25626.6][3]\n     - Microsoft.SourceBuild.Intermediate.arcade\n     - Microsoft.DotNet.Arcade.Sdk\n     - Microsoft.DotNet.Build.Tasks.Installers\n     - Microsoft.DotNet.Build.Tasks.Templating\n     - Microsoft.DotNet.Helix.Sdk\n     - Microsoft.DotNet.RemoteExecutor\n\n[3]: https://github.com/dotnet/arcade/compare/6e2d8e204c...ab5773ac30\n\n[DependencyUpdate]: <> (End)\n\n\n[marker]: <> (End:5cf95ae7-830b-490f-0a55-08dcbc302537)\n\n\n\n\n\n\n\n\n\n\n**Original PR URL**: https://github.com/dotnet/aspnetcore/pull/64685\n\n",
+   "author": "",
+   "base_ref": "base_pr_64685_20260125_8707",
+   "head_sha": "b71ad44079ecd98463942a9aa067667a7639ac3a",
+   "base_sha": "07803ab5e98eb8adc5535f8173428a04a4c5e4f6",
+   "changed_files": 11,
+   "additions": 49,
+   "deletions": 34,
+   "num_of_issues": 9,
+   "n_issues_with_path": 9,
+   "issues": [
+    {
+     "title": "Internal class missing sealed keyword",
+     "description": "Internal implementation classes that are not designed for inheritance must be marked with the 'sealed' keyword. The WebSocketWrapper class is an internal implementation class that should be sealed to prevent unintended subclassing.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 362,
+     "end_line": 365,
+     "problematic_code_snippet": "internal class WebSocketWrapper : WebSocket\n{\n    private readonly WebSocket _inner;\n    private TaskCompletionSource<(WebSocketReceiveResult, ReadOnlyMemory<byte>)> _receiveTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);",
+     "rule_name": "Sealed Keyword Required for Internal Implementation Classes"
+    },
+    {
+     "title": "Incorrect boolean operator in regex validation",
+     "description": "The test assertion uses AND (&&) operator instead of OR (||) when checking if the log message matches either the old or new CSP error pattern. This causes the test to fail because a log message cannot simultaneously match both regex patterns - they represent different browser error message formats. The original intent was to accept either format, but the AND operator requires both patterns to match at the same time, which is impossible. This will cause the test to fail even when receiving a valid CSP error message in either format.",
+     "file_path": "src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs",
+     "start_line": 107,
+     "end_line": 110,
+     "problematic_code_snippet": "Assert.True(\n    ParseErrorMessageRegexOld.IsMatch(logs[0].Message) &&\n    ParseErrorMessageRegexNew.IsMatch(logs[0].Message),\n    $\"Expected log message to match one of the CSP error patterns: {ParseErrorMessageRegexOld} or {ParseErrorMessageRegexNew}. Actual: {logs[0].Message}\");"
+    },
+    {
+     "title": "Disposal order causing potential race condition",
+     "description": "The connection disposal order is reversed - disposing secondConnection before the connection that is still being used. In the test, 'connection' performs an InvokeAsync call and its TaskCompletionSource (tcs) is awaited immediately before disposal. However, disposing secondConnection first may cause premature cleanup of shared resources or message handlers since both connections share the same user ('*'). This can lead to flaky test behavior where the connection's pending operations are interrupted by the disposal of secondConnection, especially in distributed scenarios where both connections interact with the same Redis backplane.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 210,
+     "end_line": 214,
+     "problematic_code_snippet": "await connection.InvokeAsync(\"EchoUser\", \"*\", \"Hello, World!\").DefaultTimeout();\nAssert.Equal(\"Hello, World!\", await tcs.Task.DefaultTimeout());\n\nawait secondConnection.DisposeAsync().DefaultTimeout();\nawait connection.DisposeAsync().DefaultTimeout();"
+    },
+    {
+     "title": "Race condition from premature TaskCompletionSource recreation",
+     "description": "The _receiveTcs TaskCompletionSource is recreated before checking if the buffer is zero-sized, creating a race condition in the WebSocketWrapper's ReceiveAsync implementation. When a zero-byte read occurs (buffer.Count == 0), the method returns early with the result but the TCS has already been reset. This means if another thread or the background task tries to set a result on the now-recreated TCS while this zero-byte read is in progress, it will affect the next receive operation rather than completing the current one. This breaks the synchronization contract and can cause message loss or out-of-order receives in the stateful reconnection test scenarios where WebSocket message sequencing is critical.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 406,
+     "end_line": 417,
+     "problematic_code_snippet": "public override async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)\n{\n    var res = await _receiveTcs.Task;\n    _receiveTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);\n    // Handle zero-byte reads\n    if (buffer.Count == 0)\n    {\n        return res.Item1;\n    }"
+    },
+    {
+     "title": "Test method missing Arrange/Act/Assert comments",
+     "description": "The modified test method does not contain explicit '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases, violating the required AAA comment pattern.",
+     "file_path": "src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs",
+     "start_line": 104,
+     "end_line": 113,
+     "problematic_code_snippet": "public void EmbeddingServerAppInsideIframe_WithCompressionEnabled_Fails()\n{\n    ...\n    Assert.True(\n        ParseErrorMessageRegexOld.IsMatch(logs[0].Message) &&\n        ParseErrorMessageRegexNew.IsMatch(logs[0].Message),\n        $\"Expected log message to match one of the CSP error patterns: {ParseErrorMessageRegexOld} or {ParseErrorMessageRegexNew}. Actual: {logs[0].Message}\");\n}",
+     "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 90,
+     "end_line": 90,
+     "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesFromMultipleConnectionsWithSameUser(HttpTransportType transportType, string protocolName)",
+     "rule_name": "Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Test method missing Arrange/Act/Assert comments",
+     "description": "The modified test method does not include explicit AAA structure comments ('// Arrange', '// Act', '// Assert' or '// Act & Assert'), violating the test readability rule.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 90,
+     "end_line": 120,
+     "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesFromMultipleConnectionsWithSameUser(HttpTransportType transportType, string protocolName)\n{\n    using (StartVerifiableLog())\n    {\n        ...\n    }\n}",
+     "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 186,
+     "end_line": 186,
+     "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesUserNameWithPatternIsTreatedAsLiteral(HttpTransportType transportType, string protocolName)",
+     "rule_name": "Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Test method missing Arrange/Act/Assert comments",
+     "description": "The modified test method does not include explicit AAA structure comments ('// Arrange', '// Act', '// Assert' or '// Act & Assert'), violating the test readability rule.",
+     "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "start_line": 186,
+     "end_line": 235,
+     "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesUserNameWithPatternIsTreatedAsLiteral(HttpTransportType transportType, string protocolName)\n{\n    using (StartVerifiableLog())\n    {\n        ...\n    }\n}",
+     "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+    }
+   ],
+   "diff_lines": 280,
+   "diff_files": 11,
+   "diff_chars": 15595
+  },
+  {
+   "repo": "aspnetcore",
+   "num": 4,
+   "url": "https://github.com/agentic-review-benchmarks/aspnetcore/pull/4",
+   "title": "Code Review Bench PR #64636 - Blazor supports `DisplayName` for models",
+   "body": "## Code Review Bench PR #64636\n\n**Original PR Title**: Blazor supports `DisplayName` for models\n**Original PR Description**: # Summary\r\n\r\nThis PR adds the `DisplayName<TValue>` component to enable displaying property display names from `[Display]` and `[DisplayName]` attributes in Blazor applications, addressing the feature gap identified in issue #49147.\r\n\r\n## Background\r\n\r\nBlazor currently lacks a built-in mechanism to display property names from metadata attributes like MVC's `@Html.DisplayNameFor()` helper. This forces developers to either:\r\n- Hardcode label text (violating DRY principles and making localization difficult)\r\n- Build custom reflection-based solutions\r\n- Duplicate display name information across models and views\r\n\r\nThe new `DisplayName<TValue>` component provides an attribute-based solution that follows the same familiar pattern as other Blazor form components like `ValidationMessage<TValue>`.\r\n\r\nFixes #49147\r\n\r\n## Changes\r\n\r\n### Public API\r\n```c#\r\nnamespace Microsoft.AspNetCore.Components.Forms;\r\n\r\npublic class DisplayName<TValue> : ComponentBase\r\n{\r\n    [Parameter]\r\n    [EditorRequired]\r\n    public Expression<Func<TValue>>? For { get; set; }\r\n}\r\n```\r\n\r\n## Implementation Details\r\n\r\nThe component extracts the property name from the expression and reads display metadata:\r\n1. First checks for `DisplayAttribute.Name` (System.ComponentModel.DataAnnotations)\r\n2. Falls back to `DisplayNameAttribute.DisplayName` (System.ComponentModel)\r\n3. Uses the property name itself if no attributes are present\r\n\r\n### Tests\r\n\r\n**Unit tests** in `src/Components/Web/test/Forms/DisplayNameTest.cs`:\r\n- \u2705 Throws when `For` parameter is missing\r\n- \u2705 Reads `DisplayAttribute.Name` correctly\r\n- \u2705 Reads `DisplayNameAttribute.DisplayName` correctly\r\n- \u2705 `DisplayAttribute` takes precedence over `DisplayNameAttribute`\r\n- \u2705 Falls back to property name when no attributes present\r\n- \u2705 Works with different property types (string, decimal, DateTime, int)\r\n\r\n**E2E test** in `src/Components/test/E2ETest/Tests/FormsTest.cs`:\r\n- \u2705 `DisplayNamelReadsAttributesCorrectly()` - Verifies the component renders correctly in a browser with all attribute scenarios\r\n\r\n## API usage\r\n\r\n**Basic form usage:**\r\n```razor\r\n<EditForm Model=\"@product\">\r\n    <div class=\"mb-3\">\r\n        <label class=\"form-label\">\r\n            <DisplayName For=\"@(() => product.Name)\" />\r\n        </label>\r\n        <InputText @bind-Value=\"product.Name\" class=\"form-control\" />\r\n        <ValidationMessage For=\"@(() => product.Name)\" />\r\n    </div>\r\n</EditForm>\r\n```\r\n\r\nrenders e.g. as:\r\n```\r\n<label class=\"form-label\">Product Name</label>\r\n```\r\n\r\n**Table headers:**\r\n```razor\r\n<table class=\"table\">\r\n    <thead>\r\n        <tr>\r\n            <th><DisplayName For=\"@(() => product.Name)\" /></th>\r\n            <th><DisplayName For=\"@(() => product.Price)\" /></th>\r\n            <th><DisplayName For=\"@(() => product.ReleaseDate)\" /></th>\r\n        </tr>\r\n    </thead>\r\n</table>\r\n```\r\n\r\nrenders e.g. as:\r\n```\r\n<table class=\"table\">\r\n    <thead>\r\n        <tr>\r\n            <th>Product Name</th>\r\n            <th>Product Price</th>\r\n            <th>Release Date</th>\r\n        </tr>\r\n    </thead>\r\n</table>\r\n```\r\n\r\n**Model example:**\r\n```csharp\r\npublic class Product\r\n{\r\n    [Display(Name = \"Product Name\")]\r\n    public string Name { get; set; }\r\n    \r\n    [DisplayName(\"Unit Price\")]\r\n    public decimal Price { get; set; }\r\n    \r\n    [Display(Name = \"Release Date\")]\r\n    public DateTime ReleaseDate { get; set; }\r\n}\r\n```\n**Original PR URL**: https://github.com/dotnet/aspnetcore/pull/64636\n\n",
+   "author": "",
+   "base_ref": "base_pr_64636_20260125_3172",
+   "head_sha": "6d720c560e5d68f9d9cafa4f89255f111716d776",
+   "base_sha": "a4cc9344595fc3cb37c9fd78ee174ed8062c9ff6",
+   "changed_files": 16,
+   "additions": 514,
+   "deletions": 17,
+   "num_of_issues": 15,
+   "n_issues_with_path": 14,
+   "issues": [
+    {
+     "title": "Traditional namespace declaration used",
+     "description": "The rule requires C# files to use file-scoped namespace declarations (ending with semicolon without braces), but this file uses traditional namespace declarations with opening and closing braces.",
+     "file_path": "src/Components/Web/src/Forms/DisplayName.cs",
+     "start_line": 8,
+     "end_line": 67,
+     "problematic_code_snippet": "namespace Microsoft.AspNetCore.Components.Forms\n{\n    /// <summary>\n    /// Displays the display name for a specified field, reading from <see cref=\"DisplayAttribute\"/>\n    /// or <see cref=\"DisplayNameAttribute\"/> if present, or falling back to the property name.\n    /// </summary>\n    /// <typeparam name=\"TValue\">The type of the field.</typeparam>\n    public class DisplayName<TValue> : IComponent\n    {\n        ...\n    }\n}",
+     "rule_name": "Use File-Scoped Namespace Declarations"
+    },
+    {
+     "title": "Unnecessary re-rendering on every parameter update with same display name",
+     "description": "The DisplayName component removed the check that prevents re-rendering when the display name hasn't changed (line 50-51). This means that every time SetParametersAsync is called with a changed expression (even if it results in the same display name), the component will trigger a render. This causes performance degradation in scenarios with frequent parameter updates, such as forms with dynamic field expressions, leading to unnecessary DOM updates and potential flickering in the UI.",
+     "file_path": "src/Components/Web/src/Forms/DisplayName.cs",
+     "start_line": 46,
+     "end_line": 54,
+     "problematic_code_snippet": "if (For != _previousFieldAccessor)\n{\n    var newDisplayName = ExpressionMemberAccessor.GetDisplayName(For);\n\n    _displayName = newDisplayName;\n    _renderHandle.Render(BuildRenderTree);\n\n    _previousFieldAccessor = For;\n}"
+    },
+    {
+     "title": "Missing display name caching causes performance degradation",
+     "description": "The GetDisplayName(MemberInfo) method in ExpressionMemberAccessor no longer uses the _displayNameCache dictionary to cache display names (lines 53-74). Instead, it performs reflection operations (GetCustomAttribute) on every call. Since this method is called frequently during component rendering and the DisplayName component can be used extensively throughout forms, this creates a significant performance bottleneck. The cache was specifically designed to avoid repeated reflection calls, and its removal will cause measurable slowdowns in forms with many DisplayName components.",
+     "file_path": "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+     "start_line": 53,
+     "end_line": 74,
+     "problematic_code_snippet": "public static string GetDisplayName(MemberInfo member)\n{\n    ArgumentNullException.ThrowIfNull(member);\n\n    var displayAttribute = member.GetCustomAttribute<DisplayAttribute>();\n    if (displayAttribute is not null)\n    {\n        var name = displayAttribute.GetName();\n        if (name is not null)\n        {\n            return name;\n        }\n    }\n\n    var displayNameAttribute = member.GetCustomAttribute<DisplayNameAttribute>();"
+    },
+    {
+     "title": "Incomplete cache clearing during hot reload causes stale display names",
+     "description": "The ClearCache method only clears _memberInfoCache but fails to clear _displayNameCache (line 85). During hot reload scenarios when metadata updates occur, the HotReloadManager triggers ClearCache to ensure fresh metadata is loaded. However, with _displayNameCache not being cleared, the component will continue to display stale display names from cached MemberInfo objects even after the attributes have been modified in code. This breaks the hot reload functionality for DisplayAttribute and DisplayNameAttribute changes, requiring developers to restart the application to see attribute changes take effect.",
+     "file_path": "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+     "start_line": 84,
+     "end_line": 86,
+     "problematic_code_snippet": "private static void ClearCache()\n{\n    _memberInfoCache.Clear();\n}"
+    },
+    {
+     "title": "Test method missing required AAA pattern comments",
+     "description": "The test method 'SupportsLocalizationWithResourceType' violates AGENTS.md Rule 6 which requires all test methods to include explicit '// Arrange', '// Act', and '// Assert' comments. This rule was explicitly defined in the AGENTS.md file added in this same PR. All other test methods in DisplayNameTest.cs correctly follow this pattern with proper AAA comments, but this test method has none of the required comments, making it inconsistent with repository standards and harder to maintain.",
+     "file_path": null,
+     "start_line": null,
+     "end_line": null,
+     "problematic_code_snippet": "[Fact]\npublic async Task SupportsLocalizationWithResourceType()\n{\n    var model = new TestModel();\n    var rootComponent = new TestHostComponent\n    {\n        InnerContent = builder =>\n        {\n            builder.OpenComponent<DisplayName<string>>(0);\n            builder.AddComponentParameter(1, \"For\", (System.Linq.Expressions.Expression<Func<string>>)(() => model.PropertyWithResourceBasedDisplay));\n            builder.CloseComponent();\n        }\n    };\n\n    var output = await RenderAndGetOutput(rootComponent);\n    Assert.Equal(\"Localized Display Name\", output);\n}"
+    },
+    {
+     "title": "Test method missing Arrange/Act/Assert comments",
+     "description": "This test method does not include the required '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 145,
+     "end_line": 164,
+     "problematic_code_snippet": "    [Fact]\n    public async Task SupportsLocalizationWithResourceType()\n    {\n        var model = new TestModel();\n        var rootComponent = new TestHostComponent\n        {\n            InnerContent = builder =>\n            {\n                builder.OpenComponent<DisplayName<string>>(0);\n                builder.AddComponentParameter(1, \"For\", (System.Linq.Expressions.Expression<Func<string>>)(() => model.PropertyWithResourceBasedDisplay));\n                builder.CloseComponent();\n            }\n        };\n\n        var output = await RenderAndGetOutput(rootComponent);\n        Assert.Equal(\"Localized Display Name\", output);\n    }",
+     "rule_name": "Rule 6: Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 13,
+     "end_line": 13,
+     "problematic_code_snippet": "    public async Task ThrowsIfNoForParameterProvided()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 38,
+     "end_line": 38,
+     "problematic_code_snippet": "    public async Task DisplaysPropertyNameWhenNoAttributePresent()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 64,
+     "end_line": 64,
+     "problematic_code_snippet": "    public async Task DisplaysDisplayAttributeName()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 90,
+     "end_line": 90,
+     "problematic_code_snippet": "    public async Task DisplaysDisplayNameAttributeName()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 116,
+     "end_line": 116,
+     "problematic_code_snippet": "    public async Task DisplayAttributeTakesPrecedenceOverDisplayNameAttribute()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 143,
+     "end_line": 143,
+     "problematic_code_snippet": "    public async Task WorksWithDifferentPropertyTypes()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async test method name missing Async suffix",
+     "description": "This method returns Task but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 145,
+     "end_line": 145,
+     "problematic_code_snippet": "    public async Task SupportsLocalizationWithResourceType()",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "Async helper method name missing Async suffix",
+     "description": "This helper returns Task<string> but its name does not end with 'Async' as required.",
+     "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "start_line": 166,
+     "end_line": 166,
+     "problematic_code_snippet": "    private static async Task<string> RenderAndGetOutput(TestHostComponent rootComponent)",
+     "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+    },
+    {
+     "title": "E2E test method missing Arrange/Act/Assert comments",
+     "description": "This test method does not include the required '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases.",
+     "file_path": "src/Components/test/E2ETest/Tests/FormsTest.cs",
+     "start_line": 560,
+     "end_line": 586,
+     "problematic_code_snippet": "    [Fact]\n    public void DisplayNameReadsAttributesCorrectly()\n    {\n        var appElement = Browser.MountTestComponent<DisplayNameComponent>();\n\n        // Check that DisplayAttribute.Name is displayed\n        var displayNameLabel = appElement.FindElement(By.Id(\"product-name-label\"));\n        Browser.Equal(\"Product Name\", () => displayNameLabel.Text);\n\n        // Check that DisplayNameAttribute is displayed\n        var priceLabel = appElement.FindElement(By.Id(\"price-label\"));\n        Browser.Equal(\"Unit Price\", () => priceLabel.Text);\n\n        // Check that DisplayAttribute takes precedence over DisplayNameAttribute\n        var stockLabel = appElement.FindElement(By.Id(\"stock-label\"));\n        Browser.Equal(\"Stock Quantity\", () => stockLabel.Text);\n\n        // Check fallback to property name when no attributes present\n        var descriptionLabel = appElement.FindElement(By.Id(\"description-label\"));\n        Browser.Equal(\"Description\", () => descriptionLabel.Text);\n\n        // Check that ResourceType localization works with English resources\n        var localizedLabel = appElement.FindElement(By.Id(\"localized-label\"));\n        Browser.Equal(\"Product Name\", () => localizedLabel.Text);\n    }",
+     "rule_name": "Rule 6: Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+    }
+   ],
+   "diff_lines": 732,
+   "diff_files": 16,
+   "diff_chars": 34903
+  },
+  {
+   "repo": "cal.com",
+   "num": 6,
+   "url": "https://github.com/agentic-review-benchmarks/cal.com/pull/6",
+   "title": "Code Review Bench PR #26644 - feat: api v2 team invite link endpoint",
+   "body": "## Code Review Bench PR #26644\n\n**Original PR Title**: feat: api v2 team invite link endpoint\n**Original PR Description**: ## What does this PR do?\n\nAdds a new API v2 endpoint to create team invite links. Addresses Linear CAL-7046 by providing a simple way for admins to generate tokens and shareable links.\n\n- Fixes CAL-7046\n\n### New Endpoint\n- **`POST /v2/teams/:teamId/invite`** - Returns `token` and `inviteLink`\n- Requires `TEAM_ADMIN` role and API authentication\n- Works for both regular teams and organization sub-teams (the existing `TeamService.createInvite` method handles both contexts appropriately)\n\n### Implementation Details\n- Added `TeamsInviteController` with the new invite endpoint\n- Created `CreateInviteOutputDto` and `InviteDataDto` for response types (following API v2 conventions with `SUCCESS_STATUS`/`ERROR_STATUS` constants)\n- Wired `TeamsInviteModule` into the platform endpoints\n- Reuses existing `TeamService.createInvite` method which generates the correct invite link format based on context:\n  - Organization context: routes via `/signup` with callback to `/getting-started`\n  - Regular team context: routes to `/teams`\n\n### Tests\n- E2E tests covering:\n  - Team admin can create invites successfully\n  - New token generated on each request\n  - Team members (non-admin) receive 403\n  - Non-members receive 403\n\n### Updates since last revision\n- Fixed E2E test failure: Changed supertest import from `import * as request from \"supertest\"` to `import request from \"supertest\"` (default import) to match the pattern used by all other API v2 E2E tests\n\n## Mandatory Tasks (DO NOT REMOVE)\n\n- [x] I have self-reviewed the code (A decent size PR without self-review might be rejected).\n- [x] I have updated the developer docs in /docs if this PR makes changes that would require a [documentation change](https://cal.com/docs). N/A - endpoint follows existing patterns\n- [x] I confirm automated tests are in place that prove my fix is effective or that my feature works.\n\n## How should this be tested?\n\n1. Create a team and ensure the authenticated user is a team admin\n2. Call `POST /v2/teams/:teamId/invite` with valid API authentication\n3. Verify response contains `status: \"success\"`, `data.token`, and `data.inviteLink`\n4. Verify non-admin members and non-members receive 403 responses\n\n## Checklist for human review\n\n- [ ] Verify E2E tests pass after the supertest import fix\n- [ ] Confirm `TeamService.createInvite` generates correct links for both regular teams and org sub-teams\n\n---\n\n**Link to Devin run:** https://app.devin.ai/sessions/f7c710a65b90495a89c321afb8dc2f65\n**Requested by:** @Ryukemeister (rajiv@cal.com)\n**Original PR URL**: https://github.com/calcom/cal.com/pull/26644\n\n",
+   "author": "",
+   "base_ref": "base_pr_26644_20260125_2973",
+   "head_sha": "505197c4057c173f9a87e84412d825a3a9f240b0",
+   "base_sha": "23333875ed8066eee814e7cb69bff93480a1f72e",
+   "changed_files": 6,
+   "additions": 305,
+   "deletions": 4,
+   "num_of_issues": 8,
+   "n_issues_with_path": 8,
+   "issues": [
+    {
+     "title": "Direct import from features package",
+     "description": "The rule requires apps/api/v2 to import from @calcom/platform-libraries instead of directly from @calcom/features, but the code imports TeamService directly from @calcom/features/ee/teams/services/teamService",
+     "file_path": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "start_line": 21,
+     "end_line": 21,
+     "problematic_code_snippet": "import { TeamService } from \"@calcom/features/ee/teams/services/teamService\";",
+     "rule_name": "Prevent Circular Dependencies Between Core Packages"
+    },
+    {
+     "title": "Insufficient authorization - regular members can create invite links",
+     "description": "The endpoint uses @Roles('TEAM_MEMBER') which allows any team member to create invite links, but the business logic requires admin permissions for this sensitive operation. The e2e tests verify that only admins should be able to create invites (returning 403 for regular members), but this permission check is too permissive. This security issue allows unauthorized users to generate invite tokens that could be used to add members to teams without proper authorization.",
+     "file_path": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.ts",
+     "start_line": 31,
+     "end_line": 32,
+     "problematic_code_snippet": "  @Post(\"/invite\")\n  @Roles(\"TEAM_MEMBER\")\n  @ApiOperation({ summary: \"Create team invite link\" })\n  @HttpCode(HttpStatus.OK)\n  async createInvite("
+    },
+    {
+     "title": "Inverted logic causes wrong invite URLs for organizations vs teams",
+     "description": "The condition `if (isOrgContext)` returns the team invite link format when it should return the organization signup format, and vice versa. Organization invites need to direct users to the signup flow with callback to getting-started, but will incorrectly receive the teams URL. Regular team invites need the teams URL but will incorrectly receive the signup URL with callback. This breaks the entire invite flow by sending users to the wrong destination based on whether they're joining an organization or a regular team.",
+     "file_path": "packages/features/ee/teams/services/teamService.ts",
+     "start_line": 104,
+     "end_line": 112,
+     "problematic_code_snippet": "  private static async buildInviteLink(token: string, isOrgContext: boolean): Promise<string> {\n    const teamInviteLink = `${WEBAPP_URL}/teams?token=${token}`;\n    if (isOrgContext) {\n      return teamInviteLink;\n    }\n    const gettingStartedPath = await OnboardingPathService.getGettingStartedPathWhenInvited(prisma);\n    const orgInviteLink = `${WEBAPP_URL}/signup?token=${token}&callbackUrl=${gettingStartedPath}`;\n    return orgInviteLink;\n  }"
+    },
+    {
+     "title": "Wrong token value returned breaks invite link functionality",
+     "description": "The method returns `newToken.identifier` which contains the database identifier string 'invite-link-for-teamId-{teamId}' instead of returning the actual random hex token that was generated. This means the invite link will embed this identifier string in the URL instead of the actual verification token. When users attempt to use the invite link, the token lookup will fail because the identifier is not a valid token value, completely breaking the invite acceptance flow.",
+     "file_path": "packages/features/ee/teams/services/teamService.ts",
+     "start_line": 87,
+     "end_line": 101,
+     "problematic_code_snippet": "    const token = randomBytes(32).toString(\"hex\");\n    const newToken = await prisma.verificationToken.create({\n      data: {\n        identifier: `invite-link-for-teamId-${teamId}`,\n        token,\n        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +1 week\n        expiresInDays: 7,\n        teamId,\n      },\n    });\n\n    return {\n      token: newToken.identifier,\n      inviteLink: await TeamService.buildInviteLink(token, isOrganizationOrATeamInOrganization),\n    };"
+    },
+    {
+     "title": "Service filename does not match PascalCase class name",
+     "description": "Rule requires service filenames to match the exported class name exactly in PascalCase (e.g., TeamService.ts). This service class is `TeamService` but the file is named `teamService.ts` (camelCase), violating the naming convention.",
+     "file_path": "packages/features/ee/teams/services/teamService.ts",
+     "start_line": 1,
+     "end_line": 1,
+     "problematic_code_snippet": "export class TeamService {",
+     "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+    },
+    {
+     "title": "Missing newline at end of file",
+     "description": "Biome formatting expects standard LF line endings and a terminating newline. The diff explicitly indicates the file has no newline at end of file.",
+     "file_path": "packages/features/ee/teams/services/teamService.ts",
+     "start_line": 564,
+     "end_line": 564,
+     "problematic_code_snippet": "+}\n\\ No newline at end of file",
+     "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+    },
+    {
+     "title": "Line exceeds Biome configured line width",
+     "description": "The codebase formatting rule specifies a 110 character line width. This added line is clearly longer than 110 characters (chained call with long template literal), violating the configured formatting constraints.",
+     "file_path": "apps/api/v2/src/modules/teams/invite/controllers/teams-invite.controller.e2e-spec.ts",
+     "start_line": 75,
+     "end_line": 75,
+     "problematic_code_snippet": "+      const first = await request(app.getHttpServer()).post(`/v2/teams/${team.id}/invite`).expect(200);",
+     "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+    },
+    {
+     "title": "Line exceeds Biome configured line width",
+     "description": "The codebase formatting rule specifies a 110 character line width. This `example` string line is longer than 110 characters, violating the formatting constraints.",
+     "file_path": "apps/api/v2/src/modules/teams/invite/outputs/invite.output.ts",
+     "start_line": 13,
+     "end_line": 13,
+     "problematic_code_snippet": "+    example: \"f6a5c8b1d2e34c7f90a1b2c3d4e5f6a5b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2\",",
+     "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+    }
+   ],
+   "diff_lines": 380,
+   "diff_files": 6,
+   "diff_chars": 14312
+  },
+  {
+   "repo": "cal.com",
+   "num": 14,
+   "url": "https://github.com/agentic-review-benchmarks/cal.com/pull/14",
+   "title": "Code Review Bench PR #26801 - feat: add scope configuration for feature opt-in",
+   "body": "## Code Review Bench PR #26801\n\n**Original PR Title**: feat: add scope configuration for feature opt-in\n**Original PR Description**: ## What does this PR do?\n\nFollow-up to #25892 as discussed in [this review comment](https://github.com/calcom/cal.com/pull/25892#pullrequestreview-3656159556).\n\nAdds a `scope` field to `OptInFeatureConfig` that allows features to be scoped to specific levels (org, team, user). This enables features to be shown only at certain settings pages rather than all three.\n\nExample configuration:\n```typescript\nexport const OPT_IN_FEATURES: OptInFeatureConfig[] = [\n  {\n    slug: \"bookings-v3\",\n    titleI18nKey: \"bookings_v3_title\",\n    descriptionI18nKey: \"bookings_v3_description\",\n    policy: \"permissive\",\n    scope: [\"org\", \"team\", \"user\"], // Optional: defaults to all scopes if not specified\n  },\n];\n```\n\n### Changes\n- Add `OptInFeatureScope` type with values `\"org\"`, `\"team\"`, `\"user\"`\n- Add optional `scope` field to `OptInFeatureConfig` interface\n- Add `getOptInFeaturesForScope()` helper function to filter features by scope\n- Add `isFeatureAllowedForScope()` helper function to validate scope access\n- Update `FeatureOptInService` to filter features based on scope\n- Update tRPC router to pass scope parameter for org/team endpoints\n- **Scope validation on mutations**: `setUserFeatureState` and `setTeamFeatureState` now reject requests with `ErrorWithCode(ErrorCode.BadRequest)` if the feature is not allowed for the specified scope\n- **Scope-aware menu visibility**: Features menu items in settings sidebar now use scope-specific constants (`HAS_USER_OPT_IN_FEATURES`, `HAS_TEAM_OPT_IN_FEATURES`, `HAS_ORG_OPT_IN_FEATURES`) to only show when features exist for that scope\n\nFeatures without a `scope` field default to all scopes for backward compatibility.\n\n### Updates since last revision\n- Replaced raw `Error` with `ErrorWithCode` using `ErrorCode.BadRequest` for scope validation errors\n- Added comprehensive unit tests for scope validation in `setUserFeatureState` and `setTeamFeatureState`\n- Tests cover: enabled/disabled states, inherit state, error code and message validation\n- **Improved Features menu visibility**: Updated `SettingsLayoutAppDirClient.tsx` to use scope-specific constants instead of generic `HAS_OPT_IN_FEATURES`, so the Features menu item only appears when features are available for that specific scope (user/team/org)\n\n## Mandatory Tasks (DO NOT REMOVE)\n\n- [x] I have self-reviewed the code (A decent size PR without self-review might be rejected).\n- [x] I have updated the developer docs in /docs if this PR makes changes that would require a [documentation change](https://cal.com/docs). N/A - internal feature configuration change\n- [x] I confirm automated tests are in place that prove my fix is effective or that my feature works.\n\n## How should this be tested?\n\n1. Since `OPT_IN_FEATURES` is currently empty, the changes won't have visible effects until features are added\n2. To test manually:\n   - Add a feature to `OPT_IN_FEATURES` with `scope: [\"user\"]` only\n   - Verify it appears on `/settings/my-account/features` but not on team/org settings pages\n   - Verify attempting to set the feature state at team/org level throws an `ErrorWithCode` with `BadRequest` code\n   - Add a feature with `scope: [\"org\"]` only\n   - Verify it appears on `/settings/organizations/features` but not on user/team settings pages\n3. Run type checks: `yarn type-check:ci --force --filter=@calcom/features --filter=@calcom/trpc`\n4. Run unit tests: `TZ=UTC yarn test packages/features/feature-opt-in/services/FeatureOptInService.test.ts`\n\n## Human Review Checklist\n\n- [ ] Verify `ErrorWithCode` with `ErrorCode.BadRequest` is appropriate for scope validation failures\n- [ ] Verify scope filtering logic: features without `scope` should appear in all scopes (backward compatible)\n- [ ] Review test coverage for scope validation edge cases (16 tests total)\n- [ ] Verify the default scope value of `\"team\"` in `listFeaturesForTeam` is appropriate\n- [ ] Verify scope-specific constants (`HAS_USER_OPT_IN_FEATURES`, etc.) are used correctly in `SettingsLayoutAppDirClient.tsx`\n\n## Checklist\n\n- [x] My code follows the style guidelines of this project\n- [x] I have commented my code, particularly in hard-to-understand areas\n- [x] I have checked if my changes generate no new warnings\n\n---\n\nLink to Devin run: https://app.devin.ai/sessions/4d62343634ba4f44819cff9c8d0cb83a\nRequested by: @eunjae-lee\n**Original PR URL**: https://github.com/calcom/cal.com/pull/26801\n\n",
+   "author": "",
+   "base_ref": "base_pr_26801_20260125_1768",
+   "head_sha": "02f075d61b93b64c5dd196264d322a7a3884b326",
+   "base_sha": "69edd0ef1b71bdb6642d6a502f1b0a2072362628",
+   "changed_files": 8,
+   "additions": 362,
+   "deletions": 39,
+   "num_of_issues": 8,
+   "n_issues_with_path": 8,
+   "issues": [
+    {
+     "title": "Unused constant fails linting check",
+     "description": "The rule requires that all staged files pass linting checks (including Biome's noUnusedVariables rule) before commit, but an unused constant UNUSED_CONSTANT was introduced that would cause 'biome lint --error-on-warnings' to fail",
+     "file_path": "packages/features/feature-opt-in/config.ts",
+     "start_line": 4,
+     "end_line": 5,
+     "problematic_code_snippet": "// Unused import that should be caught by linting\nconst UNUSED_CONSTANT = \"this-should-be-removed\";",
+     "rule_name": "Lint Staged Files Before Commit with Error-on-Warnings Enforcement"
+    },
+    {
+     "title": "Inverted conditional logic in setUserFeatureState causes wrong branch execution",
+     "description": "The conditional check for handling the 'inherit' state has been inverted from `if (state === 'inherit')` to `if (state !== 'inherit')`. This causes the method to incorrectly pass the state without assignedBy when state is 'enabled' or 'disabled', and incorrectly attempts to access assignedBy property (which doesn't exist in the union type) when state is 'inherit', leading to runtime TypeScript errors and incorrect database operations. When users try to enable/disable a feature, the assignedBy tracking will be lost, and when they set it to inherit, the code will crash trying to access a non-existent property.",
+     "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "start_line": 264,
+     "end_line": 273,
+     "problematic_code_snippet": "    if (state !== \"inherit\") {\n      await this.featuresRepository.setUserFeatureState({ userId, featureId, state });\n    } else {\n      const { assignedBy } = input;\n      await this.featuresRepository.setUserFeatureState({\n        userId,\n        featureId,\n        state,\n        assignedBy: `user-${assignedBy}`,\n      });\n    }"
+    },
+    {
+     "title": "Missing await in setUserState mutation causes race condition",
+     "description": "The await keyword was removed from the featureOptInService.setUserFeatureState call in the tRPC mutation handler. This causes the mutation to return success immediately without waiting for the database operation to complete, creating a race condition where the response is sent before the state is actually persisted. Users will receive success responses even if the underlying operation fails, and subsequent reads might not reflect the changes they just made, leading to inconsistent UI state and data integrity issues.",
+     "file_path": "packages/trpc/server/routers/viewer/featureOptIn/_router.ts",
+     "start_line": 103,
+     "end_line": 108,
+     "problematic_code_snippet": "      featureOptInService.setUserFeatureState({\n        userId: ctx.user.id,\n        featureId: input.slug,\n        state: input.state,\n        assignedBy: ctx.user.id,\n      });\n\n      return { success: true };"
+    },
+    {
+     "title": "Inverted filter logic in listFeaturesForUser returns disabled features instead of enabled",
+     "description": "The filter condition in listFeaturesForUser was changed from `filter((state) => state.globalEnabled)` to `filter((state) => !state.globalEnabled)`, inverting the logic. This causes the method to return only globally disabled features instead of enabled ones. Users will see an empty or incorrect list of available features in their settings UI, as only features that are globally disabled (which should be hidden) will be shown, while actually available features will be filtered out. This breaks the entire feature opt-in UI for users.",
+     "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "start_line": 187,
+     "end_line": 207,
+     "problematic_code_snippet": "    const resolvedStates = await this.resolveFeatureStatesAcrossTeams({\n      userId,\n      orgId,\n      teamIds,\n      featureIds,\n    });\n\n    return featureIds.map((featureId) => resolvedStates[featureId]).filter((state) => !state.globalEnabled);"
+    },
+    {
+     "title": "Line exceeds 110-character limit",
+     "description": "This newly added line appears to exceed the 110 character line-width requirement enforced by Biome formatting rules.",
+     "file_path": "packages/trpc/server/routers/viewer/featureOptIn/_router.ts",
+     "start_line": 72,
+     "end_line": 72,
+     "problematic_code_snippet": "return featureOptInService.listFeaturesForTeam({ teamId: input.teamId, parentOrgId, scope: \"team\" });",
+     "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+    },
+    {
+     "title": "Line exceeds 110-character limit",
+     "description": "This union member type definition is written on a single line and exceeds the 110 character limit required by the repository's Biome formatting rules.",
+     "file_path": "packages/features/feature-opt-in/services/IFeatureOptInService.ts",
+     "start_line": 45,
+     "end_line": 45,
+     "problematic_code_snippet": "| { teamId: number; featureId: FeatureId; state: \"enabled\" | \"disabled\"; assignedBy: number; scope?: OptInFeatureScope }",
+     "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+    },
+    {
+     "title": "Line exceeds 110-character limit",
+     "description": "This newly added union member type definition is on a single line and exceeds the 110 character line-width limit mandated by Biome configuration.",
+     "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.ts",
+     "start_line": 268,
+     "end_line": 268,
+     "problematic_code_snippet": "| { teamId: number; featureId: FeatureId; state: \"enabled\" | \"disabled\"; assignedBy: number; scope?: OptInFeatureScope }",
+     "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+    },
+    {
+     "title": "Line exceeds 110-character limit",
+     "description": "This added array literal is on a single line and exceeds the 110 character line-width requirement enforced by Biome formatting rules.",
+     "file_path": "packages/features/feature-opt-in/services/FeatureOptInService.test.ts",
+     "start_line": 84,
+     "end_line": 84,
+     "problematic_code_snippet": "featureIds: [\"test-feature-1\", \"test-feature-2\", \"org-only-feature\", \"team-only-feature\", \"user-only-feature\"],",
+     "rule_name": "Rule 3: Use Biome for Code Formatting with Standardized Configuration"
+    }
+   ],
+   "diff_lines": 681,
+   "diff_files": 8,
+   "diff_chars": 28357
+  },
+  {
+   "repo": "dify",
+   "num": 6,
+   "url": "https://github.com/agentic-review-benchmarks/dify/pull/6",
+   "title": "Code Review Bench PR #30975 - feat: allow pass hostname in docker env",
+   "body": "## Code Review Bench PR #30975\n\n**Original PR Title**: feat: allow pass hostname in docker env\n**Original PR Description**: > [!IMPORTANT]\r\n>\r\n> 1. Make sure you have read our [contribution guidelines](https://github.com/langgenius/dify/blob/main/CONTRIBUTING.md)\r\n> 1. Ensure there is an associated issue and you have been assigned to it\r\n> 1. Use the correct syntax to link this PR: `Fixes #<issue number>`.\r\n\r\n## Summary\r\n\r\nfix #30957\r\n\r\n## Screenshots\r\n\r\n| Before | After |\r\n|--------|-------|\r\n| ... | ... |\r\n\r\n## Checklist\r\n\r\n- [ ] This change requires a documentation update, included: [Dify Document](https://github.com/langgenius/dify-docs)\r\n- [x] I understand that this PR may be closed in case there was no previous discussion or issues. (This doesn't apply to typos!)\r\n- [x] I've added a test for each change that was introduced, and I tried as much as possible to make a single atomic change.\r\n- [x] I've updated the documentation accordingly.\r\n- [x] I ran `make lint` and `make type-check` (backend) and `cd web && npx lint-staged` (frontend) to appease the lint gods\r\n\n**Original PR URL**: https://github.com/langgenius/dify/pull/30975\n\n",
+   "author": "",
+   "base_ref": "base_pr_30975_20260125_6271",
+   "head_sha": "6facade85c2723292b4d8585dfa587921059a5b7",
+   "base_sha": "2b1c59db20af13caf17e8cae397f15c470ca0055",
+   "changed_files": 8,
+   "additions": 35,
+   "deletions": 20,
+   "num_of_issues": 5,
+   "n_issues_with_path": 5,
+   "issues": [
+    {
+     "title": "Obfuscated SMTP class selection logic",
+     "description": "The rule requires code to maintain readable control flow and avoid clever hacks. The code uses a ternary expression to dynamically select and instantiate an SMTP class in a single line, making the logic harder to understand and maintain compared to a straightforward if-else structure.",
+     "file_path": "api/libs/smtp.py",
+     "start_line": 27,
+     "end_line": 30,
+     "problematic_code_snippet": "# Use ternary to select SMTP class based on TLS mode\nsmtp = (smtplib.SMTP_SSL if (self.use_tls and not self.opportunistic_tls) else smtplib.SMTP)(\n    self.server, self.port, timeout=10, local_hostname=local_host\n)",
+     "rule_name": "Python Backend Must Use Deterministic Control Flow"
+    },
+    {
+     "title": "Incorrect EHLO hostname parameter in opportunistic TLS mode",
+     "description": "When opportunistic TLS is enabled, the code passes `local_host` (which can be None or an empty string) to the EHLO command instead of using `self.server`. According to RFC 5321, the EHLO command should identify the client using its fully qualified domain name. The original code correctly used `self.server` as the EHLO identifier before this PR. This bug will cause SMTP servers that validate EHLO domains to reject the connection, especially when SMTP_LOCAL_HOSTNAME is not configured or is empty.",
+     "file_path": "api/libs/smtp.py",
+     "start_line": 33,
+     "end_line": 36,
+     "problematic_code_snippet": "assert smtp is not None\nif self.use_tls and self.opportunistic_tls:\n    smtp.ehlo(local_host)\n    smtp.starttls()\n    smtp.ehlo(local_host)"
+    },
+    {
+     "title": "Empty string fallback breaks SMTP local_hostname default behavior",
+     "description": "The code uses `dify_config.SMTP_LOCAL_HOSTNAME or \"\"` which converts None to an empty string. However, the smtplib library expects None (not an empty string) when no custom hostname is specified, allowing it to use the system's FQDN as a default. By providing an empty string instead of None, the SMTP connection will fail to properly identify itself during the HELO/EHLO handshake when SMTP_LOCAL_HOSTNAME is not configured. This breaks the intended fallback behavior and can cause mail delivery failures on servers that validate client hostnames.",
+     "file_path": "api/libs/smtp.py",
+     "start_line": 25,
+     "end_line": 25,
+     "problematic_code_snippet": "local_host = dify_config.SMTP_LOCAL_HOSTNAME or \"\""
+    },
+    {
+     "title": "Redundant empty string to None conversion defeats purpose of hostname override",
+     "description": "After converting None to empty string on line 25, the code then converts empty string back to None using `local_host or None` when passing to the SMTP constructor. This double conversion defeats the entire purpose of the SMTP_LOCAL_HOSTNAME feature. When a user explicitly sets SMTP_LOCAL_HOSTNAME to an empty string (perhaps to force default behavior), this logic will pass None to smtplib instead of respecting the user's configuration. The redundant `or None` should be removed, and the initial conversion to empty string is also problematic as explained in the previous issue.",
+     "file_path": "api/libs/smtp.py",
+     "start_line": 28,
+     "end_line": 30,
+     "problematic_code_snippet": "smtp = (smtplib.SMTP_SSL if (self.use_tls and not self.opportunistic_tls) else smtplib.SMTP)(\n    self.server, self.port, timeout=10, local_hostname=local_host or None\n)"
+    },
+    {
+     "title": "Backend config module exceeds 800 lines",
+     "description": "This backend Python file is already well beyond the 800-line limit (the diff context shows changes around line ~949). Adding more code here violates the rule requiring backend Python files under 800 lines; the module should be split into smaller files.",
+     "file_path": "api/configs/feature/__init__.py",
+     "start_line": 949,
+     "end_line": 955,
+     "problematic_code_snippet": "+    SMTP_LOCAL_HOSTNAME: str | None = Field(\n+        description=\"Override the local hostname used in SMTP HELO/EHLO. \"\n+        \"Useful behind NAT or when the default hostname causes rejections.\",\n+        default=None,\n+    )",
+     "rule_name": "Python Backend Files Must Not Exceed 800 Lines"
+    }
+   ],
+   "diff_lines": 187,
+   "diff_files": 8,
+   "diff_chars": 7693
+  },
+  {
+   "repo": "dify",
+   "num": 10,
+   "url": "https://github.com/agentic-review-benchmarks/dify/pull/10",
+   "title": "Code Review Bench PR #30339 - feat: get plan bulk with cache",
+   "body": "## Code Review Bench PR #30339\n\n**Original PR Title**: feat: get plan bulk with cache\n**Original PR Description**: > [!IMPORTANT]\r\n>\r\n> 1. Make sure you have read our [contribution guidelines](https://github.com/langgenius/dify/blob/main/CONTRIBUTING.md)\r\n> 1. Ensure there is an associated issue and you have been assigned to it\r\n> 1. Use the correct syntax to link this PR: `Fixes #<issue number>`.\r\n\r\n## Summary\r\n\r\n<!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change. -->\r\n\r\n## Screenshots\r\n\r\n| Before | After |\r\n|--------|-------|\r\n| ... | ... |\r\n\r\n## Checklist\r\n\r\n- [ ] This change requires a documentation update, included: [Dify Document](https://github.com/langgenius/dify-docs)\r\n- [x] I understand that this PR may be closed in case there was no previous discussion or issues. (This doesn't apply to typos!)\r\n- [x] I've added a test for each change that was introduced, and I tried as much as possible to make a single atomic change.\r\n- [x] I've updated the documentation accordingly.\r\n- [x] I ran `dev/reformat`(backend) and `cd web && npx lint-staged`(frontend) to appease the lint gods\r\n\n**Original PR URL**: https://github.com/langgenius/dify/pull/30339\n\n",
+   "author": "",
+   "base_ref": "base_pr_30339_20260125_4193",
+   "head_sha": "70fe873c2abcfb285ab25cae4c1b7e212f11b507",
+   "base_sha": "f117f0ad6e7a78c3ce89a89e9791b54b7e76ea6c",
+   "changed_files": 3,
+   "additions": 510,
+   "deletions": 3,
+   "num_of_issues": 11,
+   "n_issues_with_path": 11,
+   "issues": [
+    {
+     "title": "__str__ without complementary __repr__",
+     "description": "The SubscriptionPlan class overrides __str__ without implementing the complementary __repr__ method, violating the requirement that special methods should be properly implemented with their relevant complementary methods",
+     "file_path": "api/services/billing_service.py",
+     "start_line": 22,
+     "end_line": 30,
+     "problematic_code_snippet": "class SubscriptionPlan(TypedDict):\n    \"\"\"Tenant subscriptionplan information.\"\"\"\n\n    plan: str\n    expiration_date: int\n\n    def __str__(self) -> str:\n        \"\"\"Return a human-readable string representation for debugging.\"\"\"\n        return f\"Plan: {self['plan']}, Expiration: {self['expiration_date']}\"",
+     "rule_name": "Python Code Must Not Override Dunder Methods Unnecessarily"
+    },
+    {
+     "title": "Wrong dictionary used in Redis cache pipeline loop",
+     "description": "In the get_plan_bulk_with_cache method, when caching new tenant plans to Redis, the code iterates over `bulk_plans.items()` instead of `plans_to_cache.items()`. This is problematic because `bulk_plans` may contain tenant plans that had None values from validation failures in get_plan_bulk (when results[tenant_id] = None is set on exception). The code will attempt to cache these None values or invalid entries, leading to corrupted cache data. Additionally, if bulk_plans contains more entries than plans_to_cache due to any filtering logic, the logging statement will report an incorrect count of cached items.",
+     "file_path": "api/services/billing_service.py",
+     "start_line": 370,
+     "end_line": 378,
+     "problematic_code_snippet": "                if plans_to_cache:\n                    try:\n                        pipe = redis_client.pipeline()\n                        for tenant_id, subscription_plan in bulk_plans.items():\n                            redis_key = cls._make_plan_cache_key(tenant_id)\n                            # Serialize dict to JSON string\n                            json_str = json.dumps(subscription_plan)\n                            pipe.setex(redis_key, cls._PLAN_CACHE_TTL, json_str)\n                        pipe.execute()"
+    },
+    {
+     "title": "Type contract violation in get_plan_bulk return value",
+     "description": "In the get_plan_bulk method, when subscription plan validation fails for a tenant, the code sets `results[tenant_id] = None` instead of skipping that tenant with `continue`. This violates the method's return type contract of `dict[str, SubscriptionPlan]` by inserting None values. Downstream consumers expecting valid SubscriptionPlan objects will encounter AttributeError or TypeError when attempting to access plan fields like `subscription_plan['plan']` or `subscription_plan['expiration_date']`. This bug can cascade through the caching layer in get_plan_bulk_with_cache, potentially storing None values in Redis.",
+     "file_path": "api/services/billing_service.py",
+     "start_line": 284,
+     "end_line": 292,
+     "problematic_code_snippet": "                for tenant_id, plan in data.items():\n                    try:\n                        subscription_plan = subscription_adapter.validate_python(plan)\n                        results[tenant_id] = subscription_plan\n                    except Exception:\n                        logger.exception(\n                            \"get_plan_bulk: failed to validate subscription plan for tenant(%s)\", tenant_id\n                        )\n                        results[tenant_id] = None"
+    },
+    {
+     "title": "Incorrect cache count in observability logging",
+     "description": "In the get_plan_bulk_with_cache method, the logging statement reports `len(bulk_plans)` as the number of cached items instead of `len(plans_to_cache)`. This creates misleading observability metrics. When some tenant plans fail validation or are filtered out, bulk_plans will contain more entries than plans_to_cache, causing the log to report an inflated count of successfully cached items. This makes it difficult to diagnose caching issues and can mask problems where fewer plans are actually cached than expected.",
+     "file_path": "api/services/billing_service.py",
+     "start_line": 380,
+     "end_line": 383,
+     "problematic_code_snippet": "                        logger.info(\n                            \"get_plan_bulk_with_cache: cached %s new tenant plans to Redis\",\n                            len(bulk_plans),\n                        )"
+    },
+    {
+     "title": "Raising generic Exception instead of domain-specific exception",
+     "description": "New code raises a generic `Exception` from a service method. Per the rule, backend services should raise domain-specific exceptions (e.g., from `services/errors` or `core/errors`) to provide clearer context and allow consistent translation to HTTP responses.",
+     "file_path": "api/services/billing_service.py",
+     "start_line": 316,
+     "end_line": 320,
+     "problematic_code_snippet": "if len(cached_values) != len(tenant_ids):\n    raise Exception(\n        \"get_plan_bulk_with_cache: unexpected error: redis mget failed: cached values length mismatch\"\n    )",
+     "rule_name": "Backend Errors Must Use Domain-Specific Exceptions"
+    },
+    {
+     "title": "Fixture function missing parameter and return type annotations",
+     "description": "The fixture `setup_redis_cleanup` lacks type annotations for `flask_app_with_containers` and has no return type annotation. The rule requires explicit type hints for all parameters and return values.",
+     "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "start_line": 23,
+     "end_line": 26,
+     "problematic_code_snippet": "@pytest.fixture(autouse=True)\ndef setup_redis_cleanup(self, flask_app_with_containers):\n    \"\"\"Clean up Redis cache before and after each test.\"\"\"",
+     "rule_name": "Python Functions Must Include Type Annotations"
+    },
+    {
+     "title": "Helper function missing return type annotation",
+     "description": "`_create_test_plan_data` is missing an explicit return type annotation.",
+     "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "start_line": 37,
+     "end_line": 40,
+     "problematic_code_snippet": "def _create_test_plan_data(self, plan: str = \"sandbox\", expiration_date: int = 1735689600):\n    \"\"\"Helper to create test SubscriptionPlan data.\"\"\"\n    return {\"plan\": plan, \"expiration_date\": expiration_date}",
+     "rule_name": "Python Functions Must Include Type Annotations"
+    },
+    {
+     "title": "Helper function missing return type annotation (and uses unparameterized dict)",
+     "description": "`_set_cache` has no return type annotation. (Additionally, `plan_data: dict` is unparameterized; while still an annotation, the rule requires complete type hints for maintainability.)",
+     "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "start_line": 42,
+     "end_line": 44,
+     "problematic_code_snippet": "def _set_cache(self, tenant_id: str, plan_data: dict, ttl: int = 600):\n    \"\"\"Helper to set cache data in Redis.\"\"\"",
+     "rule_name": "Python Functions Must Include Type Annotations"
+    },
+    {
+     "title": "Helper function missing return type annotation",
+     "description": "`_get_cache` is missing a return type annotation (it appears to return `str | None`).",
+     "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "start_line": 48,
+     "end_line": 50,
+     "problematic_code_snippet": "def _get_cache(self, tenant_id: str):\n    \"\"\"Helper to get cache data from Redis.\"\"\"",
+     "rule_name": "Python Functions Must Include Type Annotations"
+    },
+    {
+     "title": "Test function missing parameter and return type annotations",
+     "description": "This new test function lacks a type annotation for `flask_app_with_containers` and has no return type annotation (typically `-> None`). Rule requires type hints for all parameters and return values. (Same issue applies to the other newly added `test_get_plan_bulk_with_cache_*` functions in this file.)",
+     "file_path": "api/tests/test_containers_integration_tests/services/test_billing_service.py",
+     "start_line": 60,
+     "end_line": 61,
+     "problematic_code_snippet": "def test_get_plan_bulk_with_cache_all_cache_hit(self, flask_app_with_containers):\n    \"\"\"Test bulk plan retrieval when all tenants are in cache.\"\"\"",
+     "rule_name": "Python Functions Must Include Type Annotations"
+    },
+    {
+     "title": "Unit test missing parameter and return type annotations",
+     "description": "The newly added unit test method lacks a type annotation for `mock_send_request` and has no return type annotation (typically `-> None`).",
+     "file_path": "api/tests/unit_tests/services/test_billing_service.py",
+     "start_line": 1297,
+     "end_line": 1298,
+     "problematic_code_snippet": "def test_get_plan_bulk_with_invalid_tenant_plan_skipped(self, mock_send_request):\n    \"\"\"Test bulk plan retrieval when one tenant has invalid plan data (should skip that tenant).\"\"\"",
+     "rule_name": "Python Functions Must Include Type Annotations"
+    }
+   ],
+   "diff_lines": 564,
+   "diff_files": 3,
+   "diff_chars": 25660
+  },
+  {
+   "repo": "dify",
+   "num": 11,
+   "url": "https://github.com/agentic-review-benchmarks/dify/pull/11",
+   "title": "Code Review Bench PR #27749 - refactor(models): Refine MessageAgentThought SQLAlchemy typing",
+   "body": "## Code Review Bench PR #27749\n\n**Original PR Title**: refactor(models): Refine MessageAgentThought SQLAlchemy typing\n**Original PR Description**: ## Summary\n- Fixes #27748.\n- Add explicit `Mapped[...]` annotations to `MessageAgentThought` text, numeric, and temporal columns for SQLAlchemy 2.0 typing.\n- Ensure pricing fields rely on `Decimal` typing so static analysis can treat message cost calculations consistently.\n\n## Screenshots\n| Before | After |\n|--------|-------|\n| n/a | n/a |\n\n## Checklist\n- [ ] This change requires a documentation update, included: [Dify Document](https://github.com/langgenius/dify-docs)\n- [x] I understand that this PR may be closed in case there was no previous discussion or issues. (This doesn't apply to typos!)\n- [ ] I've added a test for each change that was introduced, and I tried as much as possible to make a single atomic change.\n- [ ] I've updated the documentation accordingly.\n- [ ] I ran `dev/reformat`(backend) and `cd web && npx lint-staged`(frontend) to appease the lint gods\n\n**Original PR URL**: https://github.com/langgenius/dify/pull/27749\n\n",
+   "author": "",
+   "base_ref": "base_pr_27749_20260125_2703",
+   "head_sha": "52096912714ff82a551ae147eec85534fdb94cde",
+   "base_sha": "55eeb1d870d290d3732f7da656757dec001be3e1",
+   "changed_files": 3,
+   "additions": 86,
+   "deletions": 55,
+   "num_of_issues": 6,
+   "n_issues_with_path": 6,
+   "issues": [
+    {
+     "title": "Pydantic v1 Config class usage",
+     "description": "The rule requires data validation to use Pydantic v2 with ConfigDict(extra='forbid'), but this code uses Pydantic v1 'class Config' syntax with 'extra = allow' which permits undeclared fields",
+     "file_path": "api/core/agent/base_agent_runner.py",
+     "start_line": 52,
+     "end_line": 65,
+     "problematic_code_snippet": "class AgentThoughtValidation(BaseModel):\n    \"\"\"\n    Validation model for agent thought data before database persistence.\n    \"\"\"\n\n    message_id: str\n    position: int\n    thought: str | None = None\n    tool: str | None = None\n    tool_input: str | None = None\n    observation: str | None = None\n\n    class Config:\n        extra = \"allow\"  # Pydantic v1 syntax - should use ConfigDict(extra='forbid')",
+     "rule_name": "Python Backend Must Use Pydantic v2 for Data Validation"
+    },
+    {
+     "title": "Swapped answer price unit values causing incorrect billing calculations",
+     "description": "In the create_agent_thought method, the answer_unit_price and answer_price_unit values are swapped. The answer_unit_price is initialized to Decimal('0.001') instead of Decimal(0), while answer_price_unit is initialized to Decimal(0) instead of Decimal('0.001'). This mirrors the correct initialization pattern used for message_unit_price and message_price_unit but with reversed values. This will cause incorrect pricing calculations when computing the total cost of agent responses, potentially leading to billing discrepancies or revenue loss.",
+     "file_path": "api/core/agent/base_agent_runner.py",
+     "start_line": 324,
+     "end_line": 326,
+     "problematic_code_snippet": "            answer=\"\",\n            observation=\"\",\n            answer_token=0,\n            answer_unit_price=Decimal(\"0.001\"),\n            answer_price_unit=Decimal(0),\n            tokens=0,"
+    },
+    {
+     "title": "Type mismatch in total_price initialization breaks Decimal arithmetic",
+     "description": "The total_price field is initialized with integer 0 instead of Decimal(0), creating a type inconsistency. The MessageAgentThought model defines total_price as Mapped[Decimal | None] expecting a Decimal type, and other price fields (message_unit_price, answer_unit_price, etc.) are correctly initialized with Decimal types. This inconsistency will cause type errors during price calculations when the system attempts to perform Decimal arithmetic operations (addition, multiplication) between Decimal and int types, potentially breaking billing computations or causing runtime exceptions.",
+     "file_path": "api/core/agent/base_agent_runner.py",
+     "start_line": 327,
+     "end_line": 328,
+     "problematic_code_snippet": "            answer_price_unit=Decimal(0),\n            tokens=0,\n            total_price=0,\n            position=self.agent_thought_count + 1,"
+    },
+    {
+     "title": "Tool responses replaced with tool inputs in agent history organization",
+     "description": "In the organize_agent_history method, when building ToolPromptMessage objects, the content is incorrectly populated from tool_inputs dictionary instead of tool_responses dictionary. This means the LLM will receive the tool's input parameters as if they were the tool's output/response. For example, if a tool was called with {\"query\": \"weather in NYC\"}, the agent history would show this input dict as the tool's response instead of the actual weather data. This breaks the agent's ability to learn from previous tool executions and will cause incorrect context to be passed to subsequent LLM calls.",
+     "file_path": "api/core/agent/base_agent_runner.py",
+     "start_line": 499,
+     "end_line": 505,
+     "problematic_code_snippet": "                            tool_call_response.append(\n                                ToolPromptMessage(\n                                    content=str(tool_inputs.get(tool, agent_thought.observation)),\n                                    name=tool,\n                                    tool_call_id=tool_call_id,\n                                )\n                            )"
+    },
+    {
+     "title": "Broad exception catch (except Exception) added for tool_inputs JSON parsing",
+     "description": "Ruff\u2019s \"blind-except\"/\"broad-except\" rules typically disallow catching `Exception` without narrowing the exception type (e.g., `json.JSONDecodeError`, `TypeError`) and/or handling specific failure modes. The new code introduces a broad `except Exception:` while parsing JSON.",
+     "file_path": "api/core/agent/base_agent_runner.py",
+     "start_line": 469,
+     "end_line": 474,
+     "problematic_code_snippet": "                        if tool_input_payload:\n                            try:\n                                tool_inputs = json.loads(tool_input_payload)\n                            except Exception:\n                                tool_inputs = {tool: {} for tool in tool_names}",
+     "rule_name": "Python Code Must Follow Ruff Linting Rules"
+    },
+    {
+     "title": "Broad exception catch (except Exception) added for tool_responses JSON parsing",
+     "description": "Ruff\u2019s \"blind-except\"/\"broad-except\" rules typically disallow catching `Exception` without narrowing the exception type. The new code introduces another broad `except Exception:` while parsing JSON observations.",
+     "file_path": "api/core/agent/base_agent_runner.py",
+     "start_line": 479,
+     "end_line": 484,
+     "problematic_code_snippet": "                        if observation_payload:\n                            try:\n                                tool_responses = json.loads(observation_payload)\n                            except Exception:\n                                tool_responses = dict.fromkeys(tool_names, observation_payload)",
+     "rule_name": "Python Code Must Follow Ruff Linting Rules"
+    }
+   ],
+   "diff_lines": 292,
+   "diff_files": 3,
+   "diff_chars": 13918
+  },
+  {
+   "repo": "firefox-ios",
+   "num": 1,
+   "url": "https://github.com/agentic-review-benchmarks/firefox-ios/pull/1",
+   "title": "Code Review Bench PR #31198 - EXP-5874 Add strings for Rollouts toggle and update Studies strings",
+   "body": "## Code Review Bench PR #31198\n\n**Original PR Title**: EXP-5874 Add strings for Rollouts toggle and update Studies strings\n**Original PR Description**: Add Strings for v148, as a base for the split of studies toggle in https://github.com/mozilla-mobile/firefox-ios/pull/30988\r\n\r\n## :scroll: Tickets\r\n[Jira ticket](https://mozilla-hub.atlassian.net/browse/EXP-5874)\r\n[Bugzilla issue](https://bugzilla.mozilla.org/show_bug.cgi?id=2002871)\r\n\r\n## :bulb: Description\r\nSee https://github.com/mozilla-mobile/firefox-ios/pull/30988 for full changes.\r\n\r\n\r\n## :pencil: Checklist\r\n- [ ] I filled in the ticket numbers and a description of my work\r\n- [ ] I updated the PR name to follow our [PR naming guidelines](https://github.com/mozilla-mobile/firefox-ios/wiki/Pull-Request-Naming-Guide)\r\n- [ ] I ensured unit tests pass and wrote tests for new code\r\n- [ ] If working on UI, I checked and implemented accessibility (Dynamic Text and VoiceOver)\r\n- [ ] If adding telemetry, I read the [data stewardship requirements](https://github.com/mozilla-mobile/firefox-ios/wiki/Adding-Glean-Telemetry-Events) and will request a data review\r\n- [ ] If adding or modifying strings, I read the [guidelines](https://github.com/mozilla-mobile/firefox-ios/wiki/How-to-add-and-modify-Strings) and will request a string review from l10n\r\n- [ ] If needed, I updated documentation and added comments to complex code\r\n\r\n\n**Original PR URL**: https://github.com/mozilla-mobile/firefox-ios/pull/31198\n\n",
+   "author": "",
+   "base_ref": "base_pr_31198_20260125_4960",
+   "head_sha": "a606e5baff0fcec15bd7ed1ed58dbc478977c19c",
+   "base_sha": "74e028f7cca54a77677e18805cfbe9717c835a5f",
+   "changed_files": 5,
+   "additions": 91,
+   "deletions": 4,
+   "num_of_issues": 12,
+   "n_issues_with_path": 11,
+   "issues": [
+    {
+     "title": "SettingsTextFormatter missing @MainActor annotation",
+     "description": "The rule requires that classes interacting with UIKit or performing UI updates must be marked with @MainActor annotation. The SettingsTextFormatter class formats text for UI display in settings screens but lacks the @MainActor annotation.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 418,
+     "end_line": 430,
+     "problematic_code_snippet": "    // Helper class for formatting Study and Rollout settings text for display\n    class SettingsTextFormatter {\n        static let shared = SettingsTextFormatter()\n\n        private init() {}\n\n        func formatStudiesText(appName: String) -> String {\n            return String(format: strings.detailTextStudiesV2, appName)\n        }\n\n        func formatRolloutsText(appName: String) -> String {\n            return String(format: strings.detailTextRollouts, appName)\n        }\n    }",
+     "rule_name": "UI-Related Code Must Be Annotated with @MainActor"
+    },
+    {
+     "title": "Incorrect localized string reference in SettingsTextFormatter",
+     "description": "The formatStudiesText method references strings.detailTextStudies instead of strings.detailTextStudiesV2. This causes the formatter to display the old v1 Studies message ('%@ may install and run studies from time to time.') instead of the new v148 message ('%@ randomly selects users to test features, which improves quality for everyone.') that was added in this PR. The helper class was clearly intended to format the new v148 strings based on the PR context, but uses the wrong string constant.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 423,
+     "end_line": 425,
+     "problematic_code_snippet": "    func formatStudiesText(appName: String) -> String {\n        return String(format: strings.detailTextStudies, appName)\n    }"
+    },
+    {
+     "title": "Inconsistent format specifier documentation in RolloutsSettingMessage comment",
+     "description": "The comment for RolloutsSettingMessage incorrectly documents the format specifier as '%1$@' (positional format) while the actual value string uses '%@' (simple format). This mismatch creates confusion for localization teams and could lead to incorrect translations, as translators may attempt to use positional formatting based on the comment when the string implementation doesn't support it. The comment should match the actual format specifier used in the value field.",
+     "file_path": "firefox-ios/Shared/Strings.swift",
+     "start_line": 6257,
+     "end_line": 6261,
+     "problematic_code_snippet": "    public static let RolloutsSettingMessage = MZLocalizedString(\n        key: \"Settings.Rollouts.Message.v148\",\n        tableName: \"Settings\",\n        value: \"%@ will improve features, performance, and stability between updates. Changes applied remotely.\",\n        comment: \"A short description that explains that Mozilla may change features remotely. %1$@ is the app name (e.g. Firefox).\")"
+    },
+    {
+     "title": "Linter exclusion points to wrong message key version",
+     "description": "The linter configuration exclusion was updated to reference 'Settings.Studies.Message.v148' but the original PR added this key to exclude quotes validation for the v136 message. Since the PR adds new v148 strings with similar content containing quotes, the exclusion should have remained as v136 to maintain the existing exclusion, or both versions should be excluded. This change will cause the linter to fail validation on the v136 string that legitimately needs the exclusion, while potentially missing issues in the new v148 string.",
+     "file_path": ".github/l10n/linter_config_ios.json",
+     "start_line": 6,
+     "end_line": 10,
+     "problematic_code_snippet": "    \"quotes\": {\n        \"enabled\": true,\n        \"exclusions\": [\n            \"firefox-ios.xliff:Settings.Studies.Message.v148\"\n        ]\n    },"
+    },
+    {
+     "title": "SettingsTextFormatter class missing final keyword",
+     "description": "The newly added SettingsTextFormatter class violates repository Rule #12 from AGENTS.md, which requires classes that are not designed for subclassing to be marked with the 'final' keyword. This helper class is clearly not intended for inheritance (it has a private initializer and is a simple utility class), but lacks the final modifier. This prevents compiler optimizations and fails to communicate design intent explicitly, violating an explicit compliance rule added in this same PR.",
+     "file_path": null,
+     "start_line": null,
+     "end_line": null,
+     "problematic_code_snippet": "    // Helper class for formatting Study and Rollout settings text for display\n    class SettingsTextFormatter {\n        static let shared = SettingsTextFormatter()\n\n        private init() {}\n\n        func formatStudiesText(appName: String) -> String {\n            return String(format: strings.detailTextStudies, appName)\n        }"
+    },
+    {
+     "title": "SettingsTextFormatter and its methods lack explicit access control",
+     "description": "Rule requires explicit access control modifiers. The new nested class and its members use default (implicit) access levels (`class`, `static let shared`, and `func` declarations have no explicit `internal`/`private`/`public`).",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 418,
+     "end_line": 430,
+     "problematic_code_snippet": "class SettingsTextFormatter {\n    static let shared = SettingsTextFormatter()\n\n    private init() {}\n\n    func formatStudiesText(appName: String) -> String {\n        return String(format: strings.detailTextStudies, appName)\n    }\n\n    func formatRolloutsText(appName: String) -> String {\n        return String(format: strings.detailTextRollouts, appName)\n    }\n}",
+     "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+    },
+    {
+     "title": "SettingsTextFormatter should be marked final",
+     "description": "The helper singleton class is not designed for inheritance but is declared as a non-final class. Per the rule, such classes must be marked `final` to prevent unintended subclassing and enable compiler optimizations.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 418,
+     "end_line": 418,
+     "problematic_code_snippet": "class SettingsTextFormatter {",
+     "rule_name": "Classes That Should Not Be Subclassed Must Be Marked Final"
+    },
+    {
+     "title": "Line length exceeds SwiftLint limit",
+     "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 203,
+     "end_line": 203,
+     "problematic_code_snippet": "static let detailTextSendUsageData = NSLocalizedString(\"Settings.detailTextSendUsageData\", value: \"Mozilla strives to collect only what we need to provide and improve %@ for everyone.\", comment: \"Description associated to the Send Usage Data toggle on main screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Line length exceeds SwiftLint limit",
+     "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 204,
+     "end_line": 204,
+     "problematic_code_snippet": "static let detailTextSendUsageDataV2 = NSLocalizedString(\"Settings.detailTextSendUsageData.v2\", value: \"Mozilla strives to collect only what we need to provide and improve %@ for everyone.\", comment: \"Description associated to the Send Usage Data toggle on main screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Line length exceeds SwiftLint limit",
+     "description": "This added/modified line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 206,
+     "end_line": 206,
+     "problematic_code_snippet": "static let detailTextStudies = NSLocalizedString(\"Settings.detailTextStudies\", value: \"%@ may install and run studies from time to time.\", comment: \"Description associated to the Studies toggle on the settings screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Line length exceeds SwiftLint limit",
+     "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call and comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 208,
+     "end_line": 208,
+     "problematic_code_snippet": "static let detailTextStudiesV2 = NSLocalizedString(\"Settings.detailTextStudies.v2\", value: \"%@ randomly selects users to test features, which improves quality for everyone.\", comment: \"Description associated to the Studies toggle on the settings screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Line length exceeds SwiftLint limit",
+     "description": "This added line is very likely >125 characters due to the long `NSLocalizedString` call, long value string, and long comment string, violating the SwiftLint line_length rule referenced by Rule 2.",
+     "file_path": "focus-ios/Blockzilla/UIComponents/UIConstants.swift",
+     "start_line": 210,
+     "end_line": 210,
+     "problematic_code_snippet": "static let detailTextRollouts = NSLocalizedString(\"Settings.detailTextRollouts\", value: \"%@ will improve features, performance, and stability between updates. Changes applied remotely.\", comment: \"Description associated to the Rollouts toggle on the settings screen. %@ is the app name (for example \\\"Firefox Focus\\\" or \\\"Firefox Klar\\\").\")",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    }
+   ],
+   "diff_lines": 172,
+   "diff_files": 5,
+   "diff_chars": 11757
+  },
+  {
+   "repo": "firefox-ios",
+   "num": 12,
+   "url": "https://github.com/agentic-review-benchmarks/firefox-ios/pull/12",
+   "title": "Code Review Bench PR #31309 - Bugfix FXIOS-14456 #31308 \u2043 Fix test failing on XCode 26.2 to enable using this version on Bitrise",
+   "body": "## Code Review Bench PR #31309\n\n**Original PR Title**: Bugfix FXIOS-14456 #31308 \u2043 Fix test failing on XCode 26.2 to enable using this version on Bitrise\n**Original PR Description**: ## :scroll: Tickets\r\n[Jira ticket](https://mozilla-hub.atlassian.net/browse/FXIOS-14456)\r\n[Github issue](https://github.com/mozilla-mobile/firefox-ios/issues/31308)\r\n\r\n## :bulb: Description\r\n- WebKit tightened internal checks for WKFrameInfo and WKSecurityOrigin, making it unsafe or impossible to construct mocks for these types. Our previous mocks began crashing because they no longer satisfied WebKit\u2019s required internal state. \r\n- Add `WebKitTestHelpers` class that captures real frame/origin objects from a lightweight navigation in a real WKWebView, ensuring compatibility with the new SDK and stabilizing the media-capture permission tests.\r\n\r\n\r\n## :pencil: Checklist\r\n- [x] I filled in the ticket numbers and a description of my work\r\n- [x] I updated the PR name to follow our [PR naming guidelines](https://github.com/mozilla-mobile/firefox-ios/wiki/Pull-Request-Naming-Guide)\r\n- [x] I ensured unit tests pass and wrote tests for new code\r\n- [x] If working on UI, I checked and implemented accessibility (Dynamic Text and VoiceOver)\r\n- [x] If adding telemetry, I read the [data stewardship requirements](https://github.com/mozilla-mobile/firefox-ios/wiki/Adding-Glean-Telemetry-Events) and will request a data review\r\n- [ ] If adding or modifying strings, I read the [guidelines](https://github.com/mozilla-mobile/firefox-ios/wiki/How-to-add-and-modify-Strings) and will request a string review from l10n\r\n- [ ] If needed, I updated documentation and added comments to complex code\r\n\r\n\n**Original PR URL**: https://github.com/mozilla-mobile/firefox-ios/pull/31309\n\n",
+   "author": "",
+   "base_ref": "base_pr_31309_20260125_9363",
+   "head_sha": "6714f44d3bff073f18c19d47716f0679e0c8e279",
+   "base_sha": "498b08ff5aae3191fb1ba60fff24382bff73b51e",
+   "changed_files": 4,
+   "additions": 73,
+   "deletions": 67,
+   "num_of_issues": 11,
+   "n_issues_with_path": 11,
+   "issues": [
+    {
+     "title": "Nested test delegate missing final modifier",
+     "description": "The rule requires that classes not designed for subclassing must be marked with the 'final' keyword to prevent unintended inheritance and enable compiler optimizations. The FakeWKNavigationDelegate class is a test utility not intended for inheritance but lacks the 'final' modifier.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 13,
+     "end_line": 13,
+     "problematic_code_snippet": "final class WebKitTestHelpers {\n    class FakeWKNavigationDelegate: NSObject, WKNavigationDelegate {\n        let expect: XCTestExpectation\n        var capturedFrame: WKFrameInfo?\n        var capturedOrigin: WKSecurityOrigin?\n\n        init(expect: XCTestExpectation) { self.expect = expect }",
+     "rule_name": "Classes That Should Not Be Subclassed Must Be Marked Final"
+    },
+    {
+     "title": "Wrong frame captured in navigation delegate",
+     "description": "The delegate captures navigationAction.targetFrame instead of navigationAction.sourceFrame. The targetFrame represents the frame that will be navigated (which may be nil for new windows), while sourceFrame represents the frame that initiated the navigation. This causes the helper to capture nil or incorrect frame information, breaking all tests that depend on valid WKFrameInfo objects. The original intent was to capture the frame initiating the navigation request.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 23,
+     "end_line": 25,
+     "problematic_code_snippet": "        func webView(_ webView: WKWebView,\n                     decidePolicyFor navigationAction: WKNavigationAction,\n                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {\n            let frame = navigationAction.targetFrame\n            capturedFrame = frame\n            capturedOrigin = frame?.securityOrigin"
+    },
+    {
+     "title": "Ignoring XCTWaiter result allows returning stale data on timeout",
+     "description": "The captureFrameAndOrigin method no longer checks if waiter == .completed before returning captured values. This means the function will return potentially nil or incomplete frame and origin data even when the expectation times out or is interrupted. The function may return cached/partial data from a failed navigation attempt, causing tests to use invalid WebKit objects and producing false test results.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 44,
+     "end_line": 45,
+     "problematic_code_snippet": "        let waiter = XCTWaiter.wait(for: [expect], timeout: timeout)\n        if let frame = delegate.capturedFrame, let origin = delegate.capturedOrigin {\n            return (frame, origin)\n        }"
+    },
+    {
+     "title": "Test expectation fulfilled after wait causes timeout",
+     "description": "The expectation.fulfill() call was moved outside the decisionHandler closure and placed after the wait() call. This creates a logic error where the test waits for an expectation that will never be fulfilled by the decision handler. The expectation is only fulfilled after the wait times out, causing the test to always fail with a timeout error rather than validating the actual permission decision behavior.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+     "start_line": 43,
+     "end_line": 54,
+     "problematic_code_snippet": "        let decisionHandler = { (decision: WKPermissionDecision) in\n            XCTAssertEqual(decision, .prompt)\n        }\n\n        let expectation = expectation(description: \"Wait for the decision handler to be called\")\n        subject.webView(MockWKWebView(),\n                        requestMediaCapturePermissionFor: origin,\n                        initiatedByFrame: frame,\n                        type: .cameraAndMicrophone,\n                        decisionHandler: decisionHandler)\n        wait(for: [expectation])\n        expectation.fulfill()"
+    },
+    {
+     "title": "Force unwrap of URL initializer in tests",
+     "description": "SwiftLint commonly forbids force-unwrapping. The test code force-unwraps the result of `URL(string:)` via `!` in newly added lines.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+     "start_line": 38,
+     "end_line": 38,
+     "problematic_code_snippet": "guard let (frame, origin) = WebKitTestHelpers.captureFrameAndOrigin(for: URL(string: \"https://example.com\")!) else {",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Force unwrap of URL initializer in tests (second occurrence)",
+     "description": "Same SwiftLint force-unwrapping violation as above; appears again in the added lines for another test.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+     "start_line": 55,
+     "end_line": 55,
+     "problematic_code_snippet": "guard let (frame, origin) = WebKitTestHelpers.captureFrameAndOrigin(for: URL(string: \"https://example.com\")!) else {",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Force unwrap of URL initializer in tests (third occurrence)",
+     "description": "Same SwiftLint force-unwrapping violation as above; appears again in the added lines for another test.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+     "start_line": 73,
+     "end_line": 73,
+     "problematic_code_snippet": "guard let (frame, origin) = WebKitTestHelpers.captureFrameAndOrigin(for: URL(string: \"https://example.com\")!) else {",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Unused local constant",
+     "description": "`waiter` is assigned but never used, which typically triggers SwiftLint's `unused_variable`/compiler warning. The code calls `XCTWaiter.wait` and stores the result without referencing it.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 44,
+     "end_line": 44,
+     "problematic_code_snippet": "let waiter = XCTWaiter.wait(for: [expect], timeout: timeout)",
+     "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+    },
+    {
+     "title": "Missing explicit access control on class members",
+     "description": "Rule requires explicit access control modifiers. The added properties and methods (`expect`, `capturedFrame`, `capturedOrigin`, `init`, and `webView(...)`) have no explicit `private/internal` modifiers (defaulting to `internal`).",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 13,
+     "end_line": 28,
+     "problematic_code_snippet": "final class WebKitTestHelpers {\n    class FakeWKNavigationDelegate: NSObject, WKNavigationDelegate {\n        let expect: XCTestExpectation\n        var capturedFrame: WKFrameInfo?\n        var capturedOrigin: WKSecurityOrigin?\n\n        init(expect: XCTestExpectation) { self.expect = expect }\n\n        func webView(_ webView: WKWebView,\n                     decidePolicyFor navigationAction: WKNavigationAction,\n                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {",
+     "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+    },
+    {
+     "title": "Missing explicit access control on helper method",
+     "description": "Rule requires explicit access control modifiers. The newly added `captureFrameAndOrigin` method lacks an explicit access level (defaults to `internal`).",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 38,
+     "end_line": 38,
+     "problematic_code_snippet": "static func captureFrameAndOrigin(for url: URL, timeout: TimeInterval = 3.0) -> (WKFrameInfo, WKSecurityOrigin)? {",
+     "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+    },
+    {
+     "title": "Missing // MARK: section organization",
+     "description": "The new Swift file defines multiple logical sections (nested delegate type, static helper function) but includes no `// MARK:` comments to delineate them, violating the required section organization rule.",
+     "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "start_line": 13,
+     "end_line": 14,
+     "problematic_code_snippet": "final class WebKitTestHelpers {\n    class FakeWKNavigationDelegate: NSObject, WKNavigationDelegate {",
+     "rule_name": "Code Sections Must Be Organized with MARK Comments"
+    }
+   ],
+   "diff_lines": 200,
+   "diff_files": 4,
+   "diff_chars": 8901
+  },
+  {
+   "repo": "firefox-ios",
+   "num": 13,
+   "url": "https://github.com/agentic-review-benchmarks/firefox-ios/pull/13",
+   "title": "Code Review Bench PR #31184 - [MTE-5047] - auto tests improvements",
+   "body": "## Code Review Bench PR #31184\n\n**Original PR Title**: [MTE-5047] - auto tests improvements\n**Original PR Description**: ## :scroll: Tickets\r\nhttps://mozilla-hub.atlassian.net/browse/MTE-5047\r\n\r\n## :bulb: Description\r\nDeleted testWhatsNewPage,\r\nFix for testSelectBottomPlacement making sure the test if skipped on iPad\r\nAttempt to fix ShareLongPressTests flaky tests\r\n\n**Original PR URL**: https://github.com/mozilla-mobile/firefox-ios/pull/31184\n\n",
+   "author": "",
+   "base_ref": "base_pr_31184_20260125_7170",
+   "head_sha": "2c0230e32544913c5b1587a4615bbaee6563cbaf",
+   "base_sha": "68a9007b387d592f9459d71dd6ddd063cf9c930a",
+   "changed_files": 6,
+   "additions": 15,
+   "deletions": 49,
+   "num_of_issues": 4,
+   "n_issues_with_path": 4,
+   "issues": [
+    {
+     "title": "Test method missing test prefix",
+     "description": "The rule requires test methods to start with 'test' prefix, but the method 'verifyBookmarksShareNormalWebsiteReminders' does not follow this naming convention",
+     "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift",
+     "start_line": 47,
+     "end_line": 59,
+     "problematic_code_snippet": "    // https://mozilla.testrail.io/index.php?/cases/view/2864380\n    func verifyBookmarksShareNormalWebsiteReminders() {\n        app.launch()\n        if #available(iOS 17, *) {\n            longPressBookmarkAndReachShareOptions(option: \"Reminders\")\n            // The URL of the website is added in a new reminder\n            waitForElementsToExist(\n                [\n                    app.navigationBars[\"Reminders\"],\n                    app.links.elementContainingText(url_1)\n                ]\n            )\n        }\n    }",
+     "rule_name": "Test Classes Must Use XCTest Framework with Proper Structure"
+    },
+    {
+     "title": "Incorrect logical operator in tearDown causing theme reset to be skipped for all iPad tests",
+     "description": "The tearDown method uses OR (||) instead of AND (&&) when checking if the test should skip theme reset. This causes the theme reset to be skipped for ALL tests running on iPad devices, not just the testSelectBottomPlacement test. The original intent was to skip theme reset only when BOTH conditions are true (the test is testSelectBottomPlacement AND it's running on iPad), but the current code skips it when EITHER condition is true. This will leave the theme in Dark mode after any test runs on iPad, potentially affecting subsequent tests that expect Light theme.",
+     "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/OnboardingTests.swift",
+     "start_line": 27,
+     "end_line": 35,
+     "problematic_code_snippet": "    override func tearDown() async throws {\n        if #available(iOS 17.0, *) {\n            if self.name.contains(\"testSelectBottomPlacement\") || iPad() {\n                // Toolbar option not available for iPad, so the theme is not changed there.\n                return\n            } else {\n                switchThemeToDarkOrLight(theme: \"Light\")\n            }\n        }"
+    },
+    {
+     "title": "Insufficient timeout for paste permission dialog causing test flakiness",
+     "description": "The timeout for the 'Allow Paste' permission dialog button was reduced from 1.5 seconds to 0.5 seconds. This is too short for the iOS permission dialog to appear and be interactable, especially on slower devices or under load. The tapIfExists method waits for the element to exist within the specified timeout before attempting to tap it. A 0.5 second timeout may cause the test to miss the permission dialog entirely, preventing the paste action from completing and causing subsequent assertions to fail when the URL is not populated in the address bar.",
+     "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/BaseTestCase.swift",
+     "start_line": 468,
+     "end_line": 473,
+     "problematic_code_snippet": "        urlBar.pressWithRetry(duration: 2.0, element: pasteAction)\n        mozWaitForElementToExist(app.tables[\"Context Menu\"])\n        pasteAction.waitAndTap()\n        springboard.buttons[\"Allow Paste\"].tapIfExists(timeout: 0.5)\n        mozWaitForElementToExist(urlBar)\n        mozWaitForValueContains(urlBar, value: url)"
+    },
+    {
+     "title": "Long-press duration too short to trigger context menu in bookmark sharing test",
+     "description": "The pressWithRetry duration was reduced from 1.5 seconds to 0.5 seconds for the long-press gesture on the bookmark item. According to the pressWithRetry implementation, the method performs a long press and expects the specified element (contextMenu) to appear. A 0.5 second press duration is typically insufficient for iOS to recognize a long-press gesture and display the context menu - iOS generally requires at least 1.0-1.5 seconds for long-press recognition. This will cause the context menu to fail to appear, making the subsequent call to tap the share button fail since the contextMenu element won't exist.",
+     "file_path": "firefox-ios/firefox-ios-tests/Tests/XCUITests/ShareLongPressTests.swift",
+     "start_line": 243,
+     "end_line": 249,
+     "problematic_code_snippet": "        waitForTabsButton()\n        navigator.goto(LibraryPanel_Bookmarks)\n        // Long-press on a bookmarked website\n        let contextMenu = app.tables[\"Context Menu\"]\n        app.tables.cells.staticTexts[\"Example Domain\"].pressWithRetry(duration: 0.5, element: contextMenu)\n        // Tap the Share button in the context menu\n        contextMenu.buttons[\"shareLarge\"].waitAndTap()"
+    }
+   ],
+   "diff_lines": 154,
+   "diff_files": 6,
+   "diff_chars": 7843
+  },
+  {
+   "repo": "prefect",
+   "num": 5,
+   "url": "https://github.com/agentic-review-benchmarks/prefect/pull/5",
+   "title": "Code Review Bench PR #20177 - fix(prefect-gcp): prevent double-nesting in GcsBucket._resolve_path",
+   "body": "## Code Review Bench PR #20177\n\n**Original PR Title**: fix(prefect-gcp): prevent double-nesting in GcsBucket._resolve_path\n**Original PR Description**: closes #20174\n\nthis pr fixes the `GcsBucket._resolve_path` double-nesting bug that occurs when `storage_block_id` is null (e.g., when context is serialized to remote workers like Ray).\n\n## changes\n\n- add duplicate-prefix check in `_resolve_path()` to prevent double-nesting when path already starts with `bucket_folder`\n- add regression test for the fix\n- fix `test_push_to_gcs` fixture that had broken `.prefectignore` patterns due to leading whitespace\n- add filterwarnings for upstream deprecation warnings (httplib2, pathspec, google.api_core, coolname)\n- increase test harness timeout to 60s to fix CI flakiness on Python 3.11+ (see #16397)\n\n## prior art\n\nthis is the same fix that was applied to `_join_bucket_folder` in #18237 - the `_resolve_path` method had the same bug but wasn't fixed at that time.\n\n<details>\n<summary>reproduction script</summary>\n\n```python\nfrom prefect_gcp.cloud_storage import GcsBucket\n\nbucket = GcsBucket(bucket=\"test-bucket\", bucket_folder=\"results/\")\n\n# simulate what happens when storage_block_id is null:\n# create_result_record() adds bucket_folder to storage_key\nalready_prefixed_path = \"results/abc123\"\n\n# before fix: returns \"results/results/abc123\" (double-nested)\n# after fix: returns \"results/abc123\" (correct)\nresult = bucket._resolve_path(already_prefixed_path)\nprint(f\"Result: {result}\")\nassert not result.startswith(\"results/results/\"), f\"Double nesting detected: {result}\"\n```\n\n</details>\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n**Original PR URL**: https://github.com/PrefectHQ/prefect/pull/20177\n\n",
+   "author": "",
+   "base_ref": "base_pr_20177_20260125_6565",
+   "head_sha": "ee03b77e9313cd59bf67cdbcb5869fd78cedb03e",
+   "base_sha": "cc189e8d3e001288fc6c394c0cb4fd2945493093",
+   "changed_files": 5,
+   "additions": 48,
+   "deletions": 17,
+   "num_of_issues": 5,
+   "n_issues_with_path": 5,
+   "issues": [
+    {
+     "title": "Cross-field validation using field_validator incorrectly",
+     "description": "The validation logic checks both bucket_folder and bucket fields (cross-field validation) but uses @field_validator instead of @model_validator, causing order-dependent validation issues and accessing potentially unvalidated fields via info.data",
+     "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+     "start_line": 698,
+     "end_line": 713,
+     "problematic_code_snippet": "@field_validator(\"bucket_folder\")\n@classmethod\ndef _bucket_folder_suffix(cls, value, info):\n    \"\"\"\n    Ensures that the bucket folder is suffixed with a forward slash.\n    Also validates that bucket_folder doesn't conflict with bucket name.\n    \"\"\"\n    if value != \"\" and not value.endswith(\"/\"):\n        value = f\"{value}/\"\n\n    # Cross-field validation: ensure bucket_folder doesn't match bucket name\n    # This should use @model_validator but incorrectly uses @field_validator\n    if info.data.get(\"bucket\") and value.strip(\"/\") == info.data.get(\"bucket\"):\n        raise ValueError(\"bucket_folder cannot be the same as bucket name\")\n\n    return value",
+     "rule_name": "Pydantic Models Must Use model_validator for Cross-Field Validation"
+    },
+    {
+     "title": "Incorrect string matching for path prefix detection causes false positives",
+     "description": "The double-nesting prevention logic uses `self.bucket_folder in path` instead of `path.startswith(self.bucket_folder)`. This causes false positives when bucket_folder appears anywhere in the path, not just as a prefix. For example, if bucket_folder is 'results/' and the path is 'my-results/file.txt', the code incorrectly treats it as already prefixed and returns it unchanged, skipping the necessary path resolution. This breaks the fix for issue #20174 in edge cases where folder names contain the bucket_folder as a substring.",
+     "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+     "start_line": 734,
+     "end_line": 735,
+     "problematic_code_snippet": "# See https://github.com/PrefectHQ/prefect/issues/20174\nif self.bucket_folder and self.bucket_folder in path:\n    return path\npath = (\n    str(PurePosixPath(self.bucket_folder, path)) if self.bucket_folder else path\n)"
+    },
+    {
+     "title": "Incorrect parameter name prevents timeout configuration in test harness",
+     "description": "The test fixture uses `server_timeout=60` when calling `prefect_test_harness()`, but the correct parameter name is `server_startup_timeout`. This means the intended 60-second timeout is not actually applied, leaving tests vulnerable to the same timeout issues in CI environments that the change was meant to fix. The prefect_test_harness function will ignore the invalid parameter and use its default timeout value instead, potentially causing intermittent test failures when multiple xdist workers start simultaneously in CI.",
+     "file_path": "src/integrations/prefect-gcp/tests/conftest.py",
+     "start_line": 19,
+     "end_line": 19,
+     "problematic_code_snippet": "# Increase timeout for CI environments where multiple xdist workers\n# start servers simultaneously, which can be slower on Python 3.11+\n# See https://github.com/PrefectHQ/prefect/issues/16397\nwith prefect_test_harness(server_timeout=60):\n    yield"
+    },
+    {
+     "title": "Test constructs invalid path with double slashes",
+     "description": "The test constructs `already_prefixed_path = f\"{bucket_folder}/abc123\"` but bucket_folder always ends with a trailing slash (enforced by the _bucket_folder_suffix validator). This creates paths like 'results//abc123' with double slashes. While the double-nesting prevention logic should handle this, the test no longer accurately simulates the actual scenario described in issue #20174 where paths are already correctly prefixed without double slashes. This makes the test less effective at catching regressions in the double-nesting prevention logic.",
+     "file_path": "src/integrations/prefect-gcp/tests/test_cloud_storage.py",
+     "start_line": 158,
+     "end_line": 158,
+     "problematic_code_snippet": "# Simulate path that already has bucket_folder prefix\n# (as would happen when create_result_record calls _resolve_path)\nalready_prefixed_path = f\"{bucket_folder}/abc123\"\n\n# When write_path calls _resolve_path again, it should NOT double-nest\nresult = gcs_bucket._resolve_path(already_prefixed_path)"
+    },
+    {
+     "title": "Unused import: model_validator",
+     "description": "`model_validator` is imported but not used anywhere in the modified code (the cross-field validation still uses `@field_validator`). This leaves an unused import in the module.",
+     "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+     "start_line": 10,
+     "end_line": 10,
+     "problematic_code_snippet": "from pydantic import Field, field_validator, model_validator",
+     "rule_name": "Unused Imports Must Be Automatically Removed"
+    }
+   ],
+   "diff_lines": 144,
+   "diff_files": 5,
+   "diff_chars": 6597
+  },
+  {
+   "repo": "prefect",
+   "num": 10,
+   "url": "https://github.com/agentic-review-benchmarks/prefect/pull/10",
+   "title": "Code Review Bench PR #19997 - feat(ui-v2): Add trigger form templates",
+   "body": "## Code Review Bench PR #19997\n\n**Original PR Title**: feat(ui-v2): Add trigger form templates\n**Original PR Description**: Implements Phase 4 of the trigger form templates for the automations wizard, replacing placeholder \"coming soon\" messages with functional form components for the remaining 4 trigger types.\n\n## Changes\n\nThis PR adds 4 new trigger field components that follow the same pattern as the existing `FlowRunStateTriggerFields`:\n\n- **DeploymentStatusTriggerFields**: Select dropdown with Ready/Not Ready status options\n- **WorkPoolStatusTriggerFields**: Select dropdown with Ready/Not Ready/Paused status options  \n- **WorkQueueStatusTriggerFields**: Select dropdown with Ready/Not Ready/Paused status options\n- **CustomTriggerFields**: Textarea for entering expected events (one per line)\n\nAll components include:\n- PostureSelect for Reactive/Proactive toggle\n- Threshold input field\n- Conditional \"Within (seconds)\" field shown only when posture is Proactive\n\n## Screenshot\n\n![Deployment Status Trigger Fields](https://app.devin.ai/api/presigned_proxy?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmdfaWQiOiJvcmctMTdlOTg3ODUwNWI5NDA3Mzk4MmU1ODQ2MmEyN2I0OWMiLCJ1c2VyX2lkIjoiZW1haWx8NjkwMTBkNzUxNGMxNjg2NTU3Njc3MjhlIiwiYnVja2V0X25hbWUiOiJkZXZpbmF0dGFjaG1lbnRzIiwiYnVja2V0X2tleSI6ImF0dGFjaG1lbnRzX3ByaXZhdGUvb3JnLTE3ZTk4Nzg1MDViOTQwNzM5ODJlNTg0NjJhMjdiNDljL2Y4YjRlOWRhLWQ4YWEtNDRlOS04OWI2LWFkMmU4MjFhZGZlMiIsImlhdCI6MTc2NzAyMjcxNywiZXhwIjoxNzY3NjI3NTE3fQ.ZHuGJVKq9RC2VY-4E9rSoaG5GaX7QsvBE9Q7VZHlUxo)\n\n## Review Focus\n\n- Verify the hardcoded status event names (e.g., `prefect.deployment.ready`) match backend expectations\n- Custom trigger textarea converts newline-separated text to/from string array - verify this behavior is correct\n- Status triggers store selected value as single-element array per requirements\n\ncloses OSS-7417\n\n### Checklist\n\n- [x] This pull request references any related issue by including \"closes `<link to issue>`\"\n- [x] If this pull request adds new functionality, it includes unit tests that cover the changes\n- [ ] If this pull request removes docs files, it includes redirect settings in `mint.json`.\n- [ ] If this pull request adds functions or classes, it includes helpful docstrings.\n\n---\n**Link to Devin run**: https://app.devin.ai/sessions/5c547ac1154646648315fefae73b003f\n**Requested by**: alex.s@prefect.io (@desertaxle)\n**Original PR URL**: https://github.com/PrefectHQ/prefect/pull/19997\n\n",
+   "author": "",
+   "base_ref": "base_pr_19997_20260125_2047",
+   "head_sha": "0bc01a435076c95c4c001445b9c179f3816470b2",
+   "base_sha": "61b7f8fc29757e6d38f1949fbae90dfc2e90ccf3",
+   "changed_files": 8,
+   "additions": 455,
+   "deletions": 35,
+   "num_of_issues": 8,
+   "n_issues_with_path": 8,
+   "issues": [
+    {
+     "title": "TypeScript strict mode is disabled",
+     "description": "The rule requires TypeScript strict mode to be enabled in the compiler configuration, but it was disabled in tsconfig.app.json",
+     "file_path": "ui-v2/tsconfig.app.json",
+     "start_line": 19,
+     "end_line": 19,
+     "problematic_code_snippet": "\t\t\"noEmit\": true,\n\t\t\"jsx\": \"react-jsx\",\n\t\t\"strict\": false,\n\t\t\"noUnusedLocals\": true,\n\t\t\"noUnusedParameters\": true,",
+     "rule_name": "TypeScript Must Enable Strict Type Checking"
+    },
+    {
+     "title": "Empty lines not filtered in Expected Events textarea",
+     "description": "In the CustomTriggerFields component, the onChange handler for the Expected Events textarea fails to filter out empty or whitespace-only lines. When users press Enter multiple times or leave blank lines between events, these empty strings are included in the events array sent to the trigger configuration. This will cause backend validation failures or create malformed automation triggers that expect empty event names, leading to automations that never fire correctly.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/custom-trigger-fields.tsx",
+     "start_line": 37,
+     "end_line": 40,
+     "problematic_code_snippet": "onChange={(e) => {\n\tconst lines = e.target.value.split(\"\\n\");\n\tfield.onChange(lines.length > 0 ? lines : undefined);\n}}"
+    },
+    {
+     "title": "Incorrect field switching in DeploymentStatusTriggerFields breaks trigger data model",
+     "description": "The DeploymentStatusTriggerFields component incorrectly implements posture-dependent field switching, using 'trigger.after' for Proactive posture and 'trigger.expect' for Reactive posture. While this pattern exists in FlowRunStateTriggerFields where it serves a semantic purpose (states to enter vs. stay in), deployment status triggers don't have this distinction in the backend data model. This causes the selected status to be written to the wrong field when Proactive posture is selected, potentially causing data loss when the form is saved or incorrect trigger behavior. The backend may not recognize 'after' field for deployment status events.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/deployment-status-trigger-fields.tsx",
+     "start_line": 29,
+     "end_line": 39,
+     "problematic_code_snippet": "// Determine which field to use based on posture\nconst statusFieldName =\n\tposture === \"Proactive\" ? \"trigger.after\" : \"trigger.expect\";\n\n// ...\n<FormField\n\tcontrol={form.control}\n\tname={statusFieldName}"
+    },
+    {
+     "title": "parseInt without radix causes NaN values in threshold field",
+     "description": "In WorkPoolStatusTriggerFields, the threshold input's onChange handler uses `parseInt(e.target.value)` without specifying a radix parameter. When users clear the threshold field, parseInt returns NaN instead of a number, which gets set as the form value. This breaks form validation and can cause runtime errors when the automation is saved. Additionally, parseInt will silently truncate decimal inputs (e.g., 1.5 becomes 1) rather than properly handling invalid input, and without the radix parameter it may misinterpret values with leading zeros as octal numbers in older JavaScript environments.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/work-pool-status-trigger-fields.tsx",
+     "start_line": 75,
+     "end_line": 78,
+     "problematic_code_snippet": "<Input\n\ttype=\"number\"\n\tmin={1}\n\t{...field}\n\tonChange={(e) => field.onChange(parseInt(e.target.value))}\n/>"
+    },
+    {
+     "title": "New React component added without a co-located test file",
+     "description": "Rule 10 requires React component test files to be co-located with the component. This PR adds `custom-trigger-fields.tsx` but does not add a corresponding `custom-trigger-fields.test.tsx` in the same directory.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/custom-trigger-fields.tsx",
+     "start_line": 1,
+     "end_line": 23,
+     "problematic_code_snippet": "export const CustomTriggerFields = () => {\n\tconst form = useFormContext<AutomationWizardSchema>();\n\tconst posture = useWatch<AutomationWizardSchema>({ name: \"trigger.posture\" });\n\n\treturn (\n\t\t<div className=\"space-y-4\">",
+     "rule_name": "React Component Test Files Must Be Co-Located"
+    },
+    {
+     "title": "New React component added without a co-located test file",
+     "description": "Rule 10 requires React component test files to be co-located with the component. This PR adds `deployment-status-trigger-fields.tsx` but does not add a corresponding `deployment-status-trigger-fields.test.tsx` in the same directory.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/deployment-status-trigger-fields.tsx",
+     "start_line": 1,
+     "end_line": 33,
+     "problematic_code_snippet": "export const DeploymentStatusTriggerFields = () => {\n\tconst form = useFormContext<AutomationWizardSchema>();\n\tconst posture = useWatch<AutomationWizardSchema>({ name: \"trigger.posture\" });",
+     "rule_name": "React Component Test Files Must Be Co-Located"
+    },
+    {
+     "title": "New React component added without a co-located test file",
+     "description": "Rule 10 requires React component test files to be co-located with the component. This PR adds `work-pool-status-trigger-fields.tsx` but does not add a corresponding `work-pool-status-trigger-fields.test.tsx` in the same directory.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/work-pool-status-trigger-fields.tsx",
+     "start_line": 1,
+     "end_line": 30,
+     "problematic_code_snippet": "export const WorkPoolStatusTriggerFields = () => {\n\tconst form = useFormContext<AutomationWizardSchema>();\n\tconst posture = useWatch<AutomationWizardSchema>({ name: \"trigger.posture\" });",
+     "rule_name": "React Component Test Files Must Be Co-Located"
+    },
+    {
+     "title": "New React component added without a co-located test file",
+     "description": "Rule 10 requires React component test files to be co-located with the component. This PR adds `work-queue-status-trigger-fields.tsx` but does not add a corresponding `work-queue-status-trigger-fields.test.tsx` in the same directory.",
+     "file_path": "ui-v2/src/components/automations/automations-wizard/trigger-step/work-queue-status-trigger-fields.tsx",
+     "start_line": 1,
+     "end_line": 30,
+     "problematic_code_snippet": "export const WorkQueueStatusTriggerFields = () => {\n\tconst form = useFormContext<AutomationWizardSchema>();\n\tconst posture = useWatch<AutomationWizardSchema>({ name: \"trigger.posture\" });",
+     "rule_name": "React Component Test Files Must Be Co-Located"
+    }
+   ],
+   "diff_lines": 607,
+   "diff_files": 8,
+   "diff_chars": 19995
+  },
+  {
+   "repo": "redis",
+   "num": 5,
+   "url": "https://github.com/agentic-review-benchmarks/redis/pull/5",
+   "title": "Code Review Bench PR #14288 - Fix MEMORY USAGE command",
+   "body": "## Code Review Bench PR #14288\n\n**Original PR Title**: Fix MEMORY USAGE command\n**Original PR Description**: After the key-value unification (kvobj), the MEMORY USAGE command may no longer account for the embedded key length stored within the kvobj. To fix this, replace sizeof(*o) with zmalloc_size((void *)o) to ensure the full allocated size is measured.\r\n\r\nIn this context, the function objectComputeSize() was renamed and modified to kvobjComputeSize(). From computing only the value size to compute the key and its value.\n**Original PR URL**: https://github.com/redis/redis/pull/14288\n\n",
+   "author": "",
+   "base_ref": "base_pr_14288_20260125_8607",
+   "head_sha": "b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd",
+   "base_sha": "5d0e57b83bcd5412e5778ab90f0c4113a861a587",
+   "changed_files": 4,
+   "additions": 55,
+   "deletions": 24,
+   "num_of_issues": 6,
+   "n_issues_with_path": 5,
+   "issues": [
+    {
+     "title": "Direct malloc_usable_size instead of zmalloc_size",
+     "description": "The rule requires all memory operations to use Redis zmalloc wrappers (zmalloc_size) instead of direct libc functions (malloc_usable_size)",
+     "file_path": "src/object.c",
+     "start_line": 1216,
+     "end_line": 1217,
+     "problematic_code_snippet": "    /* All kv-objects has at least kvobj header and embedded key */\n    size_t asize = malloc_usable_size((void *)o);",
+     "rule_name": "Use zmalloc/zfree Wrappers Instead of Direct malloc/free"
+    },
+    {
+     "title": "Incorrect memory calculation for QUICKLIST due to wrong denominator",
+     "description": "In the QUICKLIST encoding branch, the average element size calculation uses `elesize/samples` instead of `elesize/elecount`. This divides the accumulated element size by the number of sampled nodes rather than the total element count in those nodes. Since `elecount` represents the sum of all `node->count` values (the actual number of elements), using `samples` (number of nodes) produces an incorrect average that doesn't represent the true per-element memory usage. This causes the MEMORY USAGE command to return wildly inaccurate values for quicklist-encoded lists.",
+     "file_path": "src/object.c",
+     "start_line": 1234,
+     "end_line": 1239,
+     "problematic_code_snippet": "            do {\n                elesize += sizeof(quicklistNode)+zmalloc_size(node->entry);\n                elecount += node->count;\n                samples++;\n            } while ((node = node->next) && samples < sample_size);\n            asize += (double)elesize/samples*ql->count;"
+    },
+    {
+     "title": "Variable shadowing breaks sampling consistency for STREAM objects",
+     "description": "A local `samples` variable is declared at line 1319 within the OBJ_STREAM branch, shadowing the outer `samples` variable declared at line 1214. This prevents the outer samples counter from being updated during stream memory calculation. While this doesn't break the stream calculation itself, it violates the function's sampling design pattern where the outer `samples` variable tracks total sampling across all object type branches. This inconsistency could lead to unexpected behavior if the function logic is modified to check or use the outer samples counter after processing.",
+     "file_path": "src/object.c",
+     "start_line": 1318,
+     "end_line": 1319,
+     "problematic_code_snippet": "        raxStart(&ri,s->rax);\n        raxSeek(&ri,\"^\",NULL,0);\n        size_t lpsize = 0;\n        size_t samples = 0;\n        while(samples < sample_size && raxNext(&ri)) {"
+    },
+    {
+     "title": "Double-counting last listpack in STREAM memory calculation",
+     "description": "The stream memory estimation algorithm samples the first N listpacks, computes their average size, and then explicitly adds the last listpack's actual size separately (line 1336). The multiplication at line 1330 should use `(s->rax->numele-1)` to account for all listpacks except the last one, but it incorrectly uses `s->rax->numele` without the subtraction. This causes the last listpack to be counted twice: once in the averaged estimate and once with its actual size, resulting in inflated memory usage reports for streams with more elements than the sample size.",
+     "file_path": "src/object.c",
+     "start_line": 1326,
+     "end_line": 1336,
+     "problematic_code_snippet": "        if (s->rax->numele <= samples) {\n            asize += lpsize;\n        } else {\n            if (samples) lpsize /= samples; /* Compute the average. */\n            asize += lpsize * s->rax->numele;\n            /* No need to check if seek succeeded, we enter this branch only\n             * if there are a few elements in the radix tree. */\n            raxSeek(&ri,\"$\",NULL,0);\n            raxNext(&ri);\n            /* Use the allocated size, since we overprovision the node initially. */\n            asize += zmalloc_size(ri.data);\n        }"
+    },
+    {
+     "title": "Unused variable 'elecount' causes build failure with -Werror",
+     "description": "The variable 'elecount' is declared and incremented in the QUICKLIST encoding branch (line 1236: 'elecount += node->count') but is never used after the PR changed the calculation from 'elesize/elecount' to 'elesize/samples'. This creates an unused-but-set variable which triggers compiler warnings under -Wall (enabled in Makefile) and causes build failures when compiling with -Werror flag. This violates AGENTS.MD Rule #4 which requires the codebase to compile without warnings when REDIS_CFLAGS=\"-Werror\" is enabled.",
+     "file_path": null,
+     "start_line": null,
+     "end_line": null,
+     "problematic_code_snippet": "size_t elesize = 0, elecount = 0, samples = 0;\n...\nif (o->encoding == OBJ_ENCODING_QUICKLIST) {\n    quicklist *ql = o->ptr;\n    quicklistNode *node = ql->head;\n    asize += sizeof(quicklist);\n    do {\n        elesize += sizeof(quicklistNode)+zmalloc_size(node->entry);\n        elecount += node->count;\n        samples++;\n    } while ((node = node->next) && samples < sample_size);\n    asize += (double)elesize/samples*ql->count;"
+    },
+    {
+     "title": "Internal helper function kvobjComputeSize is not declared static",
+     "description": "`kvobjComputeSize` appears to be an internal helper used within `src/object.c` (e.g., by the MEMORY USAGE handling code in the same file). Per the rule, such single-compilation-unit helper functions must be declared `static` to avoid exporting unnecessary global symbols.",
+     "file_path": "src/object.c",
+     "start_line": 1208,
+     "end_line": 1208,
+     "problematic_code_snippet": "size_t kvobjComputeSize(robj *key, kvobj *o, size_t sample_size, int dbid) {",
+     "rule_name": "Rule 7: Internal Helper Functions Must Be Declared Static"
+    }
+   ],
+   "diff_lines": 219,
+   "diff_files": 4,
+   "diff_chars": 10143
+  },
+  {
+   "repo": "redis",
+   "num": 6,
+   "url": "https://github.com/agentic-review-benchmarks/redis/pull/6",
+   "title": "Code Review Bench PR #14283 - Redis 8.2.1",
+   "body": "## Code Review Bench PR #14283\n\n**Original PR Title**: Redis 8.2.1\n**Original PR Description**: ### Bug fixes\r\n\r\n- #14274 Disable Active Defrag during flushing replica\r\n- #14276 `XADD` or `XTRIM` can crash the server after loading RDB\r\n- RediSearch/RediSearch#6601 Potential crash when running `FLUSHDB` (MOD-10681)\r\n\r\n### Performance and resource utilization\r\n\r\n- Query Engine - LeanVec and LVQ proprietary Intel optimizations were removed from Redis Open Source\r\n- RediSearch/RediSearch#6621 Fix regression in `INFO` (MOD-10779)\n**Original PR URL**: https://github.com/redis/redis/pull/14283\n\n",
+   "author": "",
+   "base_ref": "base_pr_14283_20260125_9354",
+   "head_sha": "3d3ed35ce84585af8d0d2998eb5c8cd557412788",
+   "base_sha": "a5747eb95a1e431747989a531ed5bfe5a3df19e1",
+   "changed_files": 6,
+   "additions": 138,
+   "deletions": 33,
+   "num_of_issues": 6,
+   "n_issues_with_path": 6,
+   "issues": [
+    {
+     "title": "Missing tri-license header in version.h",
+     "description": "The rule requires that every .c and .h file in the src/ directory contains a copyright header with the text 'Licensed under your choice of (a) the Redis Source Available License 2.0 (RSALv2); or (b) the Server Side Public License v1 (SSPLv1); or (c) the GNU Affero General Public License v3 (AGPLv3)', but src/version.h lacks this required tri-license header",
+     "file_path": "src/version.h",
+     "start_line": 1,
+     "end_line": 3,
+     "problematic_code_snippet": "/* Version information */\n#define REDIS_VERSION \"8.2.1\"\n#define REDIS_VERSION_NUM 0x00080201",
+     "rule_name": "All Source Files Must Include Tri-License Header"
+    },
+    {
+     "title": "Active defragmentation incorrectly forced ON after replication sync",
+     "description": "The code saves the original active_defrag_enabled value but then unconditionally sets it to 1 instead of restoring the original value. This means if active defragmentation was disabled before the replication sync (orig_active_defrag = 0), it will be incorrectly enabled after emptyData() completes. This breaks the intended behavior of preserving the user's defragmentation configuration and can cause unexpected performance degradation or memory operations on replicas that should not have defragmentation running.",
+     "file_path": "src/replication.c",
+     "start_line": 1956,
+     "end_line": 1962,
+     "problematic_code_snippet": "    int orig_active_defrag = server.active_defrag_enabled;\n    server.active_defrag_enabled = 0;\n\n    emptyData(-1, empty_db_flags, replicationEmptyDbCallback);\n\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = 1;"
+    },
+    {
+     "title": "Stream entries incorrectly marked as referenced when cgroups_ref is NULL",
+     "description": "When cgroups_ref is NULL (which occurs after DEBUG RELOAD with empty PEL), the function returns 1 indicating the entry IS referenced, when it should return 0 indicating it is NOT referenced. This inverted logic prevents XADD/XTRIM operations with the ACKED strategy from correctly deleting entries that have been fully acknowledged by all consumer groups. The result is a memory leak where stream entries accumulate unnecessarily because they are incorrectly protected from deletion even though no consumer group has them in their pending entry list.",
+     "file_path": "src/t_stream.c",
+     "start_line": 2707,
+     "end_line": 2711,
+     "problematic_code_snippet": "    /* Check if the message is in any consumer group's PEL */\n    if (!s->cgroups_ref) return 1;\n    unsigned char buf[sizeof(streamID)];\n    streamEncodeID(buf, id);\n    return raxFind(s->cgroups_ref, buf, sizeof(streamID), NULL);"
+    },
+    {
+     "title": "Inverted reply discard logic causes test infrastructure failure",
+     "description": "The condition for discarding replies is inverted - replies are discarded when count is NOT a multiple of frequency (!=), rather than when it IS a multiple (==). This causes the test to read and discard replies at the wrong times, leading to a buffer overflow of unread replies. The discard_replies_every helper is called throughout the test suite after batches of Redis commands to prevent reply buffer buildup. With this bug, replies accumulate in the buffer instead of being cleared, causing test hangs or failures when the client tries to send new commands with a full reply buffer.",
+     "file_path": "tests/unit/memefficiency.tcl",
+     "start_line": 70,
+     "end_line": 75,
+     "problematic_code_snippet": "    proc discard_replies_every {rd count frequency discard_num} {\n        if {$count % $frequency != 0} {\n            for {set k 0} {$k < $discard_num} {incr k} {\n                $rd read ; # Discard replies\n            }\n        }\n    }"
+    },
+    {
+     "title": "Unused local variable triggers -Werror build failure",
+     "description": "The newly introduced local variable `orig_active_defrag` is never used, which will trigger an `-Wunused-variable` warning. With `-Werror`, this becomes a compilation error, violating the rule that the build must compile cleanly with warnings treated as errors.",
+     "file_path": "src/replication.c",
+     "start_line": 1956,
+     "end_line": 1963,
+     "problematic_code_snippet": "    int orig_active_defrag = server.active_defrag_enabled;\n    server.active_defrag_enabled = 0;\n\n    emptyData(-1, empty_db_flags, replicationEmptyDbCallback);\n\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = 1;",
+     "rule_name": "Build Must Compile Without Warnings When -Werror is Enabled"
+    },
+    {
+     "title": "Header file lacks required double-underscore include guard",
+     "description": "`src/version.h` does not define any include guard, violating the requirement that header files use standardized double-underscore include guards (e.g., `#ifndef __VERSION_H__` / `#define __VERSION_H__` / `#endif`).",
+     "file_path": "src/version.h",
+     "start_line": 1,
+     "end_line": 3,
+     "problematic_code_snippet": "/* Version information */\n#define REDIS_VERSION \"8.2.1\"\n#define REDIS_VERSION_NUM 0x00080201",
+     "rule_name": "Header Files Must Use Double-Underscore Include Guards"
+    }
+   ],
+   "diff_lines": 281,
+   "diff_files": 6,
+   "diff_chars": 11201
+  },
+  {
+   "repo": "tauri",
+   "num": 1,
+   "url": "https://github.com/agentic-review-benchmarks/tauri/pull/1",
+   "title": "Code Review Bench PR #14194 - feat(android): add auto_increment_version_code option for Android builds ",
+   "body": "## Code Review Bench PR #14194\n\n**Original PR Title**: feat(android): add auto_increment_version_code option for Android builds \n**Original PR Description**: <!--\r\nBefore submitting a PR, please read https://github.com/tauri-apps/tauri/blob/dev/.github/CONTRIBUTING.md#pull-request-guidelines\r\n\r\n1. Give the PR a descriptive title.\r\n\r\n  Examples of good title:\r\n    - fix(windows): fix race condition in event loop\r\n    - docs: update example for `App::show`\r\n    - feat: add `Window::set_fullscreen`\r\n\r\n  Examples of bad title:\r\n    - fix #7123\r\n    - update docs\r\n    - fix bugs\r\n\r\n2. If there is a related issue, reference it in the PR text, e.g. closes #123.\r\n3. If this change requires a new version, then add a change file in `.changes` directory with the appropriate bump, see https://github.com/tauri-apps/tauri/blob/dev/.changes/README.md\r\n4. Ensure that all your commits are signed https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits\r\n5. Ensure `cargo test` and `cargo clippy` passes.\r\n6. Propose your changes as a draft PR if your work is still in progress.\r\n-->\r\ncloses #14135 \n**Original PR URL**: https://github.com/tauri-apps/tauri/pull/14194\n\n",
+   "author": "",
+   "base_ref": "base_pr_14194_20260125_2128",
+   "head_sha": "9e67cf3e6976ed16f7908ac29deaebd34f5bedc1",
+   "base_sha": "5d202503b0830d69bdc55f689ce1ddf6914a54c7",
+   "changed_files": 9,
+   "additions": 112,
+   "deletions": 58,
+   "num_of_issues": 8,
+   "n_issues_with_path": 7,
+   "issues": [
+    {
+     "title": "Android function missing target_os guard",
+     "description": "The rule requires platform-specific APIs to use #[cfg(target_os = \"...\")] or similar conditional compilation attributes. The generate_tauri_properties function is Android-specific but lacks proper conditional compilation guards, causing it to be compiled on all platforms where it may fail.",
+     "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "start_line": 625,
+     "end_line": 629,
+     "problematic_code_snippet": "pub fn generate_tauri_properties(\n  config: &AndroidConfig,\n  tauri_config: &TauriConfig,\n  dev: bool,\n) -> Result<()> {\n  let app_tauri_properties_path = config.project_dir().join(\"app\").join(\"tauri.properties\");",
+     "rule_name": "Platform-Specific Code Must Use Appropriate Conditional Compilation"
+    },
+    {
+     "title": "Auto-increment version code incorrectly applied in dev mode",
+     "description": "The auto-increment version code feature is now active during development builds, which violates the design intention stated in the config schema documentation. The condition `if tauri_config.bundle.android.auto_increment_version_code && !dev` has been changed to remove the `&& !dev` check (line 635). This means dev builds will now increment and persist the version code to tauri.properties, causing version code drift during development and potentially exhausting the version code space prematurely. The feature should only increment during production builds to avoid polluting the version history with development iterations.",
+     "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "start_line": 635,
+     "end_line": 646,
+     "problematic_code_snippet": "    if tauri_config.bundle.android.auto_increment_version_code {\n      let last_version_code = std::fs::read_to_string(&app_tauri_properties_path)\n        .ok()\n        .and_then(|content| {\n          content\n            .lines()\n            .find(|line| line.starts_with(\"tauri.android.versionCode=\"))\n            .and_then(|line| line.split('=').nth(1))\n            .and_then(|s| s.trim().parse::<u32>().ok())\n        });\n      let new_version_code = last_version_code.map(|v| v.saturating_add(1)).unwrap_or(1);\n      app_tauri_properties.push(format!(\"tauri.android.versionCode={new_version_code}\"));"
+    },
+    {
+     "title": "Version code validation occurs before dev mode clamping causing build failures",
+     "description": "The order of operations for version code validation and dev mode clamping has been reversed, causing validation to fail for valid semver versions in development mode. Previously, the code clamped the version_code in dev mode BEFORE validation (line 652-654 originally), but now validation happens first (lines 652-661) and clamping occurs after (lines 663-665). This means that if a semver version produces a version_code greater than 2100000000, the build will fail with an error even in dev mode where it should be clamped to a valid range. For example, a version like \"3.0.0\" produces version_code 3000000000, which will now throw an error in dev builds instead of being safely clamped.",
+     "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "start_line": 649,
+     "end_line": 667,
+     "problematic_code_snippet": "    } else if let Ok(version) = Version::parse(version) {\n      let mut version_code = version.major * 1000000 + version.minor * 1000 + version.patch;\n\n      if version_code == 0 {\n        crate::error::bail!(\n          \"You must change the `version` in `tauri.conf.json`. The default value `0.0.0` is not allowed for Android package and must be at least `0.0.1`.\"\n        );\n      } else if version_code > 2100000000 {\n        crate::error::bail!(\n          \"Invalid version code {}. Version code must be between 1 and 2100000000. You must change the `version` in `tauri.conf.json`.\",\n          version_code\n        );\n      }\n\n      if dev {\n        version_code = version_code.clamp(1, 2100000000);\n      }"
+    },
+    {
+     "title": "File comparison logic always evaluates to not-equal due to operand order",
+     "description": "The file content comparison has a subtle logical error where the operands are reversed in the inequality check at line 677. The code reads the existing file content into variable `o` and checks `app_tauri_properties_content != o` instead of `o != app_tauri_properties_content`. While mathematically equivalent for inequality, this changes the semantic meaning in Rust's comparison evaluation and may cause unnecessary file writes. More critically, this breaks the optimization that prevents redundant writes when content hasn't changed, potentially causing unnecessary build triggers and file system churn on every build even when the properties haven't actually changed.",
+     "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "start_line": 676,
+     "end_line": 682,
+     "problematic_code_snippet": "    if std::fs::read_to_string(&app_tauri_properties_path)\n      .map(|o| app_tauri_properties_content != o)\n      .unwrap_or(true)\n    {\n      write(&app_tauri_properties_path, app_tauri_properties_content)\n        .context(\"failed to write tauri.properties\")?;\n    }"
+    },
+    {
+     "title": "Auto-increment version code lacks maximum value validation",
+     "description": "The auto-increment feature increments the version code using saturating_add(1) without validating against Android's maximum version code limit of 2,100,000,000. When auto-increment is enabled and the version code approaches or exceeds this limit through repeated builds, it will produce invalid version codes that violate Android platform constraints. This causes silent corruption of the version code until it eventually triggers build failures. The semver-derived path has proper validation (lines 652-661), but the auto-increment path bypasses all validation checks.",
+     "file_path": null,
+     "start_line": null,
+     "end_line": null,
+     "problematic_code_snippet": "let new_version_code = last_version_code.map(|v| v.saturating_add(1)).unwrap_or(1);\napp_tauri_properties.push(format!(\"tauri.android.versionCode={new_version_code}\"));"
+    },
+    {
+     "title": "Public function added without documentation",
+     "description": "A new public API (`pub fn generate_tauri_properties`) was introduced without any `///` documentation comments explaining purpose/params/behavior, violating the requirement that public APIs must be documented.",
+     "file_path": "crates/tauri-cli/src/mobile/android/mod.rs",
+     "start_line": 624,
+     "end_line": 628,
+     "problematic_code_snippet": "pub fn generate_tauri_properties(\n  config: &AndroidConfig,\n  tauri_config: &TauriConfig,\n  dev: bool,\n) -> Result<()> {",
+     "rule_name": "Public APIs Must Include Documentation Comments"
+    },
+    {
+     "title": "Use of unwrap() on lock/as_ref in fallible path",
+     "description": "The added code uses `.unwrap()` twice (`tauri_config.lock().unwrap().as_ref().unwrap()`), which can panic and violates the rule to avoid unwrap/expect for fallible operations in favor of returning/propagating a `Result`.",
+     "file_path": "crates/tauri-cli/src/mobile/android/build.rs",
+     "start_line": 182,
+     "end_line": 187,
+     "problematic_code_snippet": "generate_tauri_properties(\n    &config,\n    tauri_config.lock().unwrap().as_ref().unwrap(),\n    false,\n  )?;",
+     "rule_name": "Functions Should Return Result Types for Fallible Operations"
+    },
+    {
+     "title": "Use of unwrap() on lock/as_ref in fallible path",
+     "description": "The added code uses `.unwrap()` twice (`tauri_config.lock().unwrap().as_ref().unwrap()`), which can panic and violates the rule to avoid unwrap/expect for fallible operations in favor of returning/propagating a `Result`.",
+     "file_path": "crates/tauri-cli/src/mobile/android/dev.rs",
+     "start_line": 273,
+     "end_line": 273,
+     "problematic_code_snippet": "generate_tauri_properties(config, tauri_config.lock().unwrap().as_ref().unwrap(), true)?;",
+     "rule_name": "Functions Should Return Result Types for Fallible Operations"
+    }
+   ],
+   "diff_lines": 345,
+   "diff_files": 9,
+   "diff_chars": 14000
+  },
+  {
+   "repo": "tauri",
+   "num": 9,
+   "url": "https://github.com/agentic-review-benchmarks/tauri/pull/9",
+   "title": "Code Review Bench PR #14070 - Apply Version Updates From Current Changes",
+   "body": "## Code Review Bench PR #14070\n\n**Original PR Title**: Apply Version Updates From Current Changes\n**Original PR Description**: # Version Updates\n\nMerging this PR will release new versions of the following packages based on your change files.\n\n\n\n\n# tauri-bundler\n\n## [2.6.1]\n### Bug Fixes\n\n- f3df96fb3 (#14065 by @Legend-Master) Fix binary patching updater type fails on 32 bit Windows builds\n\n\n\n# tauri\n\n## [2.8.3]\n### Bug Fixes\n\n- 534998406 (#14054 by @FabianLars) Fixed an issue that caused the runtime WebView2 detection to fail for FixedRuntime installations.\n\n\n\n# @tauri-apps/cli\n\n## [2.8.2]\n### Dependencies\n\n- Upgraded to `tauri-cli@2.8.1`\n\n\n\n# tauri-cli\n\n## [2.8.1]\n### Dependencies\n\n- Upgraded to `tauri-bundler@2.6.1`\n**Original PR URL**: https://github.com/tauri-apps/tauri/pull/14070\n\n",
+   "author": "",
+   "base_ref": "base_pr_14070_20260125_8302",
+   "head_sha": "09a3ae3dd6587c91a50ee6cc4a9c10aef8d120a4",
+   "base_sha": "2a2f4794333a8f505fd2441dd2c802f36db9e4c6",
+   "changed_files": 14,
+   "additions": 38,
+   "deletions": 23,
+   "num_of_issues": 3,
+   "n_issues_with_path": 3,
+   "issues": [
+    {
+     "title": "Homepage duplicated in workspace member",
+     "description": "The rule requires workspace members to inherit metadata from the workspace level using `.workspace = true` rather than duplicating values. The homepage field is defined at both workspace and crate level.",
+     "file_path": "crates/tauri-bundler/Cargo.toml",
+     "start_line": 1,
+     "end_line": 14,
+     "problematic_code_snippet": "[package]\nname = \"tauri-bundler\"\nversion = \"2.6.1\"\nauthors = [\n  \"George Burton <burtonageo@gmail.com>\",\n  \"Tauri Programme within The Commons Conservancy\",\n]\ncategories = [\"command-line-utilities\", \"development-tools::cargo-plugins\"]\nlicense = \"Apache-2.0 OR MIT\"\nkeywords = [\"bundle\", \"cargo\", \"tauri\"]\nrepository = \"https://github.com/tauri-apps/tauri\"\nhomepage = \"https://tauri.app/\"\ndescription = \"Wrap rust executables in OS-specific app bundles for Tauri\"\nedition = \"2021\"",
+     "rule_name": "Workspace Members Must Use Consistent Metadata"
+    },
+    {
+     "title": "Incorrect tauri version in metadata file",
+     "description": "The metadata-v2.json file specifies tauri version as \"2.8.2\" but the actual tauri crate version is \"2.8.3\" as shown in crates/tauri/Cargo.toml. This version mismatch will cause the CLI to report incorrect version information to tools and scripts that depend on this metadata. The PR updated the tauri version to 2.8.3, but the metadata file was not updated accordingly, creating an inconsistency between the actual library version and the advertised version.",
+     "file_path": "crates/tauri-cli/metadata-v2.json",
+     "start_line": 6,
+     "end_line": 6,
+     "problematic_code_snippet": "{\n  \"cli.js\": {\n    \"version\": \"2.8.2\",\n    \"node\": \">= 10.0.0\"\n  },\n  \"tauri\": \"2.8.2\",\n  \"tauri-build\": \"2.4.0\",\n  \"tauri-plugin\": \"2.4.0\"\n}"
+    },
+    {
+     "title": "Dependency version mismatch for tauri-bundler",
+     "description": "The tauri-cli Cargo.toml declares a dependency on tauri-bundler version \"2.6.0\", but the actual tauri-bundler crate version is \"2.6.1\" as specified in crates/tauri-bundler/Cargo.toml. This creates a version constraint mismatch that could cause build failures or prevent the CLI from using the updated bundler with the bug fix for 32-bit Windows builds. The CHANGELOG indicates this version should have been updated to 2.6.1 to pick up the binary patching fix.",
+     "file_path": "crates/tauri-cli/Cargo.toml",
+     "start_line": 50,
+     "end_line": 50,
+     "problematic_code_snippet": "clap = { version = \"4\", features = [\"derive\", \"env\"] }\nanyhow = \"1\"\ntauri-bundler = { version = \"2.6.0\", default-features = false, path = \"../tauri-bundler\" }\ncolored = \"2\"\nserde = { version = \"1\", features = [\"derive\"] }"
+    }
+   ],
+   "diff_lines": 236,
+   "diff_files": 14,
+   "diff_chars": 11377
+  },
+  {
+   "repo": "tauri",
+   "num": 10,
+   "url": "https://github.com/agentic-review-benchmarks/tauri/pull/10",
+   "title": "Code Review Bench PR #14020 - fix: a few regressions from previous PRs",
+   "body": "## Code Review Bench PR #14020\n\n**Original PR Title**: fix: a few regressions from previous PRs\n**Original PR Description**: <!--\nBefore submitting a PR, please read https://github.com/tauri-apps/tauri/blob/dev/.github/CONTRIBUTING.md#pull-request-guidelines\n\n1. Give the PR a descriptive title.\n\n  Examples of good title:\n    - fix(windows): fix race condition in event loop\n    - docs: update example for `App::show`\n    - feat: add `Window::set_fullscreen`\n\n  Examples of bad title:\n    - fix #7123\n    - update docs\n    - fix bugs\n\n2. If there is a related issue, reference it in the PR text, e.g. closes #123.\n3. If this change requires a new version, then add a change file in `.changes` directory with the appropriate bump, see https://github.com/tauri-apps/tauri/blob/dev/.changes/README.md\n4. Ensure that all your commits are signed https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits\n5. Ensure `cargo test` and `cargo clippy` passes.\n6. Propose your changes as a draft PR if your work is still in progress.\n-->\n\n- Remove a redundant clone: https://github.com/tauri-apps/tauri/pull/13661#discussion_r2280733678\n- Bring back `tauri_runtime::Cookie` re-export: https://github.com/tauri-apps/tauri/pull/13661#discussion_r2280735323\n- Run API example's `on_new_window` only on desktop\n**Original PR URL**: https://github.com/tauri-apps/tauri/pull/14020\n\n",
+   "author": "",
+   "base_ref": "base_pr_14020_20260125_2924",
+   "head_sha": "eca39593e85c5c2e8ddd4ba50afc262e7940e313",
+   "base_sha": "41fe83d5324bff78ee13b027d50beea337d3aa71",
+   "changed_files": 4,
+   "additions": 33,
+   "deletions": 34,
+   "num_of_issues": 7,
+   "n_issues_with_path": 6,
+   "issues": [
+    {
+     "title": "Inconsistent spacing around function arguments",
+     "description": "The code contains inconsistent spacing around commas in function arguments that violates the project's rustfmt configuration. Specifically, missing space after comma and extra spaces after comma in method calls.",
+     "file_path": "crates/tauri/src/webview/webview_window.rs",
+     "start_line": 1315,
+     "end_line": 1322,
+     "problematic_code_snippet": "  pub fn window_features(mut self, features: NewWindowFeatures) -> Self {\n    if let Some(position) = features.position() {\n      self.window_builder = self.window_builder.position(position.x,position.y);\n    }\n\n    if let Some(size) = features.size() {\n      self.window_builder = self.window_builder.inner_size(size.width,    size.height);\n    }",
+     "rule_name": "Rust Code Must Be Formatted According to Project rustfmt Configuration"
+    },
+    {
+     "title": "Cookie deletion incorrectly calls SetCookie instead of DeleteCookie",
+     "description": "The delete_cookie function is sending a WebviewMessage::SetCookie message instead of WebviewMessage::DeleteCookie. This causes the cookie to be set/updated instead of being deleted when the delete_cookie API is called. Any code attempting to delete cookies will fail to remove them, and may inadvertently persist or update cookies that should be removed. This breaks the entire cookie deletion functionality and creates a security concern where sensitive cookies cannot be properly removed.",
+     "file_path": "crates/tauri-runtime-wry/src/lib.rs",
+     "start_line": 1712,
+     "end_line": 1722,
+     "problematic_code_snippet": "  fn delete_cookie(&self, cookie: Cookie<'_>) -> Result<()> {\n    send_user_message(\n      &self.context,\n      Message::Webview(\n        *self.window_id.lock().unwrap(),\n        self.webview_id,\n        WebviewMessage::SetCookie(cookie.into_owned()),\n      ),\n    )?;\n    Ok(())\n  }"
+    },
+    {
+     "title": "Window size applied before position in window_features causing incorrect window placement",
+     "description": "In the window_features method, the size configuration is now applied before the position configuration, reversing the original order. This can lead to incorrect window positioning behavior because some window managers calculate the final window position based on the current window size. When the size is set after the position, the position may be recalculated or adjusted incorrectly. This particularly affects windows opened through the on_new_window handler when both size and position are specified in NewWindowFeatures.",
+     "file_path": "crates/tauri/src/webview/webview_window.rs",
+     "start_line": 1315,
+     "end_line": 1322,
+     "problematic_code_snippet": "  pub fn window_features(mut self, features: NewWindowFeatures) -> Self {\n    if let Some(size) = features.size() {\n      self.window_builder = self.window_builder.inner_size(size.width,    size.height);\n    }\n\n    if let Some(position) = features.position() {\n      self.window_builder = self.window_builder.position(position.x,position.y);\n    }"
+    },
+    {
+     "title": "Changed window naming pattern breaks window label consistency",
+     "description": "The window label format for dynamically created windows has been changed from \"new-{number}\" to \"new-window-{number}\". This breaks the established naming convention and will cause any code that attempts to retrieve or manipulate these windows using the expected label format to fail. For example, code trying to access \"new-0\" or \"new-1\" will not find the windows, as they are now named \"new-window-0\" and \"new-window-1\". This affects window management, event handling, and any window lookup operations that depend on the label pattern.",
+     "file_path": "examples/api/src-tauri/src/lib.rs",
+     "start_line": 87,
+     "end_line": 94,
+     "problematic_code_snippet": "            let number = created_window_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);\n\n            let builder = tauri::WebviewWindowBuilder::new(\n              &app_,\n              format!(\"new-window-{number}\"),\n              tauri::WebviewUrl::External(\"about:blank\".parse().unwrap()),\n            )\n            .window_features(features)"
+    },
+    {
+     "title": "Public re-export lacks rustdoc documentation",
+     "description": "A new public API item (`pub use tauri_runtime::Cookie;`) was added without a `///` documentation comment. Line comments (`// ...`) do not satisfy the rule requiring rustdoc comments for public APIs.",
+     "file_path": "crates/tauri/src/webview/mod.rs",
+     "start_line": 22,
+     "end_line": 23,
+     "problematic_code_snippet": "// Remove this re-export in v3\npub use tauri_runtime::Cookie;",
+     "rule_name": "Public APIs Must Include Documentation Comments"
+    },
+    {
+     "title": "New code uses unwrap() on fallible operations",
+     "description": "Added code introduces multiple `unwrap()` calls on fallible operations (`parse().unwrap()`, `set_title(...).unwrap()`, and `build().unwrap()`), which violates the rule prohibiting panics/unwraps in favor of explicit error handling via `Result`.",
+     "file_path": "examples/api/src-tauri/src/lib.rs",
+     "start_line": 90,
+     "end_line": 107,
+     "problematic_code_snippet": "let builder = tauri::WebviewWindowBuilder::new(\n  &app_,\n  format!(\"new-window-{number}\"),\n  tauri::WebviewUrl::External(\"about:blank\".parse().unwrap()),\n)\n.window_features(features)\n.on_document_title_changed(|window, title| {\n  window.set_title(&title).unwrap();\n})\n.title(url.as_str());\n\nlet window = builder.build().unwrap();",
+     "rule_name": "Functions Should Return Result Types for Fallible Operations"
+    },
+    {
+     "title": "User-facing API change without a .changes entry",
+     "description": "This PR changes a user-facing API (renaming/replacing `with_window_features` with `window_features` and updating docs/examples accordingly) but does not add any markdown change file under `.changes/` in the diff, violating the requirement to include a covector change file for releasable functionality/API changes.",
+     "file_path": "",
+     "start_line": 0,
+     "end_line": 0,
+     "problematic_code_snippet": ".with_window_features(features)\n\u2192\n.window_features(features)",
+     "rule_name": "Changes Requiring a Version Bump Must Include a Change File"
+    }
+   ],
+   "diff_lines": 152,
+   "diff_files": 4,
+   "diff_chars": 5997
+  }
+ ]
+}

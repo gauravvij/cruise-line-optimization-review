@@ -1,0 +1,310 @@
+{
+ "id": "firefox-ios#12",
+ "repo": "firefox-ios",
+ "num": 12,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T12:04:33.262Z",
+ "num_of_issues": 11,
+ "issues": [
+  {
+   "title": "Nested test delegate missing final modifier",
+   "description": "The rule requires that classes not designed for subclassing must be marked with the 'final' keyword to prevent unintended inheritance and enable compiler optimizations. The FakeWKNavigationDelegate class is a test utility not intended for inheritance but lacks the 'final' modifier.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 13,
+   "end_line": 13,
+   "problematic_code_snippet": "final class WebKitTestHelpers {\n    class FakeWKNavigationDelegate: NSObject, WKNavigationDelegate {\n        let expect: XCTestExpectation\n        var capturedFrame: WKFrameInfo?\n        var capturedOrigin: WKSecurityOrigin?\n\n        init(expect: XCTestExpectation) { self.expect = expect }",
+   "rule_name": "Classes That Should Not Be Subclassed Must Be Marked Final"
+  },
+  {
+   "title": "Wrong frame captured in navigation delegate",
+   "description": "The delegate captures navigationAction.targetFrame instead of navigationAction.sourceFrame. The targetFrame represents the frame that will be navigated (which may be nil for new windows), while sourceFrame represents the frame that initiated the navigation. This causes the helper to capture nil or incorrect frame information, breaking all tests that depend on valid WKFrameInfo objects. The original intent was to capture the frame initiating the navigation request.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 23,
+   "end_line": 25,
+   "problematic_code_snippet": "        func webView(_ webView: WKWebView,\n                     decidePolicyFor navigationAction: WKNavigationAction,\n                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {\n            let frame = navigationAction.targetFrame\n            capturedFrame = frame\n            capturedOrigin = frame?.securityOrigin"
+  },
+  {
+   "title": "Ignoring XCTWaiter result allows returning stale data on timeout",
+   "description": "The captureFrameAndOrigin method no longer checks if waiter == .completed before returning captured values. This means the function will return potentially nil or incomplete frame and origin data even when the expectation times out or is interrupted. The function may return cached/partial data from a failed navigation attempt, causing tests to use invalid WebKit objects and producing false test results.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 44,
+   "end_line": 45,
+   "problematic_code_snippet": "        let waiter = XCTWaiter.wait(for: [expect], timeout: timeout)\n        if let frame = delegate.capturedFrame, let origin = delegate.capturedOrigin {\n            return (frame, origin)\n        }"
+  },
+  {
+   "title": "Test expectation fulfilled after wait causes timeout",
+   "description": "The expectation.fulfill() call was moved outside the decisionHandler closure and placed after the wait() call. This creates a logic error where the test waits for an expectation that will never be fulfilled by the decision handler. The expectation is only fulfilled after the wait times out, causing the test to always fail with a timeout error rather than validating the actual permission decision behavior.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+   "start_line": 43,
+   "end_line": 54,
+   "problematic_code_snippet": "        let decisionHandler = { (decision: WKPermissionDecision) in\n            XCTAssertEqual(decision, .prompt)\n        }\n\n        let expectation = expectation(description: \"Wait for the decision handler to be called\")\n        subject.webView(MockWKWebView(),\n                        requestMediaCapturePermissionFor: origin,\n                        initiatedByFrame: frame,\n                        type: .cameraAndMicrophone,\n                        decisionHandler: decisionHandler)\n        wait(for: [expectation])\n        expectation.fulfill()"
+  },
+  {
+   "title": "Force unwrap of URL initializer in tests",
+   "description": "SwiftLint commonly forbids force-unwrapping. The test code force-unwraps the result of `URL(string:)` via `!` in newly added lines.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+   "start_line": 38,
+   "end_line": 38,
+   "problematic_code_snippet": "guard let (frame, origin) = WebKitTestHelpers.captureFrameAndOrigin(for: URL(string: \"https://example.com\")!) else {",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Force unwrap of URL initializer in tests (second occurrence)",
+   "description": "Same SwiftLint force-unwrapping violation as above; appears again in the added lines for another test.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+   "start_line": 55,
+   "end_line": 55,
+   "problematic_code_snippet": "guard let (frame, origin) = WebKitTestHelpers.captureFrameAndOrigin(for: URL(string: \"https://example.com\")!) else {",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Force unwrap of URL initializer in tests (third occurrence)",
+   "description": "Same SwiftLint force-unwrapping violation as above; appears again in the added lines for another test.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+   "start_line": 73,
+   "end_line": 73,
+   "problematic_code_snippet": "guard let (frame, origin) = WebKitTestHelpers.captureFrameAndOrigin(for: URL(string: \"https://example.com\")!) else {",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Unused local constant",
+   "description": "`waiter` is assigned but never used, which typically triggers SwiftLint's `unused_variable`/compiler warning. The code calls `XCTWaiter.wait` and stores the result without referencing it.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 44,
+   "end_line": 44,
+   "problematic_code_snippet": "let waiter = XCTWaiter.wait(for: [expect], timeout: timeout)",
+   "rule_name": "Code Must Pass All Enabled SwiftLint Rules"
+  },
+  {
+   "title": "Missing explicit access control on class members",
+   "description": "Rule requires explicit access control modifiers. The added properties and methods (`expect`, `capturedFrame`, `capturedOrigin`, `init`, and `webView(...)`) have no explicit `private/internal` modifiers (defaulting to `internal`).",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 13,
+   "end_line": 28,
+   "problematic_code_snippet": "final class WebKitTestHelpers {\n    class FakeWKNavigationDelegate: NSObject, WKNavigationDelegate {\n        let expect: XCTestExpectation\n        var capturedFrame: WKFrameInfo?\n        var capturedOrigin: WKSecurityOrigin?\n\n        init(expect: XCTestExpectation) { self.expect = expect }\n\n        func webView(_ webView: WKWebView,\n                     decidePolicyFor navigationAction: WKNavigationAction,\n                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {",
+   "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+  },
+  {
+   "title": "Missing explicit access control on helper method",
+   "description": "Rule requires explicit access control modifiers. The newly added `captureFrameAndOrigin` method lacks an explicit access level (defaults to `internal`).",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 38,
+   "end_line": 38,
+   "problematic_code_snippet": "static func captureFrameAndOrigin(for url: URL, timeout: TimeInterval = 3.0) -> (WKFrameInfo, WKSecurityOrigin)? {",
+   "rule_name": "Properties and Methods Must Have Appropriate Access Control"
+  },
+  {
+   "title": "Missing // MARK: section organization",
+   "description": "The new Swift file defines multiple logical sections (nested delegate type, static helper function) but includes no `// MARK:` comments to delineate them, violating the required section organization rule.",
+   "file_path": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+   "start_line": 13,
+   "end_line": 14,
+   "problematic_code_snippet": "final class WebKitTestHelpers {\n    class FakeWKNavigationDelegate: NSObject, WKNavigationDelegate {",
+   "rule_name": "Code Sections Must Be Organized with MARK Comments"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/firefox-ios",
+ "head_sha": "6714f44d3bff073f18c19d47716f0679e0c8e279",
+ "diff_chars": 8901,
+ "diff_lines": 201,
+ "user_prompt_chars": 11200,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 37967,
+ "wall_ms": 40675,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 2,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 2,
+ "turn_trace": {
+  "assistant_lines": 4,
+  "unique_message_ids": 2,
+  "lines_without_id": 0,
+  "tool_use_blocks": 2
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.238440755,
+ "spend_post_usd": 0.24435184,
+ "cost_settled": true,
+ "cost_wait_ms": 328,
+ "cost_usd": 0.005911084999999983,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 3,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.005826165,
+ "usage": {
+  "input_tokens": 4,
+  "cache_creation_input_tokens": 11609,
+  "cache_read_input_tokens": 45364,
+  "output_tokens": 7842,
+  "output_tokens_details": {
+   "thinking_tokens": 2858
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 11609
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 4,
+   "outputTokens": 7842,
+   "cacheReadInputTokens": 45364,
+   "cacheCreationInputTokens": 11609,
+   "webSearchRequests": 0,
+   "costUSD": 0.005826165,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2858,
+   "cacheCreationEphemeral5mInputTokens": 11609,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/firefox-ios",
+   "number": 12,
+   "title": "Code Review Bench PR #31309 - Bugfix FXIOS-14456 #31308 ⁃ Fix test failing on XCode 26.2 to enable using this version on Bitrise",
+   "author": "",
+   "baseSha": "498b08ff5aae3191fb1ba60fff24382bff73b51e",
+   "headSha": "6714f44d3bff073f18c19d47716f0679e0c8e279"
+  },
+  "summary": "This PR replaces the hand-rolled `MockWKFrameInfo` and `MockWKSecurityOrigin` test doubles, which crash on Xcode 26.2 because WebKit now validates internal state on these types. A new `WebKitTestHelpers.captureFrameAndOrigin(for:)` loads a URL in a real `WKWebView`, captures the `WKFrameInfo` and `WKSecurityOrigin` from the navigation policy callback, and returns them. The three media-capture tests in `WKUIHandlerTests` now use these real objects. I confirmed the deleted mocks have no remaining references in the repo, so the removal is clean.\n\nThe direction is sound, but the PR has a blocking bug. In `testRequestMediaCaptureSuccess` the `expectation.fulfill()` call was moved after `wait(for:)`, so the expectation can never be fulfilled before the wait and the test will time out and fail. The helper also makes unit tests depend on live network access to example.com, which is slow and flaky on CI and offline.",
+  "verdict": "request_changes",
+  "verdictRationale": "The success-path test is broken as written: `wait(for: [expectation])` runs before `expectation.fulfill()`, and the fulfill call inside the decision handler was removed. That test cannot pass. The helper's network dependency is a real reliability concern for a unit-test target. Both should be fixed before merge. The overall approach of using real WebKit objects is the right fix for the SDK crash.",
+  "architecture": {
+   "overview": "Before this PR, `WKUIHandlerTests` built fake `WKFrameInfo` and `WKSecurityOrigin` objects by subclassing WebKit classes (`MockWKFrameInfo`, `MockWKSecurityOrigin`) and passed them to `WKUIHandler.webView(_:requestMediaCapturePermissionFor:initiatedByFrame:type:decisionHandler:)`. Newer WebKit SDKs validate internal state on these objects, so the fakes now crash.\n\nThe PR swaps those fakes for objects WebKit produces itself. `WebKitTestHelpers` creates a real `WKWebView`, sets a private navigation delegate, and loads a URL. The delegate's `decidePolicyFor` callback receives a `WKNavigationAction` whose `targetFrame` supplies the `WKFrameInfo` and its `securityOrigin`. The helper waits on an `XCTestExpectation` and returns the pair, and each media-capture test uses that pair as input.",
+   "steps": [
+    "Entry point: `WKUIHandler.webView(_:requestMediaCapturePermissionFor:initiatedByFrame:type:decisionHandler:)` is the production code under test and is unchanged by this PR. The test calls it directly.",
+    "Before: `WKUIHandlerTests` passed `MockWKSecurityOrigin.new(nil)` and `MockWKFrameInfo()` into the handler. These mocks are deleted in this PR and no references to them remain.",
+    "New helper: `WebKitTestHelpers.captureFrameAndOrigin(for:timeout:)` in `BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift` creates a `WKWebView`, installs `FakeWKNavigationDelegate`, and calls `load(URLRequest)`. It then waits on an expectation for up to 3 seconds.",
+    "Capture: `FakeWKNavigationDelegate.webView(_:decidePolicyFor:decisionHandler:)` stores `navigationAction.targetFrame` and its `securityOrigin`, allows the navigation, and fulfills the expectation. This depends on a real network load of `https://example.com`.",
+    "Test wiring: the three media-capture tests in `WKUIHandlerTests.swift` each call the helper in a `guard let` and pass the real origin and frame to the handler. The success test is where the ordering bug sits."
+   ],
+   "diagrams": [
+    {
+     "title": "Test-side capture of real WebKit frame and origin",
+     "kind": "flowchart",
+     "description": "Shows how the test helper obtains real WKFrameInfo and WKSecurityOrigin values from a live navigation and feeds them to WKUIHandler.",
+     "mermaid": "flowchart LR\n    T[WKUIHandlerTests] -->|captureFrameAndOrigin url| H[WebKitTestHelpers]\n    H --> W[WKWebView load URL]\n    W -->|decidePolicyFor| D[FakeWKNavigationDelegate]\n    D -->|targetFrame and securityOrigin| H\n    H -->|frame and origin| T\n    T -->|requestMediaCapturePermission| U[WKUIHandler]\n    U -->|decisionHandler| T"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Success-path test waits before its expectation is fulfilled and always times out",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `testRequestMediaCaptureSuccess`, the PR removed `expectation.fulfill()` from the decision handler and moved it to after `wait(for: [expectation])`. `wait` blocks until the expectation is fulfilled, but nothing fulfills it before that call, so the test waits for the full timeout and fails. The other two tests still fulfill inside the handler, so this is a regression introduced by this PR.\n\n::diff{file=\"BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift\" lines=\"43-55\"}\n\n::callout{type=\"warning\"}\nThe assertion `XCTAssertEqual(decision, .prompt)` inside the handler is also the only check on the result. Keep it, and restore the `fulfill` call inside the closure so the expectation can complete.\n\n::suggestion{file=\"BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift\" lines=\"43-54\"}\n        let decisionHandler = { (decision: WKPermissionDecision) in\n            XCTAssertEqual(decision, .prompt)\n            expectation.fulfill()\n        }\n\n        subject.webView(MockWKWebView(),\n                        requestMediaCapturePermissionFor: origin,\n                        initiatedByFrame: frame,\n                        type: .cameraAndMicrophone,\n                        decisionHandler: decisionHandler)\n        wait(for: [expectation])\n",
+    "files": [
+     "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift`, `testRequestMediaCaptureSuccess` (around lines 35-55) calls `wait(for: [expectation])` and then `expectation.fulfill()`, so the test can never complete and will time out. Move the `expectation.fulfill()` call back inside the `decisionHandler` closure, after the `XCTAssertEqual(decision, .prompt)` line, and delete the trailing `expectation.fulfill()` after `wait`. Keep the expectation created before the handler so the closure can reference it. Follow the pattern in `testRequestMediaCaptureIsActiveFalse` in the same file.",
+    "commentAnchor": {
+     "file": "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift",
+     "lineStart": 43,
+     "lineEnd": 55
+    }
+   },
+   {
+    "title": "Unit tests now depend on live network access to example.com",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`captureFrameAndOrigin` calls `webView.load` on a real `https://example.com` URL and waits up to 3 seconds for the navigation policy callback. This adds three problems to the unit-test target:\n\n- The tests fail whenever the CI runner or a developer machine is offline, is behind a proxy, or gets a slow DNS or TLS response.\n- The 3-second timeout is hardcoded and can be exceeded on a loaded Bitrise runner, which then surfaces as a misleading \"Could not obtain WKFrameInfo\" failure.\n- Each of the three tests performs a full network navigation, which slows the suite.\n\nA `WKWebView` can produce a real navigation without network access. Loading a local `data:` or `about:blank` style request, or a request served by a stub `WKURLSchemeHandler`, would still yield a real `WKFrameInfo` and `WKSecurityOrigin`. Unit tests should not require the internet.\n\n::code{file=\"BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift\" lines=\"34-48\"}\n\n::callout{type=\"info\"}\nIf the frame and origin must come from an HTTPS origin specifically, use a `WKURLSchemeHandler` that returns a canned response for a custom scheme, and load that scheme's URL.",
+    "files": [
+     "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "BrowserKit/Tests/WebEngineTests/WKUIHandlerTests.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift`, `captureFrameAndOrigin(for:timeout:)` (around lines 34-48) loads a real `https://example.com` URL, which makes the WebEngine unit tests depend on network access and a 3-second timeout. Change the helper so that it produces a real navigation without network access, for example by registering a `WKURLSchemeHandler` for a custom test scheme that returns a canned response, and loading a URL with that scheme. Keep the `FakeWKNavigationDelegate` capture logic and the `(WKFrameInfo, WKSecurityOrigin)?` return type so the three callers in `WKUIHandlerTests.swift` do not change. Verify that the origin the handler receives is still a non-nil `WKSecurityOrigin`.",
+    "commentAnchor": {
+     "file": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "lineStart": 34,
+     "lineEnd": 48
+    }
+   },
+   {
+    "title": "Unused waiter variable and redundant return in the helper",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`let waiter = XCTWaiter.wait(for: [expect], timeout: timeout)` assigns a value that is never read. The result of the wait is also discarded, so a timeout is indistinguishable from a delegate that ran without a frame. The bare `return` at the end of `decidePolicyFor` is also redundant. The `guard let (frame, origin) = ...` block is copied three times in the test file, so it could be a single helper or a shared setup.\n\n::code{file=\"BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift\" lines=\"44-48\"}\n\nIf you keep the helper, drop the unused binding and return `nil` early on timeout, or call `XCTFail` with the wait result so the failure message says whether the navigation timed out.",
+    "files": [
+     "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift"
+    ],
+    "fixPrompt": "In `BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift`, remove the unused `let waiter =` binding in `captureFrameAndOrigin` (around line 44) and either check its `XCTWaiter.Result` so a timeout produces a clear failure message, or call `XCTWaiter.wait` without assigning it. Also remove the redundant bare `return` at the end of `FakeWKNavigationDelegate.webView(_:decidePolicyFor:decisionHandler:)` (around line 28).",
+    "commentAnchor": {
+     "file": "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift",
+     "lineStart": 44,
+     "lineEnd": 44
+    }
+   },
+   {
+    "title": "Mock classes replaced with real WebKit objects, and the mock files deleted cleanly",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Swapping hand-subclassed `WKFrameInfo` and `WKSecurityOrigin` mocks for objects that WebKit creates is the right fix for the Xcode 26.2 crash. The deleted `MockWKFrameInfo.swift` and `MockWKSecurityOrigin.swift` have no remaining references in the repo, so nothing else breaks. The helper's doc comment also explains why the mocks were removed, which will help the next person who reads it.",
+    "files": [
+     "BrowserKit/Tests/WebEngineTests/Mock/MockWKFrameInfo.swift",
+     "BrowserKit/Tests/WebEngineTests/Mock/MockWKSecurityOrigin.swift",
+     "BrowserKit/Tests/WebEngineTests/Utilities/WebKitTestHelpers.swift"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/firefox-ios\",\"number\":12,\"title\":\"Code Review Bench PR #31309 - Bugfix FXIOS-14456 #31308 ⁃ Fix test failing on XCode 26.2 to enable using this version on Bitrise\",\"author\":\"\",\"baseSha\":\"498b08ff5aae3191fb1ba60fff24382bff73b51e\",\"headSha\":\"6714f44d3bff073f18c19d47716f0679e0c8e279\"},\"summary\":\"This PR replaces the hand-rolled `MockWKFrameInfo` and `MockWKSecurityOrigin` test doubles, which crash on Xcode 26.2 because WebKit now validates internal state on ",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 4
+}

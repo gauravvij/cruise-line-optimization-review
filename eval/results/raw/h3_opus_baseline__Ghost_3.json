@@ -1,0 +1,303 @@
+{
+ "id": "Ghost#3",
+ "repo": "Ghost",
+ "num": 3,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7"
+ ],
+ "run_started_at": "2026-11-23T15:41:25.665Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "Non-strict inequality operator used",
+   "description": "The rule requires using strict equality operators (=== or !==) for all comparisons, but the code uses != instead of !== to check if count is null",
+   "file_path": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+   "start_line": 111,
+   "end_line": 112,
+   "problematic_code_snippet": "const count = result.data[0].get('csd_email_count');\nreturn count != null ? count : 0;",
+   "rule_name": "Code Must Use Strict Equality Operators"
+  },
+  {
+   "title": "Date filter includes today's emails instead of excluding them",
+   "description": "The filter in #getHighestCount() uses `created_at:<=` which includes today's date, but the docstring explicitly states it should exclude today. This causes the method to potentially return today's partial email count instead of the previous day's complete count. When emails are sent early in the day, this will result in a lower base count for warmup limit calculations, causing the domain warming progression to restart or regress unexpectedly. This breaks the intended day-over-day scaling behavior where each day's limit should be based on the previous day's complete sending volume.",
+   "file_path": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+   "start_line": 101,
+   "end_line": 105,
+   "problematic_code_snippet": "async #getHighestCount(): Promise<number> {\n    const result = await this.#emailModel.findPage({\n        filter: `created_at:<=${new Date().toISOString().split('T')[0]}`,\n        order: 'csd_email_count DESC',\n        limit: 1\n    });"
+  },
+  {
+   "title": "High-volume threshold boundary applies wrong scaling factor at 400k",
+   "description": "The condition uses `>=` instead of `>` when checking if lastCount qualifies for high-volume capping at exactly 400,000 emails. According to the documented scaling table, 400k should use the 2× multiplier from the thresholds array, but with this bug it immediately applies the high-volume cap of 1.2× or +75k absolute increase. For a site hitting exactly 400k messages, this means getting a limit of 480k (1.2×) or 475k (+75k) instead of the expected 800k (2×). This creates a significant bottleneck at a critical growth milestone and breaks the documented warmup progression.",
+   "file_path": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+   "start_line": 124,
+   "end_line": 129,
+   "problematic_code_snippet": "// For high volume senders (400k+), cap the increase at 20% or 75k absolute\nif (lastCount >= WARMUP_SCALING_TABLE.highVolume.threshold) {\n    const scaledIncrease = Math.ceil(lastCount * WARMUP_SCALING_TABLE.highVolume.maxScale);\n    const absoluteIncrease = lastCount + WARMUP_SCALING_TABLE.highVolume.maxAbsoluteIncrease;\n    return Math.min(scaledIncrease, absoluteIncrease);\n}"
+  },
+  {
+   "title": "Threshold boundary values skip their designated scaling tier",
+   "description": "The loop uses `<` instead of `<=` when comparing lastCount to threshold limits. This causes exact boundary values (1000, 5000, 100000, 400000) to incorrectly skip their tier and fall through to the next scaling factor or the fallback logic. For example, a site with exactly 1000 previous emails will bypass the 1.25× tier and incorrectly use 1.5× scaling (getting 1500 instead of 1250). Similarly, 5000 will use 1.75× instead of 1.5×, and 100000 will use 2× instead of 1.75×. This creates unexpected jumps in scaling at precisely the documented threshold boundaries.",
+   "file_path": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+   "start_line": 131,
+   "end_line": 135,
+   "problematic_code_snippet": "for (const threshold of WARMUP_SCALING_TABLE.thresholds.sort((a, b) => a.limit - b.limit)) {\n    if (lastCount < threshold.limit) {\n        return Math.ceil(lastCount * threshold.scale);\n    }\n}"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "71f56480360617f8632fda9cc062723f5b0f03bd",
+ "diff_chars": 17410,
+ "diff_lines": 412,
+ "user_prompt_chars": 18644,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 79189,
+ "wall_ms": 82742,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 12,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 9.694640277,
+ "spend_post_usd": 9.989739477,
+ "cost_settled": true,
+ "cost_wait_ms": 377,
+ "cost_usd": 0.295099200000001,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.30258219999999997,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 19281,
+  "cache_read_input_tokens": 190646,
+  "output_tokens": 8400,
+  "output_tokens_details": {
+   "thinking_tokens": 2184
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 19281
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4828,
+    "cache_creation_input_tokens": 1767,
+    "cache_read_input_tokens": 36404,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 1767,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 8400,
+   "cacheReadInputTokens": 190646,
+   "cacheCreationInputTokens": 19281,
+   "webSearchRequests": 0,
+   "costUSD": 0.30258219999999997,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2184,
+   "cacheCreationEphemeral5mInputTokens": 19281,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 3,
+   "title": "Code Review Bench PR #25526 - Updated the scaling factors for domain warmup",
+   "author": "",
+   "baseSha": "91d969440b995ff050c46f37e795700f20105050",
+   "headSha": "71f56480360617f8632fda9cc062723f5b0f03bd"
+  },
+  "summary": "This PR swaps the old warmup curve (2× up to 100k, 1.5× up to 400k, then 1.25×) for a gentler one: 1.25× up to 1k, 1.5× up to 5k, 1.75× up to 100k, and 2× up to 400k. Above 400k, growth is capped at min(1.2×, +75k). It also changes `#getHighestCount` to use `findPage({limit: 1})` instead of `findOne`, and pins the integration-test clock to a fixed base date.\n\nThe new table is sensible, but the code doesn't do what the PR's own tests and docs say. The threshold check changed from `<=` to `<`, and the high-volume branch fires at `>= 400_000`. That pushes every boundary value into the next tier: 1000 → 1500 (expected 1250), 5000 → 8750 (expected 7500), 100000 → 200000 (expected 175000), 400000 → 475000 (expected 800000). Four progression cases and the \"calculated limit\" test will fail. Separately, the date filter quietly changed from `created_at:<today` to `created_at:<=today`. That contradicts the \"excluding today\" docstring and fails the unit test that checks for the `<` filter.",
+  "verdict": "request_changes",
+  "verdictRationale": "Boundary comparisons in `#getTargetLimit` don't match the documented table or the PR's own unit tests, so five unit tests fail. The history filter also changed from `<` to `<=`, which breaks the \"before today\" contract and its test.",
+  "architecture": {
+   "overview": "When a newsletter is sent, `EmailService` asks `DomainWarmingService.getWarmupLimit(emailCount)` how many recipients should go through the custom sending domain (CSD). The service looks up the highest `csd_email_count` from earlier emails, runs it through a tiered scaling table to get today's target, and returns the smaller of that target and the real recipient count. The result is saved on the Email row as `csd_email_count`, and `BatchSendingService` uses it later to split batches between domains.\n\nThis PR changes the lookup from `Email.findOne` to `Email.findPage({limit: 1})` so the `order` clause actually applies. It also replaces the scaling table with five tiers plus a `highVolume` branch that caps growth at min(1.2×, +75k) once the previous count reaches 400k.",
+   "steps": [
+    "Start in `EmailService.js` (~line 129): when the `domainWarmup` lab flag is on, it calls `getWarmupLimit(emailCount)` and saves the result as `csd_email_count` on the new Email row.",
+    "`DomainWarmingService.#getHighestCount` now calls `Email.findPage` with a date filter, `csd_email_count DESC` ordering, and `limit: 1`, then reads `csd_email_count` from the first row.",
+    "`#getTargetLimit` returns 200 for counts ≤100. Counts ≥400k go to the `highVolume` cap. Everything else walks the sorted `thresholds` list and applies the first matching tier's multiplier.",
+    "`getWarmupLimit` clamps the target to the actual recipient count.",
+    "Tests: the unit tests use `createModelClass({findAll: [...]})`, whose `findPage` mock slices `findAll`. The integration tests send real emails on fake-timer days and check exact CSD counts."
+   ],
+   "diagrams": [
+    {
+     "title": "Warmup limit calculation",
+     "kind": "flowchart",
+     "description": "How the next CSD limit is worked out from the highest previous CSD count.",
+     "mermaid": "flowchart TD\n  A[EmailService.createEmail] --> B[getWarmupLimit emailCount]\n  B --> C[getHighestCount via Email.findPage limit 1]\n  C --> D{lastCount <= 100}\n  D -- yes --> E[200]\n  D -- no --> F{lastCount >= 400k}\n  F -- yes --> G[min of 1.2x and +75k]\n  F -- no --> H[thresholds: 1k 1.25x / 5k 1.5x / 100k 1.75x / 400k 2x]\n  E --> I[min emailCount, target]\n  G --> I\n  H --> I\n  I --> J[Email.add csd_email_count]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Strict `<` comparison and `>= 400k` branch push boundary values into the wrong tier",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The threshold loop changed from `<=` to `<`, and the high-volume branch fires at `>= 400_000`. So a `lastCount` that lands exactly on a tier limit gets the *next* tier's multiplier. That contradicts the doc table (\"101 – 1k → 1.25×\", \"100k – 400k → 2×\") and this PR's own tests:\n\n::diff{file=\"ghost/core/core/server/services/email-service/DomainWarmingService.ts\" lines=\"124-135\"}\n\nI ran the new logic against the progression table in the unit test:\n\n| lastCount | test expects | code returns |\n|---|---|---|\n| 1,000 | 1,250 | **1,500** |\n| 5,000 | 7,500 | **8,750** |\n| 100,000 | 175,000 | **200,000** |\n| 400,000 | 800,000 | **475,000** |\n\n::code{file=\"ghost/core/test/unit/server/services/email-service/domain-warming-service.test.ts\" lines=\"201-207\"}\n\n`should return calculated limit when emailCount is greater` (line 127, expects 1250 for lastCount=1000) fails too. The integration test's `getExpectedScale` helper also uses `<=` boundaries, so the whole PR assumes inclusive upper limits. Only the implementation disagrees.\n\nFix: make the limits inclusive and start the high-volume branch strictly above 400k.\n\n::suggestion{file=\"ghost/core/core/server/services/email-service/DomainWarmingService.ts\" lines=\"124-135\"}\n        // For high volume senders (400k+), cap the increase at 20% or 75k absolute\n        if (lastCount > WARMUP_SCALING_TABLE.highVolume.threshold) {\n            const scaledIncrease = Math.ceil(lastCount * WARMUP_SCALING_TABLE.highVolume.maxScale);\n            const absoluteIncrease = lastCount + WARMUP_SCALING_TABLE.highVolume.maxAbsoluteIncrease;\n            return Math.min(scaledIncrease, absoluteIncrease);\n        }\n\n        for (const threshold of WARMUP_SCALING_TABLE.thresholds.sort((a, b) => a.limit - b.limit)) {\n            if (lastCount <= threshold.limit) {\n                return Math.ceil(lastCount * threshold.scale);\n            }\n        }\n",
+    "files": [
+     "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+     "ghost/core/test/unit/server/services/email-service/domain-warming-service.test.ts"
+    ],
+    "fixPrompt": "In `ghost/core/core/server/services/email-service/DomainWarmingService.ts` `#getTargetLimit` (lines 124-135), boundary values fall into the wrong tier: lastCount=1000 returns 1500 (expected 1250), 5000→8750 (expected 7500), 100000→200000 (expected 175000), 400000→475000 (expected 800000). Change the thresholds loop comparison from `lastCount < threshold.limit` to `lastCount <= threshold.limit`, and change the high-volume check from `>=` to `>` so 400k still uses 2×. Then run `test/unit/server/services/email-service/domain-warming-service.test.ts` and confirm every case in the progression table (lines ~196-209) passes.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+     "lineStart": 124,
+     "lineEnd": 135
+    }
+   },
+   {
+    "title": "History filter changed to `<=` today, contradicting \"excluding today\" and the unit test",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "Moving to `findPage` also changed the filter operator from `<` to `<=`:\n\n::diff{file=\"ghost/core/core/server/services/email-service/DomainWarmingService.ts\" lines=\"97-105\"}\n\nThe docstring right above still says \"excluding today\". The warmup model depends on not compounding within a day: a second send on the same day shouldn't scale off the first one. Depending on how the DB compares a datetime to a bare date (`2026-11-23` turns into midnight in MySQL, or a plain string compare in SQLite), `<=` either does almost nothing or pulls today's sends into the max. Either way it's an unintended semantic change.\n\nIt also breaks the PR's own unit test. `\"created_at:<=2026-11-23\".includes(\"created_at:<2026-11-23\")` is `false`:\n\n::code{file=\"ghost/core/test/unit/server/services/email-service/domain-warming-service.test.ts\" lines=\"181-181\"}\n\n::suggestion{file=\"ghost/core/core/server/services/email-service/DomainWarmingService.ts\" lines=\"102-102\"}\n            filter: `created_at:<${new Date().toISOString().split('T')[0]}`,\n",
+    "files": [
+     "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+     "ghost/core/test/unit/server/services/email-service/domain-warming-service.test.ts"
+    ],
+    "fixPrompt": "In `ghost/core/core/server/services/email-service/DomainWarmingService.ts` line 102, the `#getHighestCount` filter changed from `created_at:<${today}` to `created_at:<=${today}`. That contradicts the method's \"excluding today\" docstring and fails the unit test at `test/unit/server/services/email-service/domain-warming-service.test.ts:181`, which checks for `created_at:<${today}`. Restore the strict `<` operator so only emails from before today count toward the highest CSD count.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+     "lineStart": 102,
+     "lineEnd": 102
+    }
+   },
+   {
+    "title": "Duplicated 400k boundary and an unreachable fallback can drift apart",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`highVolume.threshold` and the last `thresholds[].limit` both hard-code 400_000. The fallback after the loop is only correct because those two numbers stay in sync. If someone changes one, say raising the last threshold to 500k, the fallback quietly applies an uncapped 1.2× with no +75k limit.\n\n::diff{file=\"ghost/core/core/server/services/email-service/DomainWarmingService.ts\" lines=\"136-138\"}\n\nYou could derive the high-volume threshold from the last tier, or have the fallback call the same `min(1.2×, +75k)` logic so it's correct no matter what. `thresholds.sort()` also mutates the module-level constant on every call. It's harmless, but sorting once at definition time would be cleaner.",
+    "files": [
+     "ghost/core/core/server/services/email-service/DomainWarmingService.ts"
+    ],
+    "fixPrompt": "In `ghost/core/core/server/services/email-service/DomainWarmingService.ts`, the 400_000 boundary appears in both `WARMUP_SCALING_TABLE.thresholds` (last entry) and `highVolume.threshold`, and the fallback at lines 136-138 returns an uncapped 1.2× that skips the +75k cap. Pull the high-volume cap into a small helper and call it from both the `highVolume` branch and the fallback, so the cap always applies. Optionally sort `thresholds` once at definition instead of calling `.sort()` on every call.",
+    "commentAnchor": {
+     "file": "ghost/core/core/server/services/email-service/DomainWarmingService.ts",
+     "lineStart": 136,
+     "lineEnd": 138
+    }
+   },
+   {
+    "title": "Switching to findPage makes the ORDER BY actually apply",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Moving from `findOne` to `findPage({order, limit: 1})` is a good change. Ghost's `findOne` is built for lookups by attributes, not for sorted queries. `findPage` reliably applies `csd_email_count DESC` and limits the result to one row. The explicit `count != null ? count : 0` is also clearer than `count || 0`.\n\n::code{file=\"ghost/core/core/server/services/email-service/DomainWarmingService.ts\" lines=\"100-113\"}",
+    "files": [
+     "ghost/core/core/server/services/email-service/DomainWarmingService.ts"
+    ]
+   },
+   {
+    "title": "Integration tests now assert exact values",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The multi-day integration test used to accept \"same, doubled, or total\". It now checks exact values (200 → 250 → 313), which actually exercises the `Math.ceil` rounding. Pinning `setDay` to a fixed `baseDate` with `shouldAdvanceTime` also gets rid of day-rollover flakiness.\n\n::code{file=\"ghost/core/test/integration/services/email-service/domain-warming.test.js\" lines=\"52-67\"}",
+    "files": [
+     "ghost/core/test/integration/services/email-service/domain-warming.test.js"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":3,\"title\":\"Code Review Bench PR #25526 - Updated the scaling factors for domain warmup\",\"author\":\"\",\"baseSha\":\"91d969440b995ff050c46f37e795700f20105050\",\"headSha\":\"71f56480360617f8632fda9cc062723f5b0f03bd\"},\"summary\":\"This PR swaps the old warmup curve (2× up to 100k, 1.5× up to 400k, then 1.25×) for a gentler one: 1.25× up to 1k, 1.5× up to 5k, 1.75× up to 100k, and 2× up to 400k. Above 400k, growth is capped at min(1.2×, +75k). It also c",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

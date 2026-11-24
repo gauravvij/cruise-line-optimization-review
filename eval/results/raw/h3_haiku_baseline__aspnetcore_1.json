@@ -1,0 +1,328 @@
+{
+ "id": "aspnetcore#1",
+ "repo": "aspnetcore",
+ "num": 1,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T15:59:54.886Z",
+ "num_of_issues": 7,
+ "issues": [
+  {
+   "title": "MSTest attribute in xUnit project",
+   "description": "The rule requires test projects to consistently use the xUnit framework, but the test method uses MSTest's [TestMethod] attribute instead of xUnit's [Fact] attribute",
+   "file_path": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+   "start_line": 287,
+   "end_line": 289,
+   "problematic_code_snippet": "    [TestMethod]\n    [QuarantinedTest(\"https://github.com/dotnet/aspnetcore/pull/63708/\")]\n    public void NavigationException_InAsyncContext_DoesNotBecomeUnobservedTaskException()",
+   "rule_name": "Test Projects Must Use xUnit Framework"
+  },
+  {
+   "title": "Stale element reference captured before navigation in test initialization",
+   "description": "In the InitializeAsync method, _originalH1Element is captured by calling Browser.Exists(By.TagName(\"h1\")) before navigating to the test page. This captures an element from whatever page the browser was previously on (from a prior test), then the Navigate() call loads the /redirect page. The stored element reference now points to a detached DOM node from the old page, making it stale. When test methods later access _originalH1Element.Text, they will encounter StaleElementReferenceException or get incorrect values because the element belongs to a different page's DOM that no longer exists in the browser.",
+   "file_path": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+   "start_line": 28,
+   "end_line": 35,
+   "problematic_code_snippet": "public override async Task InitializeAsync()\n{\n    await base.InitializeAsync();\n\n    _originalH1Element = Browser.Exists(By.TagName(\"h1\"));\n    Navigate($\"{ServerPathBase}/redirect\");\n    Browser.Equal(\"Redirections\", () => _originalH1Element.Text);\n}"
+  },
+  {
+   "title": "Browser navigation uses Forward() instead of Back() breaking test flow",
+   "description": "In the RedirectEnhancedGetToInternal test, after clicking a link that redirects from /redirect to /scroll-to-hash, the test attempts to verify that browser back navigation works correctly. However, the code calls Browser.Navigate().Forward() instead of Browser.Navigate().Back(). Since there is no forward history (the browser just navigated forward to the current page), Forward() does nothing and the browser remains at /scroll-to-hash. The subsequent assertions expect the browser to be back at /redirect with the \"Redirections\" heading, but it's still at the redirected page, causing the test to fail. The comment explicitly states \"See that 'back' takes you to the place from before the redirection\" but the code does the opposite action.",
+   "file_path": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+   "start_line": 112,
+   "end_line": 115,
+   "problematic_code_snippet": "// See that 'back' takes you to the place from before the redirection\nBrowser.Navigate().Forward();\nBrowser.Equal(\"Redirections\", () => _originalH1Element.Text);\nAssert.EndsWith(\"/subdir/redirect\", Browser.Url);"
+  },
+  {
+   "title": "Navigation exception test disables the exception mechanism it's meant to test",
+   "description": "The NavigationException_InAsyncContext_DoesNotBecomeUnobservedTaskException test is designed to verify that NavigationException thrown during circular redirects doesn't become an unobserved task exception. The test name, comments, and logic all indicate it should test the exception handling behavior. However, the AppContext switch is set to true, which enables DisableThrowNavigationException, preventing NavigationException from being thrown at all. This fundamentally breaks the test's purpose - it can't validate exception handling behavior when exceptions are disabled. The test navigates to a circular redirect page that relies on NavigationException being thrown and properly handled, but with the switch enabled, the navigation manager uses a different code path that doesn't throw exceptions, making the test validate nothing meaningful.",
+   "file_path": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+   "start_line": 287,
+   "end_line": 297,
+   "problematic_code_snippet": "[TestMethod]\n[QuarantinedTest(\"https://github.com/dotnet/aspnetcore/pull/63708/\")]\npublic void NavigationException_InAsyncContext_DoesNotBecomeUnobservedTaskException()\n{\n    AppContext.SetSwitch(\"Microsoft.AspNetCore.Components.Endpoints.NavigationManager.DisableThrowNavigationException\", true);\n\n    // Navigate to the page that triggers the circular redirect.\n    Navigate($\"{ServerPathBase}/redirect/circular\");\n\n    // The component will stop redirecting after 3 attempts and render the exception count.\n    Browser.Equal(\"0\", () => Browser.FindElement(By.Id(\"unobserved-exceptions-count\")).Text);\n}"
+  },
+  {
+   "title": "Test methods missing required Arrange-Act-Assert pattern comments",
+   "description": "AGENTS.md Rule 6 explicitly requires all test methods to include '// Arrange', '// Act', and '// Assert' comments to clearly delineate test phases. Multiple newly added test methods violate this requirement: ReloadsPage_AfterDisconnection_WithoutServerState, CanResume_AfterClientPause_WithoutServerState in ServerReconnectionWithoutStateTest.cs, HotReload_ReRenderPreservesAsyncLocalValues in RendererTest.cs, and BrowserNavigationToNotExistingPathReExecutesTo404_Interactive in InteractivityTest.cs. These tests have descriptive comments but lack the required structural AAA comments that the repository standard mandates for maintaining consistency and readability across all test methods.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "[Fact]\npublic void ReloadsPage_AfterDisconnection_WithoutServerState()\n{\n    // Check interactivity\n    Browser.Equal(\"5\", () => Browser.Exists(By.Id(\"non-persisted-counter\")).Text);\n    Browser.Exists(By.Id(\"increment-non-persisted-counter\")).Click();\n    Browser.Equal(\"6\", () => Browser.Exists(By.Id(\"non-persisted-counter\")).Text);\n\n    // Store a reference to an element to detect page reload\n    // When the page reloads, this element reference will become stale\n    var initialElement = Browser.Exists(By.Id(\"non-persisted-counter\"));"
+  },
+  {
+   "title": "MSTest dependency imported in xUnit test project",
+   "description": "The repository rule requires test projects to use xUnit. Adding an MSTest namespace import indicates use of an alternative test framework (MSTest) in this test file.",
+   "file_path": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+   "start_line": 8,
+   "end_line": 8,
+   "problematic_code_snippet": "using Microsoft.VisualStudio.TestTools.UnitTesting;",
+   "rule_name": "Test Projects Must Use xUnit Framework"
+  },
+  {
+   "title": "Non-xUnit test attribute added",
+   "description": "The rule requires using xUnit test framework attributes. The added [QuarantinedTest] attribute is not an xUnit attribute ([Fact]/[Theory]) and introduces non-xUnit test metadata on the test method.",
+   "file_path": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+   "start_line": 288,
+   "end_line": 288,
+   "problematic_code_snippet": "[QuarantinedTest(\"https://github.com/dotnet/aspnetcore/pull/63708/\")]",
+   "rule_name": "Test Projects Must Use xUnit Framework"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "96519fe9621bf264555e076d6bba7dc5e456209b",
+ "diff_chars": 37245,
+ "diff_lines": 636,
+ "user_prompt_chars": 44067,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 46594,
+ "wall_ms": 48654,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 4,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 3,
+ "turn_trace": {
+  "assistant_lines": 10,
+  "unique_message_ids": 3,
+  "lines_without_id": 0,
+  "tool_use_blocks": 4
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.606387251,
+ "spend_post_usd": 5.616123151,
+ "cost_settled": true,
+ "cost_wait_ms": 348,
+ "cost_usd": 0.009735899999999909,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.010088100000000001,
+ "usage": {
+  "input_tokens": 6,
+  "cache_creation_input_tokens": 34976,
+  "cache_read_input_tokens": 116100,
+  "output_tokens": 9109,
+  "output_tokens_details": {
+   "thinking_tokens": 2925
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 34976
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 6,
+   "outputTokens": 9109,
+   "cacheReadInputTokens": 116100,
+   "cacheCreationInputTokens": 34976,
+   "webSearchRequests": 0,
+   "costUSD": 0.010088100000000001,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2925,
+   "cacheCreationEphemeral5mInputTokens": 34976,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 1,
+   "title": "Code Review Bench PR #64973 - [release/10.0] Source code updates from dotnet/dotnet",
+   "author": "",
+   "baseSha": "fde00e6dc4c9f31698f28c4603ee6cc887cc9314",
+   "headSha": "96519fe9621bf264555e076d6bba7dc5e456209b"
+  },
+  "summary": "This is a Maestro/darc codeflow PR that bumps dotnet/dotnet VMR dependencies from 68282276 to 10596eb1 (Arcade SDK, Helix SDK, servicing runtime packages, NuGet.* 7.0.2-rc.5715, and the dependency list). The mechanical part is internally consistent: the NuGet.config source key, Version.Details.props, Version.Details.xml, and global.json all move to the same versions and the same SHA. The only non-version change is in src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs, and that change is where the review concerns are. It reorders InitializeAsync, changes one history assertion from Back to Forward, flips the DisableThrowNavigationException switch in one test from false to true, and changes that test from xUnit [Fact] to MSTest [TestMethod] with a QuarantinedTest attribute and a new MSTest using directive.\n\nTaken together, these edits weaken or break the E2E coverage in that file, and they do not look like routine codeflow output. Codeflow PRs should not hand-edit test logic. The version bumps can be merged as-is, but the test edits should be reverted or reviewed by the owning team before this PR is merged.",
+  "verdict": "request_changes",
+  "verdictRationale": "The dependency bumps are consistent across the four version files. The RedirectionTest.cs edits are not: one test now runs with the throw path disabled (the path it is meant to regression-test), one assertion navigates the wrong way in browser history, and the MSTest attribute on an xUnit class means the test is never discovered. Those test changes must be fixed or reverted before merge.",
+  "architecture": {
+   "overview": "The PR sits in two layers. At the repo-wiring layer, eng/Version.Details.xml is the source of truth for which dotnet/dotnet commit (SHA and BarId) the aspnetcore tree consumes. eng/Version.Details.props, global.json, and NuGet.config derive from it and pin the concrete package versions and the darc feed. At the test layer, RedirectionTest is an xUnit E2E test class that drives a Selenium browser against the Components test server. It toggles the NavigationManager.DisableThrowNavigationException AppContext switch to exercise both the throwing and non-throwing redirect code paths.\n\nThis PR changes both layers. The first is a coordinated version and SHA bump that touches no product code. The second is a set of edits inside RedirectionTest that change what some test cases exercise: the initialization order, the history direction used for an assertion, the switch value for one test, and the test framework attribute used on one method.",
+   "steps": [
+    "Start at the source of truth: eng/Version.Details.xml pins the dotnet/dotnet SHA 10596eb1 and BarId 296265. Confirm that every dependency entry in this file uses the new SHA. The diff shows this is the case.",
+    "eng/Version.Details.props and global.json carry the concrete versions (10.0.0-beta.26056.115 for the Arcade/Helix/SharedFramework SDKs, 10.0.3-servicing.26056.115 for runtime transport packages, and 7.0.2-rc.5715 for NuGet.*). These should match the XML file exactly, and they do.",
+    "NuGet.config swaps the darc feed key to darc-pub-dotnet-dotnet-10596eb1, which is the feed that serves the new packages.",
+    "The only non-generated change is RedirectionTest.cs. InitializeAsync now grabs the h1 element before navigating to /redirect. The Streaming GET test now uses Forward instead of Back. The circular-redirect test now sets the switch to true and uses an MSTest attribute.",
+    "Because RedirectionTest is xUnit, [TestMethod] is not an xUnit discovery attribute. The method will not run, and QuarantinedTest is an xUnit trait attribute, so it adds nothing here."
+   ],
+   "diagrams": [
+    {
+     "title": "Codeflow version propagation and affected test surface",
+     "kind": "flowchart",
+     "description": "How the VMR commit pin flows into the version files, and which test file this PR also edits.",
+     "mermaid": "flowchart TD\n    VMR[\"dotnet/dotnet commit 10596eb1\"] --> XML[\"eng/Version.Details.xml (SHA + BarId)\"]\n    XML --> PROPS[\"eng/Version.Details.props (package versions)\"]\n    XML --> GJ[\"global.json (msbuild-sdks versions)\"]\n    XML --> NCFG[\"NuGet.config (darc feed key)\"]\n    PROPS --> BUILD[\"aspnetcore build and restore\"]\n    GJ --> BUILD\n    NCFG --> BUILD\n    BUILD --> TESTS[\"RedirectionTest.cs (E2E, edited in this PR)\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Enhanced/throw-path regression test now runs with throwing disabled",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The test `NavigationException_InAsyncContext_DoesNotBecomeUnobservedTaskException` used to set `DisableThrowNavigationException` to `false`. That is the throwing path, which is the path a regression test for unobserved `NavigationException`s needs. This PR flips it to `true`. With the switch on, NavigationManager no longer throws, so the exception that could become unobserved never happens, and the test can pass even when the original bug is present. The test name and its comment still describe the throwing behavior.\n\n::diff{file=\"src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs\" lines=\"287-294\"}\n\nIf the intent is to quarantine a flaky test, the switch value should be left as it was. Quarantine should not change what the test exercises.",
+    "files": [
+     "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs`, the test `NavigationException_InAsyncContext_DoesNotBecomeUnobservedTaskException` (around lines 287-294) sets `Microsoft.AspNetCore.Components.Endpoints.NavigationManager.DisableThrowNavigationException` to `true`. Restore it to `false` so the test exercises the throwing path it is meant to regression-test. Keep only changes that are needed for the test's stated intent, and do not change the switch value to make it pass.",
+    "commentAnchor": {
+     "file": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+     "lineStart": 291,
+     "lineEnd": 291
+    }
+   },
+   {
+    "title": "Streaming GET test asserts Forward where the history step needs Back",
+    "severity": "high",
+    "category": "correctness",
+    "body": "In `RedirectStreamingGetToInternal`, the test clicks a link that redirects from `/subdir/redirect` to `/subdir/nav/scroll-to-hash`. It then checks the URL. The next step is commented \"See that 'back' takes you to the place from before the redirection\", which means it should call `Back()` to return to `/subdir/redirect`. This PR changes the call to `Forward()`. From the scroll-to-hash page, Forward has no entry to move to, so the assertion that the page reads \"Redirections\" and the URL ends with `/subdir/redirect` will fail, or it will assert on a state the browser never reaches.\n\n::diff{file=\"src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs\" lines=\"110-115\"}\n\nThe other redirect tests in the same file still use `Back()`, which makes this change look accidental.",
+    "files": [
+     "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs`, in `RedirectStreamingGetToInternal` (around line 113), the history navigation was changed from `Browser.Navigate().Back()` to `Browser.Navigate().Forward()`. The comment above it says 'back' should return to the page before the redirect, and the following assertions expect `/subdir/redirect`. Revert it to `Back()`, matching the other redirect tests in this file such as `RedirectEnhancedGetToInternal`. If a real behavior change is intended, the test's comment and assertions must be updated to match and justified in the PR.",
+    "commentAnchor": {
+     "file": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+     "lineStart": 113,
+     "lineEnd": 113
+    }
+   },
+   {
+    "title": "MSTest attribute on an xUnit test class silently disables the test",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`RedirectionTest` is an xUnit class (`[Fact]` and `[Theory]` everywhere else in the file). The PR changes one method to `[TestMethod]` and adds `using Microsoft.VisualStudio.TestTools.UnitTesting;`. xUnit only discovers `[Fact]` and `[Theory]`, so this method will never run. MSTest is not used elsewhere in `src/Components/test` at all, so the new using also depends on a package that this project may not reference, which could break compilation of the whole test project.\n\nThe `[QuarantinedTest]` attribute is an xUnit trait (`ITraitAttribute`), so it does not make MSTest discover the method either. The test is effectively deleted from CI, and nothing reports that.\n\n::diff{file=\"src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs\" lines=\"9-9\"}\n\n::diff{file=\"src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs\" lines=\"287-288\"}",
+    "files": [
+     "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs`, remove the `using Microsoft.VisualStudio.TestTools.UnitTesting;` directive (around line 9). On the test `NavigationException_InAsyncContext_DoesNotBecomeUnobservedTaskException` (around lines 287-288), replace `[TestMethod]` with `[Fact]`. Keep the `[QuarantinedTest(...)]` attribute only if the repo's quarantine convention for xUnit E2E tests is to use it alongside `[Fact]`, and confirm this against another quarantined test in the same directory. Make sure the test is discovered by xUnit after the change.",
+    "commentAnchor": {
+     "file": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+     "lineStart": 287,
+     "lineEnd": 288
+    }
+   },
+   {
+    "title": "InitializeAsync grabs the h1 before navigating",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The PR swaps the order in `InitializeAsync` so that `_originalH1Element` is captured before `Navigate($\"{ServerPathBase}/redirect\")`. The original order captured the element after the page with the \"Redirections\" heading had loaded. Now the captured element belongs to whatever page the base initialization left open, not the `/redirect` page. The following `Browser.Equal(\"Redirections\", () => _originalH1Element.Text)` then reads text from an element that may be stale after the navigation. Every test that uses `_originalH1Element` depends on this.\n\n::diff{file=\"src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs\" lines=\"29-36\"}\n\nIf the reorder is intentional, it needs a comment and a reason. Otherwise it should be reverted.",
+    "files": [
+     "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs`, `InitializeAsync` (around lines 29-36) now captures `_originalH1Element` before calling `Navigate` to `/redirect`. Restore the original order: navigate first, then capture the h1 element, then wait for the 'Redirections' text. Check the base `InitializeAsync` in `src/Components/test/E2ETest/Infrastructure/ServerTestBase.cs` to confirm what page is open before the navigation.",
+    "commentAnchor": {
+     "file": "src/Components/test/E2ETest/ServerRenderingTests/RedirectionTest.cs",
+     "lineStart": 31,
+     "lineEnd": 35
+    }
+   },
+   {
+    "title": "Version and SHA pins are consistent across the codeflow files",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Every `Sha` entry in `eng/Version.Details.xml` points at `10596eb13c79f38d547565beb273458d0c832bf8`, and the `Source` element's BarId (296265) matches the build named in the PR description. The matching versions in `eng/Version.Details.props` (Arcade/Helix/SharedFramework 10.0.0-beta.26056.115, runtime servicing packages 10.0.3-servicing.26056.115, NuGet.* 7.0.2-rc.5715) and in `global.json` line up with the XML file. The `NuGet.config` source key `darc-pub-dotnet-dotnet-10596eb` matches the new pin. This makes the bump easy to audit. I checked consistency inside the repo but did not verify the upstream dotnet/dotnet build.",
+    "files": [
+     "eng/Version.Details.xml",
+     "eng/Version.Details.props",
+     "global.json",
+     "NuGet.config"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":1,\"title\":\"Code Review Bench PR #64973 - [release/10.0] Source code updates from dotnet/dotnet\",\"author\":\"\",\"baseSha\":\"fde00e6dc4c9f31698f28c4603ee6cc887cc9314\",\"headSha\":\"96519fe9621bf264555e076d6bba7dc5e456209b\"},\"summary\":\"This is a Maestro/darc codeflow PR that bumps dotnet/dotnet VMR dependencies from 68282276 to 10596eb1 (Arcade SDK, Helix SDK, servicing runtime packages, NuGet.* 7.0.2-rc.5715, and the dependency list). The mech",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

@@ -1,0 +1,411 @@
+{
+ "id": "dify#2",
+ "repo": "dify",
+ "num": 2,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T07:49:14.626Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Undefined identifier True used instead",
+   "description": "The rule requires all TypeScript code to compile successfully with strict mode enabled. The code uses `True` (Python-style boolean) which is not a valid JavaScript/TypeScript identifier, causing a compilation error.",
+   "file_path": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+   "start_line": 130,
+   "end_line": 144,
+   "problematic_code_snippet": "  const handleJSONSchemaChange = useCallback((value: string) => {\n    const isEmpty = value == null || value.trim() === ''\n    if (isEmpty) {\n      handlePayloadChange('json_schema')(undefined)\n      return null\n    }\n    try {\n      const v = JSON.parse(value)\n      handlePayloadChange('json_schema')(JSON.stringify(v, null, 2))\n      return True\n    }\n    catch {\n      return null\n    }\n  }, [handlePayloadChange])",
+   "rule_name": "TypeScript Files Must Follow Strict TypeScript Configuration"
+  },
+  {
+   "title": "JSON schema not normalized before storage",
+   "description": "In the handleJSONSchemaChange callback, the code stores the raw user input value directly instead of the normalized JSON.stringify(v, null, 2) version. This means that if a user enters compact JSON like {\"type\":\"object\"}, it will be stored as-is rather than being formatted consistently. This breaks the intended behavior where all JSON schemas should be stored in a standardized pretty-printed format with 2-space indentation. When the schema is later retrieved and displayed, it may have inconsistent formatting, and downstream consumers expecting normalized JSON may encounter issues.",
+   "file_path": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+   "start_line": 136,
+   "end_line": 139,
+   "problematic_code_snippet": "    try {\n      const v = JSON.parse(value)\n      handlePayloadChange('json_schema')(value)\n      return True\n    }"
+  },
+  {
+   "title": "JSON schema cleared for all variable types, not just jsonObject",
+   "description": "The payloadToSave logic removes the json_schema field whenever isSchemaEmpty is true, regardless of the variable type. The original code correctly checked `tempPayload.type === InputVarType.jsonObject && isSchemaEmpty`. By removing the type check, if a user switches from jsonObject type to another type (like textInput) and the schema happens to be empty, the json_schema field gets cleared even though it should be preserved during the transition. This causes data loss when users change variable types back and forth.",
+   "file_path": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+   "start_line": 253,
+   "end_line": 257,
+   "problematic_code_snippet": "    // if the input type is jsonObject and the schema is empty as determined by `isJsonSchemaEmpty`,\n    // remove the `json_schema` field from the payload by setting its value to `undefined`.\n    const payloadToSave = isSchemaEmpty\n      ? { ...tempPayload, json_schema: undefined }\n      : tempPayload"
+  },
+  {
+   "title": "JSON schema validation uses non-normalized value",
+   "description": "The validation logic for jsonObject type validates jsonSchemaValue instead of normalizedJsonSchema. This is problematic because normalizedJsonSchema is computed earlier and correctly handles the case where an empty schema should be undefined. By validating jsonSchemaValue directly, the code validates the raw tempPayload value instead of the cleaned version. This inconsistency means that validation may pass but the wrong data could be saved, or validation may fail when it should succeed if the schema is empty but not yet normalized.",
+   "file_path": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+   "start_line": 311,
+   "end_line": 317,
+   "problematic_code_snippet": "      if (!isSchemaEmpty && typeof jsonSchemaValue === 'string') {\n        try {\n          const schema = JSON.parse(jsonSchemaValue)\n          if (schema?.type !== 'object') {\n            Toast.notify({ type: 'error', message: t('variableConfig.errorMsg.jsonSchemaMustBeObject', { ns: 'appDebug' }) })\n            return\n          }\n        }"
+  },
+  {
+   "title": "Dead store / unused variable `normalizedJsonSchema`",
+   "description": "SonarJS no-dead-store is enforced at error level. `normalizedJsonSchema` is assigned but never used afterwards, making it a dead store and a lint violation.",
+   "file_path": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+   "start_line": 234,
+   "end_line": 236,
+   "problematic_code_snippet": "const jsonSchemaValue = tempPayload.json_schema\nconst isSchemaEmpty = isJsonSchemaEmpty(jsonSchemaValue)\nconst normalizedJsonSchema = isSchemaEmpty ? undefined : jsonSchemaValue",
+   "rule_name": "Frontend ESLint Sonarjs Rules Must Be Followed"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify",
+ "head_sha": "d6313992f3c992954e63466eb80cd23d6e700aa6",
+ "diff_chars": 23502,
+ "diff_lines": 460,
+ "user_prompt_chars": 25699,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 99299,
+ "wall_ms": 101404,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Grep",
+   "detail": "jsonObjectWrap|isSupportJSON|json_schema|jsonConfigPlaceHolder"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/web/app/components/app/configuration/config-var/config-modal/index.tsx"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/web/app/components/app/configuration/config-var/config-modal/config.ts"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/web/app/components/workflow/nodes/_base/components/variable/utils.ts"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/web/app/components/app/configuration/config-var/config-modal/index.tsx"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/api/core/workflow/nodes/start/start_node.py"
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/dify/web/app/components/app/configuration/config-var/config-modal/index.tsx"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 15,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 26,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 15
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 6.697541726,
+ "spend_post_usd": 6.717111796,
+ "cost_settled": true,
+ "cost_wait_ms": 334,
+ "cost_usd": 0.019570070000000328,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 16,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.01943702,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 37738,
+  "cache_read_input_tokens": 405397,
+  "output_tokens": 21328,
+  "output_tokens_details": {
+   "thinking_tokens": 12013
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 37738
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 21328,
+   "cacheReadInputTokens": 405397,
+   "cacheCreationInputTokens": 37738,
+   "webSearchRequests": 0,
+   "costUSD": 0.01943702,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 12013,
+   "cacheCreationEphemeral5mInputTokens": 37738,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/dify",
+   "number": 2,
+   "title": "Code Review Bench PR #30412 - fix(web): enable JSON_OBJECT type support in console UI",
+   "author": "unknown",
+   "baseSha": "4f362512f9b2768135e1ed8cccda8f802f4fea9c",
+   "headSha": "d6313992f3c992954e63466eb80cd23d6e700aa6"
+  },
+  "summary": "This PR exposes the `JSON_OBJECT` (json object) input type in the chatflow and workflow variable editor by removing the hard-coded `isSupportJSON = false` gate. It also changes how the JSON Schema editor works. The editor now shows and stores the full schema instead of only its `properties`, and the frontend requires the top-level `type` to be `\"object\"` on save. The change is confined to the config modal (`config.ts`, `index.tsx`) plus 22 locale files that add two error strings. The backend (`start_node.py`) already validates the stored value as a full Draft-7 schema, so the storage format now matches what the server and the variable-picker consumer (`variable/utils.ts`) expect.\n\nThe direction is right, but the modal code is not ready to merge. `handleJSONSchemaChange` contains `return True`, which is an undefined identifier. It only works because the resulting ReferenceError is caught, and it will fail type-checking. Two unused variables are left behind, which will probably fail lint. The most important behavioural problem is that invalid JSON typed into the editor is never stored, so clicking Save quietly keeps the previous schema and the \"not valid JSON\" error can never fire from the UI. The PR also adds no tests for `config-modal`, although the checklist says tests were added.",
+  "verdict": "request_changes",
+  "verdictRationale": "Three defects in the new code need fixing before merge: an undefined `True` identifier that breaks type-checking, two unused variables that will likely fail lint, and silent loss of invalid JSON edits on save. The PR also ships no tests for the new validation and empty-schema paths. The data-format change itself is sound and matches the backend contract.",
+  "architecture": {
+   "overview": "Before this PR, the workflow and chatflow variable modal had the `JSON_OBJECT` type hidden behind a hard-coded `isSupportJSON = false` flag. The backend already accepted the type, and `start_node.py` validates each submitted JSON value against the stored `json_schema` using Draft-7. The modal stored a wrapper, `{type:'object', properties: <user input>}`, and showed only the inner `properties` to the user.\n\nThis PR removes the flag so the option appears for non-basic apps. The modal now round-trips the full schema: the editor shows the stored string as-is, and `handleJSONSchemaChange` saves whatever valid JSON the user typed. `handleConfirm` normalises an empty schema to `undefined` and rejects schemas whose top-level `type` is not `object`. The stored value is therefore the same full Draft-7 schema the backend validates and the variable picker parses in `variable/utils.ts`.",
+   "steps": [
+    "Entry point: the variable editor opens `ConfigModal` in `config-modal/index.tsx`, and the `JSON_OBJECT` option is only shown when `!isBasicApp`. The `isSupportJSON` flag that used to hide it is gone.",
+    "Editing: the `CodeEditor` (`workflow/nodes/_base/components/editor/code-editor/index.tsx`) calls `handleJSONSchemaChange` on every keystroke. Valid JSON is written to `tempPayload.json_schema`. Empty input clears the field. Invalid JSON is dropped, and that is the main defect in this review.",
+    "Confirm: `handleConfirm` normalises an empty schema to `undefined`, then checks that the top-level `type` is `object` and that the JSON parses. Failures show a Toast and block the save. Valid payloads are passed to `onConfirm`.",
+    "Server consumption: `api/core/workflow/nodes/start/start_node.py` parses the saved `json_schema` and runs `Draft7Validator` against the user's JSON input. The client-side `type: object` rule is a UI policy and is not enforced server-side.",
+    "Client consumption: `variable/utils.ts` parses `json_schema` into `children.schema` so downstream nodes can see the object's shape. The full-schema format is what this consumer expects, and it is why the old `jsonObjectWrap` double-wrapping is removed.",
+    "Localisation: the two new `variableConfig.errorMsg.jsonSchema*` keys are added to all 22 locale files, so i18n lookups do not fall back to missing keys."
+   ],
+   "diagrams": [
+    {
+     "title": "JSON Schema editing and save path",
+     "kind": "flowchart",
+     "description": "How the schema typed into the modal becomes the stored json_schema, and where the backend consumes it.",
+     "mermaid": "flowchart LR\n  A[CodeEditor JSON input] --> B[handleJSONSchemaChange in config-modal index.tsx]\n  B -->|valid JSON| C[tempPayload.json_schema]\n  B -->|invalid JSON, dropped| X[stale value kept]\n  B -->|empty| D[json_schema undefined]\n  C --> E[handleConfirm]\n  D --> E\n  X --> E\n  E -->|type not object or bad JSON| F[Toast error, save blocked]\n  E -->|pass| G[onConfirm payloadToSave]\n  G --> H[Start node variable json_schema]\n  H --> I[start_node.py Draft7Validator at runtime]\n  H --> J[variable/utils.ts children.schema]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "`return True` references an undefined identifier",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`True` is a Python keyword. In TypeScript it is an undefined identifier, so the success path throws a `ReferenceError`. The `catch` block swallows that error and returns `null`, so saving still works by accident. TypeScript will still report `Cannot find name 'True'`, which breaks type-checking.\n\nThe return value is also meaningless. `CodeEditor` calls `onChange(value || '')` and ignores the result (`workflow/nodes/_base/components/editor/code-editor/index.tsx:99-100`), so the function should not return anything.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"130-144\"}\n\n::callout{type=\"warning\"}\nThe PR author says `lint-staged` was run, but a `tsc` pass should catch this.\n\n::suggestion{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"136-140\"}\ntry {\n  JSON.parse(value)\n  handlePayloadChange('json_schema')(value)\n}\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/app/configuration/config-var/config-modal/index.tsx`, `handleJSONSchemaChange` (around lines 130-144) ends its try block with `return True`. `True` is not a TypeScript identifier, so this throws a ReferenceError that the catch hides, and type-checking fails. Remove the return value. The caller `CodeEditor` ignores it. Keep the `JSON.parse` validation and the `handlePayloadChange('json_schema')(value)` call, and keep the empty-input branch that clears the field. Make the function return void in every branch. Do not change the rest of the modal.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "lineStart": 139,
+     "lineEnd": 139
+    }
+   },
+   {
+    "title": "Invalid JSON edits are silently discarded on save",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`handleJSONSchemaChange` only stores the value when it parses as JSON. When the user types invalid JSON, the catch block returns without changing `tempPayload.json_schema`. The editor keeps showing the invalid text, because `jsonSchemaStr` is memoised on the stored value and does not change.\n\nWhen the user clicks Save, `handleConfirm` validates the last valid schema, which passes, and calls `onConfirm` with that stale schema. There is no error. The user's edit is lost, and the `jsonSchemaInvalid` toast at line 320 can never fire from the UI.\n\nScenario: a schema is already saved. The user adds a trailing comma to the JSON and clicks Save. The old schema is stored and the modal closes without any message.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"130-144\"}\n\n::callout{type=\"warning\"}\nThe validation message `jsonSchemaInvalid` exists but is unreachable in this flow. Either keep the raw draft text so `handleConfirm` can validate it, or block the save.\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/app/configuration/config-var/config-modal/index.tsx`, `handleJSONSchemaChange` (around lines 130-144) drops invalid JSON without storing it. The CodeEditor keeps showing the invalid text, so Save silently stores the last valid schema and the `jsonSchemaInvalid` toast in `handleConfirm` (around line 320) can never fire. Keep the raw editor draft in separate component state, not in `tempPayload.json_schema`. Otherwise the memoised `jsonSchemaStr` would reset the editor text. Run the existing JSON.parse and `type === 'object'` checks in `handleConfirm` against that draft, and show the existing Toast error on failure. Keep the empty-string to undefined normalisation.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "lineStart": 141,
+     "lineEnd": 143
+    }
+   },
+   {
+    "title": "Unused `normalizedJsonSchema` variable left in `handleConfirm`",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "`normalizedJsonSchema` is computed on line 251 but never read. `payloadToSave` uses `isSchemaEmpty` directly. An unused local like this is usually flagged by the project's ESLint `no-unused-vars` rule, and it will show up in the lint-staged run the PR says it used.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"248-257\"}\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/app/configuration/config-var/config-modal/index.tsx`, `handleConfirm` defines `normalizedJsonSchema` (around line 251) but never uses it. `payloadToSave` already uses `isSchemaEmpty`. Delete the unused declaration. If the normalised value was intended for `payloadToSave`, use it there instead, so the empty-string to undefined normalisation is applied in one place.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "lineStart": 251,
+     "lineEnd": 251
+    }
+   },
+   {
+    "title": "Unused `v` binding in `handleJSONSchemaChange`",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "`const v = JSON.parse(value)` only exists to validate the input, and `v` is never read. The lint rule for unused variables should flag it. The parse is still needed, so the fix is to drop the binding and keep the call.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"136-140\"}\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/app/configuration/config-var/config-modal/index.tsx`, `handleJSONSchemaChange` (around line 137) has `const v = JSON.parse(value)`, and `v` is never used. Keep the `JSON.parse` call for validation, but remove the `const v =` binding so the unused-variable lint rule passes. Do not change the surrounding catch logic.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "lineStart": 137,
+     "lineEnd": 137
+    }
+   },
+   {
+    "title": "No tests for the new JSON Schema validation and save paths",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The PR checklist says tests were added for each change, but the diff contains no spec file. There is also no existing spec for `config-modal` in the repo. The new behaviour has no coverage:\n\n- an empty schema becomes `json_schema: undefined` in the saved payload\n- a valid JSON schema whose top-level `type` is not `object` is rejected with the toast\n- invalid JSON is handled (and currently dropped, see the finding above)\n- `handleJSONSchemaChange` stores valid JSON and clears on empty input\n\nTests would also have caught the `return True` defect at type-check time.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"248-268\"}\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx"
+    ],
+    "fixPrompt": "Add `web/app/components/app/configuration/config-var/config-modal/index.spec.tsx`. Use the repo's existing React Testing Library patterns from other `*.spec.tsx` files. Cover: (1) saving a `jsonObject` variable with an empty schema sends `json_schema: undefined`; (2) a schema with top-level `type` other than `object` shows the `jsonSchemaMustBeObject` toast and does not call `onConfirm`; (3) a valid object schema is passed through unchanged; (4) typing invalid JSON then saving behaves as the chosen fix specifies. Assert on the `onConfirm` payload, not on internal state.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "lineStart": 248,
+     "lineEnd": 268
+    }
+   },
+   {
+    "title": "Dead `jsonObjectWrap` export left in config.ts",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "After this PR, `jsonObjectWrap` has no remaining users. The only other reference in the repo was the import that the PR removes from `index.tsx`. Keeping the export invites someone to re-wrap the schema, which is the behaviour this PR removes.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/config.ts\" lines=\"1-6\"}\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/config.ts"
+    ],
+    "fixPrompt": "In `web/app/components/app/configuration/config-var/config-modal/config.ts`, delete the `jsonObjectWrap` export (lines 1-6). It is no longer imported anywhere after this PR. Before deleting, grep the `web/` tree once more to confirm there are no remaining references.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/config.ts",
+     "lineStart": 1,
+     "lineEnd": 6
+    }
+   },
+   {
+    "title": "Duplicated emptiness logic for `json_schema`",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "There are two emptiness checks for the same value. `handleJSONSchemaChange` uses `value == null || value.trim() === ''` (line 131). `isJsonSchemaEmpty` (lines 237-246) re-implements it with a different null and type check. The `value == null` branch in `handleJSONSchemaChange` is also dead, since the parameter is typed `string`. A single helper would keep the two paths in sync.\n\n::diff{file=\"web/app/components/app/configuration/config-var/config-modal/index.tsx\" lines=\"237-246\"}\n",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx"
+    ],
+    "fixPrompt": "In `web/app/components/app/configuration/config-var/config-modal/index.tsx`, `handleJSONSchemaChange` (around line 131) and `isJsonSchemaEmpty` (around lines 237-246) each check whether the schema is empty. Move the check into one module-level helper that accepts `string | undefined | null` and returns true for null, undefined, or a whitespace-only string. Call it from both places. Keep the behaviour unchanged.",
+    "commentAnchor": {
+     "file": "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "lineStart": 237,
+     "lineEnd": 246
+    }
+   },
+   {
+    "title": "Storage format now matches backend validation and the variable consumer",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Storing the full JSON Schema (rather than the old `{type:'object', properties}` wrapper) is the right contract. `api/core/workflow/nodes/start/start_node.py` runs `Draft7Validator` on the stored string, and `variable/utils.ts` parses it into `children.schema`. Removing the wrapper means the editor, the validator and the variable picker all see the same document. Showing the full schema in `jsonSchemaStr` is consistent with this.",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "web/app/components/app/configuration/config-var/config-modal/config.ts",
+     "web/app/components/workflow/nodes/_base/components/variable/utils.ts",
+     "api/core/workflow/nodes/start/start_node.py"
+    ]
+   },
+   {
+    "title": "Feature gate removed and all 22 locales updated",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The hard-coded `isSupportJSON = false` gate is gone, so the JSON option now appears for non-basic apps as the PR intends. The two new `variableConfig.errorMsg.jsonSchema*` keys are present in every locale directory under `web/i18n/` (I checked all 22), so no lookup falls back to a missing key.",
+    "files": [
+     "web/app/components/app/configuration/config-var/config-modal/index.tsx",
+     "web/i18n/en-US/app-debug.json"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/dify\",\"number\":2,\"title\":\"Code Review Bench PR #30412 - fix(web): enable JSON_OBJECT type support in console UI\",\"author\":\"unknown\",\"baseSha\":\"4f362512f9b2768135e1ed8cccda8f802f4fea9c\",\"headSha\":\"d6313992f3c992954e63466eb80cd23d6e700aa6\"},\"summary\":\"This PR exposes the `JSON_OBJECT` (json object) input type in the chatflow and workflow variable editor by removing the hard-coded `isSupportJSON = false` gate. It also changes how the JSON Schema editor works",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 9
+}

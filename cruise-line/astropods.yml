@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://astropods.ai/schema/package.json
+spec: package/v1
+name: "@astropods/cruise-line"
+
+meta:
+  visibility: private
+
+agent:
+  build:
+    context: .
+    dockerfile: Dockerfile
+  interfaces:
+    frontend: true
+  inputs:
+    # All GitHub credentials are auto-configured via the in-app setup flow.
+    # No manual configuration needed — just deploy and visit /setup.
+    - name: CLAUDE_MODEL
+      datatype: string
+      display-as: select
+      options:
+        - claude-opus-5-5
+        - claude-sonnet-5-5
+        - claude-haiku-5-5
+        - claude-opus-4-8
+        - claude-opus-4-7
+        - claude-opus-4-6
+        - claude-sonnet-4-6
+        - claude-haiku-4-5
+      default: "claude-haiku-5-5"
+      description: Default Claude model for reviews and chat. Owners can pick any available model, and its effort level, in Settings. Defaults to Haiku 5.5 for lower measured per-review cost than Opus 5.5 (see OPTIMIZATION_REPORT.md). Quality relative to Opus is not yet established on unseen PRs; validation round 2 is pending.
+    - name: MAX_CONCURRENT_JOBS
+      datatype: number
+      default: "3"
+      description: Maximum concurrent analysis jobs
+
+models:
+  anthropic:
+    provider: anthropic
+
+knowledge:
+  cruise-db:
+    provider: postgres
+  chat-sandbox:
+    container:
+      build:
+        context: .
+        dockerfile: sandbox/Dockerfile
+      port: 3000
+      volume: /data
+      # The platform auto-injects OTEL_EXPORTER_OTLP_ENDPOINT into the agent
+      # container but not knowledge containers. The collector service name is
+      # deterministic (<agent>-collector:4318), so we wire it in explicitly here.
+      environment:
+        OTEL_EXPORTER_OTLP_ENDPOINT: http://cruise-line-collector:4318

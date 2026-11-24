@@ -1,0 +1,329 @@
+{
+ "id": "Ghost#1",
+ "repo": "Ghost",
+ "num": 1,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T15:50:02.909Z",
+ "num_of_issues": 4,
+ "issues": [
+  {
+   "title": "NPM referenced instead of Yarn",
+   "description": "The rule requires all package management commands to use yarn, but the code documentation references npm for dependency installation",
+   "file_path": "ghost/core/core/boot.js",
+   "start_line": 313,
+   "end_line": 313,
+   "problematic_code_snippet": "    // NOTE: If you need to add dependencies for services, use npm install <package>",
+   "rule_name": "Package Manager Must Be Yarn v1"
+  },
+  {
+   "title": "Slack notifications not functioning - event listeners never registered",
+   "description": "The slack.listen() call was removed from the service initialization in Promise.all, but the slack service module is still imported. This means the Slack service event listeners for 'post.published' and 'slack.test' events are never registered during boot. As a result, posts published on the site will not trigger Slack webhook notifications even when Slack integration is configured correctly. The slack.listen() method registers critical event handlers that connect the Ghost event system to the Slack notification service, and without this call, the integration is completely non-functional.",
+   "file_path": "ghost/core/core/boot.js",
+   "start_line": 351,
+   "end_line": 377,
+   "problematic_code_snippet": "    await Promise.all([\n        emailAddressService.init(),\n        identityTokens.init(),\n        memberAttribution.init(),\n        mentionsService.init(),\n        mentionsEmailReport.init(),\n        staffService.init(),\n        members.init(),\n        tiers.init(),\n        tagsPublic.init(),\n        postsPublic.init(),\n        membersEvents.init(),\n        permissions.init(),\n        audienceFeedback.init(),\n        emailService.init(),\n        emailAnalytics.init(),\n        webhooks.listen(),\n        scheduling.init(),\n        // slack.listen() is missing here - should be included\n        comments.init(),"
+  },
+  {
+   "title": "Post scheduling will fail on boot - missing required apiUrl parameter",
+   "description": "The scheduling.init() call is missing the required apiUrl parameter that was previously passed via urlUtils.urlFor('api', {type: 'admin'}, true). The PostScheduler constructor explicitly checks for this parameter and throws an IncorrectUsageError if it's not provided. This will cause Ghost to crash during the boot sequence when attempting to initialize the scheduling service. The apiUrl is critical for the scheduling service as it's used to generate signed admin tokens and callback URLs for scheduled post publishing. Without this parameter, the scheduled publishing feature cannot function.",
+   "file_path": "ghost/core/core/boot.js",
+   "start_line": 368,
+   "end_line": 368,
+   "problematic_code_snippet": "        webhooks.listen(),\n        scheduling.init(),\n        comments.init(),"
+  },
+  {
+   "title": "Race condition in email service initialization - dependency order violated",
+   "description": "The emailAddressService.init() was moved from sequential await execution into the parallel Promise.all block alongside emailService.init(). The comment explicitly states 'newsletter service and email service depend on email address service', indicating a required initialization order. The EmailServiceWrapper's init() method imports and uses emailAddressService, expecting it to be fully initialized. By running these initializations in parallel, emailService may attempt to access emailAddressService before it has completed initialization, leading to undefined behavior, null reference errors, or incorrect email configuration. This race condition can cause intermittent failures that are difficult to reproduce and debug.",
+   "file_path": "ghost/core/core/boot.js",
+   "start_line": 349,
+   "end_line": 366,
+   "problematic_code_snippet": "    // NOTE: newsletter service and email service depend on email address service\n\n    await Promise.all([\n        emailAddressService.init(),\n        identityTokens.init(),\n        memberAttribution.init(),\n        mentionsService.init(),\n        mentionsEmailReport.init(),\n        staffService.init(),\n        members.init(),\n        tiers.init(),\n        tagsPublic.init(),\n        postsPublic.init(),\n        membersEvents.init(),\n        permissions.init(),\n        audienceFeedback.init(),\n        emailService.init(),"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "d3184872c4837be0457b6311bc9113538d871db1",
+ "diff_chars": 16628,
+ "diff_lines": 482,
+ "user_prompt_chars": 18680,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 64418,
+ "wall_ms": 66394,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 22,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.510769656,
+ "spend_post_usd": 5.518486496,
+ "cost_settled": true,
+ "cost_wait_ms": 347,
+ "cost_usd": 0.007716840000000502,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.011738855000000001,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 16413,
+  "cache_read_input_tokens": 321643,
+  "output_tokens": 12938,
+  "output_tokens_details": {
+   "thinking_tokens": 5230
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 16413
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 12938,
+   "cacheReadInputTokens": 321643,
+   "cacheCreationInputTokens": 16413,
+   "webSearchRequests": 0,
+   "costUSD": 0.011738855000000001,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5230,
+   "cacheCreationEphemeral5mInputTokens": 16413,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 1,
+   "title": "Code Review Bench PR #25799 - Removed xmlrpc/pingomatic ping service",
+   "author": "",
+   "baseSha": "18c03d2522d44f458b717120ceb3caa3521ee751",
+   "headSha": "d3184872c4837be0457b6311bc9113538d871db1"
+  },
+  "summary": "The PR deletes the legacy XML-RPC/Pingomatic ping service (`server/services/xmlrpc.js` and its unit tests), removes its `xmlrpc.listen()` call from `core/boot.js`, and drops the `privacy.useRpcPing` key from `config.development.json`. The core deletion is clean: nothing else in the repo references `xmlrpc`, `useRpcPing`, or `pingomatic`, and the `xml` package stays in use by the sitemap generators.\n\nHowever, the `boot.js` hunk goes well beyond the xmlrpc removal. It changes the `scheduling.init()` call so it no longer passes `apiUrl`, which will make `post-scheduling/index.js` throw `TypeError: Cannot read properties of undefined (reading 'apiUrl')` during `initServices()`. That rejects the `Promise.all` and stops Ghost from booting. It also silently drops `slack.listen()`, which disables Slack `post.published` notifications and the `slack.test` handler, and it moves `emailAddressService.init()` into the `Promise.all` and adds an unrelated NOTE comment. None of these are described in the PR title or description.",
+  "verdict": "request_changes",
+  "verdictRationale": "The scheduling change will prevent Ghost from booting, which is critical on its own. The silent removal of `slack.listen()` breaks a live integration that the PR description never mentions. The xmlrpc deletion itself is correct and complete, so once the unrelated `boot.js` edits are reverted to the original calls, this is a clean removal PR.",
+  "architecture": {
+   "overview": "Ghost's `core/boot.js` `initServices()` fans out every core service's `init()` or `listen()` call through one `Promise.all`, after awaiting Stripe. Before this PR, the legacy `xmlrpc` service subscribed to the `post.published` model event from `core/server/lib/common/events`, and it pinged rpc.pingomatic.com when a post was published unless privacy.useRpcPing was off. The `slack` service also subscribed to `post.published` and the `slack.test` event through its own `listen()`, and `scheduling.init({apiUrl})` needed the admin API URL to construct the post scheduler.\n\nThe PR removes the xmlrpc module and its `listen()` entry, plus the `useRpcPing` config key. It also edits three other entries in the same initialization block: it removes `slack.listen()`, changes `scheduling.init` to receive no options, and moves `emailAddressService.init()` from a standalone awaited statement into the `Promise.all`. Those three edits change runtime behavior and are not covered by the xmlrpc removal.",
+   "steps": [
+    "Entry point: `ghost/core/core/boot.js` `initServices()` runs after Stripe init and starts every core service in a single `Promise.all` (around lines 351-375).",
+    "Event fan-out: services subscribe to model events such as `post.published` through `core/server/lib/common/events`. Before the PR, xmlrpc and slack both did this; after it, only the Slack notification path in `slack-notifications` and the remaining listeners do.",
+    "Deleted: `core/server/services/xmlrpc.js` and `test/unit/server/services/xmlrpc.test.js`, along with the `xmlrpc.listen()` call and the `privacy.useRpcPing` config key. Repo-wide search finds no remaining references, so this part is safe.",
+    "Unintended change: `scheduling.init({apiUrl})` became `scheduling.init()`. `post-scheduling/index.js` reads `options.apiUrl` without a guard, so boot now fails. Separately, `slack.listen()` is removed, so `post.published` and `slack.test` no longer reach `slack.js`.",
+    "Unintended reorder: `emailAddressService.init()` is now an element of the `Promise.all`. It is synchronous and array elements are evaluated left to right, so `emailService` still sees the initialized service, but the dependency is now implicit and the comment above it is left dangling."
+   ],
+   "diagrams": [
+    {
+     "title": "Service initialization after this PR",
+     "kind": "flowchart",
+     "description": "Shows how initServices wires services and which paths the PR removes or changes.",
+     "mermaid": "flowchart LR\n  boot[core/boot.js initServices] --> pa[Promise.all of service inits]\n  pa --> ea[emailAddressService.init]\n  pa --> sched[scheduling.init without options]\n  sched --> pp[post-scheduling init reads options.apiUrl]\n  pa --> sl[slack.listen no longer called]\n  xr[xmlrpc.js deleted] -.-> pe[post.published listeners]\n  sl -.-> pe"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "scheduling.init() called without apiUrl crashes boot",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The `boot.js` edit changed `scheduling.init({apiUrl: urlUtils.urlFor('api', {type: 'admin'}, true)})` to `scheduling.init()`. `scheduling/index.js` forwards the argument straight to `post-scheduling/index.js`, whose `init = async (options) => ...` reads `options.apiUrl` at the `new PostScheduler({apiUrl: options.apiUrl, ...})` call. With `options` undefined, that is a `TypeError` inside an async function, so the promise rejects. That rejection propagates through the `Promise.all` in `initServices()`, and the server fails to boot on every environment.\n\nThe xmlrpc removal does not need this change, so the fix is to restore the original argument.\n\n::diff{file=\"ghost/core/core/boot.js\" lines=\"351-372\"}\n\n::callout{type=\"warning\"}\nThis is not caught by the existing unit tests, which removed xmlrpc tests but added none for boot. A boot-level test or a smoke test of `initServices()` would catch it.\n\n::",
+    "files": [
+     "ghost/core/core/boot.js",
+     "ghost/core/core/server/adapters/scheduling/index.js",
+     "ghost/core/core/server/adapters/scheduling/post-scheduling/index.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/boot.js` inside `initServices()`, the `scheduling.init()` call in the `Promise.all` (around line 368) was changed to take no arguments. Restore it to pass `{apiUrl: urlUtils.urlFor('api', {type: 'admin'}, true)}` as before, because `post-scheduling/index.js` reads `options.apiUrl` and will throw at boot otherwise. Keep the `urlUtils` require in place, since it is needed for that call. Don't change the scheduling adapter itself.",
+    "commentAnchor": {
+     "file": "ghost/core/core/boot.js",
+     "lineStart": 368,
+     "lineEnd": 368
+    }
+   },
+   {
+    "title": "slack.listen() removed, silently disabling Slack post notifications",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`slack.listen()` was removed from the `Promise.all` in `boot.js`, but the PR title and description only mention xmlrpc. `slack.js` `listen()` is the only place that registers `slackListener` on `post.published` and `slackTestPing` on `slack.test`. Nothing else in the repo calls it (confirmed with a repo-wide search), so after this change Slack post notifications stop firing, and the `slack.test` event that `api/endpoints/slack.js` emits has no handler. The `const slack = require(...)` at line 319 is now unused too.\n\nIf the removal was intentional, it belongs in its own PR with a note saying Slack's legacy integration is retired. Otherwise restore the call.\n\n::diff{file=\"ghost/core/core/boot.js\" lines=\"351-368\"}\n\n::callout{type=\"warning\"}\nIf it is restored, the `slack` require at line 319 stays in use.\n\n::",
+    "files": [
+     "ghost/core/core/boot.js",
+     "ghost/core/core/server/services/slack.js",
+     "ghost/core/core/server/api/endpoints/slack.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/boot.js` `initServices()`, the `slack.listen()` call was removed from the `Promise.all` (its require is at line 319). Put `slack.listen()` back in the `Promise.all` so Slack `post.published` notifications and the `slack.test` handler keep working. Don't touch the xmlrpc removal. If the author instead wants Slack retired, that should be a separate PR that also removes `core/server/services/slack.js` and its test, with an explanation in the description.",
+    "commentAnchor": {
+     "file": "ghost/core/core/boot.js",
+     "lineStart": 319,
+     "lineEnd": 319
+    }
+   },
+   {
+    "title": "Unrelated boot.js edits make the PR scope misleading",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The title and description describe removing xmlrpc and `privacy.useRpcPing`. The `boot.js` hunk also contains four unrelated edits:\n\n- `slack.listen()` removed (see the finding above).\n- `scheduling.init` lost its `apiUrl` option (see the critical finding).\n- `emailAddressService.init()` moved from a standalone awaited statement into the `Promise.all`. The `NOTE` comment about the ordering dependency now sits above a blank line.\n- A new `// NOTE: If you need to add dependencies for services, use npm install <package>` comment appears above the require block. It isn't related to the removal.\n\nThe email-address move happens to work, because `EmailAddressServiceWrapper.init()` is synchronous and `Promise.all` evaluates its array elements in order, so `emailService` sees `service` set. But that ordering is now implicit and fragile. A future async `init` would break `emailService` with no error at the call site.\n\nSplit these into a separate PR, or revert them, so the xmlrpc removal stands on its own.\n\n::diff{file=\"ghost/core/core/boot.js\" lines=\"313-313\"}\n\n::",
+    "files": [
+     "ghost/core/core/boot.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/boot.js` `initServices()`, revert the changes that are unrelated to xmlrpc removal: restore `slack.listen()`, restore `scheduling.init({apiUrl: ...})`, and restore `await emailAddressService.init(),` as a standalone statement before the `Promise.all`. Also remove the added `// NOTE: If you need to add dependencies...` comment at line 313. Keep only the xmlrpc require removal and its `xmlrpc.listen()` call removal in this PR.",
+    "commentAnchor": {
+     "file": "ghost/core/core/boot.js",
+     "lineStart": 313,
+     "lineEnd": 313
+    }
+   },
+   {
+    "title": "urlUtils left unused in boot.js after scheduling change",
+    "severity": "low",
+    "category": "style",
+    "body": "`const urlUtils = require('./shared/url-utils');` at line 343 was only used for the `scheduling.init` `apiUrl` argument. That argument was removed, so `urlUtils` is now unused in `initServices()`. Ghost's ESLint config flags unused variables, so this will fail lint. Once the scheduling argument is restored (see the critical finding), this resolves itself.\n\n::diff{file=\"ghost/core/core/boot.js\" lines=\"343-343\"}\n\n::",
+    "files": [
+     "ghost/core/core/boot.js"
+    ],
+    "fixPrompt": "In `ghost/core/core/boot.js`, the `urlUtils` require inside `initServices()` (around line 343) is unused after the `scheduling.init` change. Either restore the `scheduling.init({apiUrl: urlUtils.urlFor(...)})` call, which uses it, or delete the require. Also check that the `slack` require at line 319 is removed if `slack.listen()` stays gone.",
+    "commentAnchor": {
+     "file": "ghost/core/core/boot.js",
+     "lineStart": 343,
+     "lineEnd": 343
+    }
+   },
+   {
+    "title": "xmlrpc service and config key removed cleanly",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The core deletion is complete. The `xmlrpc.js` module and its test file are removed together, and repo-wide searches find no remaining references to `xmlrpc`, `useRpcPing`, or `rpc.pingomatic.com`. The `privacy.useRpcPing` key is removed from `config.development.json`, and the `isPrivacyDisabled('useRpcPing')` check went away with the module. The `xml` npm package stays in `package.json` because `core/frontend/services/sitemap/` still uses it, so there is no orphaned dependency to clean up.",
+    "files": [
+     "ghost/core/core/server/services/xmlrpc.js",
+     "ghost/core/core/shared/config/env/config.development.json",
+     "ghost/core/test/unit/server/services/xmlrpc.test.js"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":1,\"title\":\"Code Review Bench PR #25799 - Removed xmlrpc/pingomatic ping service\",\"author\":\"\",\"baseSha\":\"18c03d2522d44f458b717120ceb3caa3521ee751\",\"headSha\":\"d3184872c4837be0457b6311bc9113538d871db1\"},\"summary\":\"The PR deletes the legacy XML-RPC/Pingomatic ping service (`server/services/xmlrpc.js` and its unit tests), removes its `xmlrpc.listen()` call from `core/boot.js`, and drops the `privacy.useRpcPing` key from `config.development.json",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

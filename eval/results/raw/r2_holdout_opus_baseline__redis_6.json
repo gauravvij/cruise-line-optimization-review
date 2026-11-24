@@ -1,0 +1,152 @@
+{
+ "id": "redis#6",
+ "repo": "redis",
+ "num": 6,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T15:51:37.260Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Missing tri-license header in version.h",
+   "description": "The rule requires that every .c and .h file in the src/ directory contains a copyright header with the text 'Licensed under your choice of (a) the Redis Source Available License 2.0 (RSALv2); or (b) the Server Side Public License v1 (SSPLv1); or (c) the GNU Affero General Public License v3 (AGPLv3)', but src/version.h lacks this required tri-license header",
+   "file_path": "src/version.h",
+   "start_line": 1,
+   "end_line": 3,
+   "problematic_code_snippet": "/* Version information */\n#define REDIS_VERSION \"8.2.1\"\n#define REDIS_VERSION_NUM 0x00080201",
+   "rule_name": "All Source Files Must Include Tri-License Header"
+  },
+  {
+   "title": "Active defragmentation incorrectly forced ON after replication sync",
+   "description": "The code saves the original active_defrag_enabled value but then unconditionally sets it to 1 instead of restoring the original value. This means if active defragmentation was disabled before the replication sync (orig_active_defrag = 0), it will be incorrectly enabled after emptyData() completes. This breaks the intended behavior of preserving the user's defragmentation configuration and can cause unexpected performance degradation or memory operations on replicas that should not have defragmentation running.",
+   "file_path": "src/replication.c",
+   "start_line": 1956,
+   "end_line": 1962,
+   "problematic_code_snippet": "    int orig_active_defrag = server.active_defrag_enabled;\n    server.active_defrag_enabled = 0;\n\n    emptyData(-1, empty_db_flags, replicationEmptyDbCallback);\n\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = 1;"
+  },
+  {
+   "title": "Stream entries incorrectly marked as referenced when cgroups_ref is NULL",
+   "description": "When cgroups_ref is NULL (which occurs after DEBUG RELOAD with empty PEL), the function returns 1 indicating the entry IS referenced, when it should return 0 indicating it is NOT referenced. This inverted logic prevents XADD/XTRIM operations with the ACKED strategy from correctly deleting entries that have been fully acknowledged by all consumer groups. The result is a memory leak where stream entries accumulate unnecessarily because they are incorrectly protected from deletion even though no consumer group has them in their pending entry list.",
+   "file_path": "src/t_stream.c",
+   "start_line": 2707,
+   "end_line": 2711,
+   "problematic_code_snippet": "    /* Check if the message is in any consumer group's PEL */\n    if (!s->cgroups_ref) return 1;\n    unsigned char buf[sizeof(streamID)];\n    streamEncodeID(buf, id);\n    return raxFind(s->cgroups_ref, buf, sizeof(streamID), NULL);"
+  },
+  {
+   "title": "Inverted reply discard logic causes test infrastructure failure",
+   "description": "The condition for discarding replies is inverted - replies are discarded when count is NOT a multiple of frequency (!=), rather than when it IS a multiple (==). This causes the test to read and discard replies at the wrong times, leading to a buffer overflow of unread replies. The discard_replies_every helper is called throughout the test suite after batches of Redis commands to prevent reply buffer buildup. With this bug, replies accumulate in the buffer instead of being cleared, causing test hangs or failures when the client tries to send new commands with a full reply buffer.",
+   "file_path": "tests/unit/memefficiency.tcl",
+   "start_line": 70,
+   "end_line": 75,
+   "problematic_code_snippet": "    proc discard_replies_every {rd count frequency discard_num} {\n        if {$count % $frequency != 0} {\n            for {set k 0} {$k < $discard_num} {incr k} {\n                $rd read ; # Discard replies\n            }\n        }\n    }"
+  },
+  {
+   "title": "Unused local variable triggers -Werror build failure",
+   "description": "The newly introduced local variable `orig_active_defrag` is never used, which will trigger an `-Wunused-variable` warning. With `-Werror`, this becomes a compilation error, violating the rule that the build must compile cleanly with warnings treated as errors.",
+   "file_path": "src/replication.c",
+   "start_line": 1956,
+   "end_line": 1963,
+   "problematic_code_snippet": "    int orig_active_defrag = server.active_defrag_enabled;\n    server.active_defrag_enabled = 0;\n\n    emptyData(-1, empty_db_flags, replicationEmptyDbCallback);\n\n    /* Restore the original active defragmentation setting. */\n    server.active_defrag_enabled = 1;",
+   "rule_name": "Build Must Compile Without Warnings When -Werror is Enabled"
+  },
+  {
+   "title": "Header file lacks required double-underscore include guard",
+   "description": "`src/version.h` does not define any include guard, violating the requirement that header files use standardized double-underscore include guards (e.g., `#ifndef __VERSION_H__` / `#define __VERSION_H__` / `#endif`).",
+   "file_path": "src/version.h",
+   "start_line": 1,
+   "end_line": 3,
+   "problematic_code_snippet": "/* Version information */\n#define REDIS_VERSION \"8.2.1\"\n#define REDIS_VERSION_NUM 0x00080201",
+   "rule_name": "Header Files Must Use Double-Underscore Include Guards"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "3d3ed35ce84585af8d0d2998eb5c8cd557412788",
+ "diff_chars": 11201,
+ "diff_lines": 282,
+ "user_prompt_chars": 12243,
+ "exit_code": 1,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 1943,
+ "wall_ms": 33718,
+ "tool_calls": [],
+ "n_tool_calls": 0,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 1,
+ "turn_trace": {
+  "assistant_lines": 1,
+  "unique_message_ids": 1,
+  "lines_without_id": 0,
+  "tool_use_blocks": 0
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 3.089281557,
+ "spend_post_usd": 3.089281557,
+ "cost_settled": false,
+ "cost_wait_ms": 30234,
+ "cost_usd": 0,
+ "cost_flag": "key_delta_unsettled_after_30s",
+ "subtype": "success",
+ "is_error": true,
+ "num_turns": 1,
+ "stop_reason": "stop_sequence",
+ "cli_cost_usd": 0,
+ "usage": {
+  "output_tokens_details": {
+   "thinking_tokens": 0
+  },
+  "input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 0,
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {},
+ "structured_output": null,
+ "result_text_head": "API Error: 402 This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 114316. To increase, visit https://openrouter.ai/workspaces/default/keys/c11fc93ffbed165e461748ba5cf65716beccf8d2a850ea12e740f539ed089b6b and adjust the key's total limit",
+ "schema_valid": false,
+ "schema_errors": [
+  "structured_output missing"
+ ],
+ "n_findings": 0
+}

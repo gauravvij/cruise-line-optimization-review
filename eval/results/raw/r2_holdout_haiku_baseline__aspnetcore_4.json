@@ -1,0 +1,452 @@
+{
+ "id": "aspnetcore#4",
+ "repo": "aspnetcore",
+ "num": 4,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T11:57:25.503Z",
+ "num_of_issues": 15,
+ "issues": [
+  {
+   "title": "Traditional namespace declaration used",
+   "description": "The rule requires C# files to use file-scoped namespace declarations (ending with semicolon without braces), but this file uses traditional namespace declarations with opening and closing braces.",
+   "file_path": "src/Components/Web/src/Forms/DisplayName.cs",
+   "start_line": 8,
+   "end_line": 67,
+   "problematic_code_snippet": "namespace Microsoft.AspNetCore.Components.Forms\n{\n    /// <summary>\n    /// Displays the display name for a specified field, reading from <see cref=\"DisplayAttribute\"/>\n    /// or <see cref=\"DisplayNameAttribute\"/> if present, or falling back to the property name.\n    /// </summary>\n    /// <typeparam name=\"TValue\">The type of the field.</typeparam>\n    public class DisplayName<TValue> : IComponent\n    {\n        ...\n    }\n}",
+   "rule_name": "Use File-Scoped Namespace Declarations"
+  },
+  {
+   "title": "Unnecessary re-rendering on every parameter update with same display name",
+   "description": "The DisplayName component removed the check that prevents re-rendering when the display name hasn't changed (line 50-51). This means that every time SetParametersAsync is called with a changed expression (even if it results in the same display name), the component will trigger a render. This causes performance degradation in scenarios with frequent parameter updates, such as forms with dynamic field expressions, leading to unnecessary DOM updates and potential flickering in the UI.",
+   "file_path": "src/Components/Web/src/Forms/DisplayName.cs",
+   "start_line": 46,
+   "end_line": 54,
+   "problematic_code_snippet": "if (For != _previousFieldAccessor)\n{\n    var newDisplayName = ExpressionMemberAccessor.GetDisplayName(For);\n\n    _displayName = newDisplayName;\n    _renderHandle.Render(BuildRenderTree);\n\n    _previousFieldAccessor = For;\n}"
+  },
+  {
+   "title": "Missing display name caching causes performance degradation",
+   "description": "The GetDisplayName(MemberInfo) method in ExpressionMemberAccessor no longer uses the _displayNameCache dictionary to cache display names (lines 53-74). Instead, it performs reflection operations (GetCustomAttribute) on every call. Since this method is called frequently during component rendering and the DisplayName component can be used extensively throughout forms, this creates a significant performance bottleneck. The cache was specifically designed to avoid repeated reflection calls, and its removal will cause measurable slowdowns in forms with many DisplayName components.",
+   "file_path": "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+   "start_line": 53,
+   "end_line": 74,
+   "problematic_code_snippet": "public static string GetDisplayName(MemberInfo member)\n{\n    ArgumentNullException.ThrowIfNull(member);\n\n    var displayAttribute = member.GetCustomAttribute<DisplayAttribute>();\n    if (displayAttribute is not null)\n    {\n        var name = displayAttribute.GetName();\n        if (name is not null)\n        {\n            return name;\n        }\n    }\n\n    var displayNameAttribute = member.GetCustomAttribute<DisplayNameAttribute>();"
+  },
+  {
+   "title": "Incomplete cache clearing during hot reload causes stale display names",
+   "description": "The ClearCache method only clears _memberInfoCache but fails to clear _displayNameCache (line 85). During hot reload scenarios when metadata updates occur, the HotReloadManager triggers ClearCache to ensure fresh metadata is loaded. However, with _displayNameCache not being cleared, the component will continue to display stale display names from cached MemberInfo objects even after the attributes have been modified in code. This breaks the hot reload functionality for DisplayAttribute and DisplayNameAttribute changes, requiring developers to restart the application to see attribute changes take effect.",
+   "file_path": "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+   "start_line": 84,
+   "end_line": 86,
+   "problematic_code_snippet": "private static void ClearCache()\n{\n    _memberInfoCache.Clear();\n}"
+  },
+  {
+   "title": "Test method missing required AAA pattern comments",
+   "description": "The test method 'SupportsLocalizationWithResourceType' violates AGENTS.md Rule 6 which requires all test methods to include explicit '// Arrange', '// Act', and '// Assert' comments. This rule was explicitly defined in the AGENTS.md file added in this same PR. All other test methods in DisplayNameTest.cs correctly follow this pattern with proper AAA comments, but this test method has none of the required comments, making it inconsistent with repository standards and harder to maintain.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "[Fact]\npublic async Task SupportsLocalizationWithResourceType()\n{\n    var model = new TestModel();\n    var rootComponent = new TestHostComponent\n    {\n        InnerContent = builder =>\n        {\n            builder.OpenComponent<DisplayName<string>>(0);\n            builder.AddComponentParameter(1, \"For\", (System.Linq.Expressions.Expression<Func<string>>)(() => model.PropertyWithResourceBasedDisplay));\n            builder.CloseComponent();\n        }\n    };\n\n    var output = await RenderAndGetOutput(rootComponent);\n    Assert.Equal(\"Localized Display Name\", output);\n}"
+  },
+  {
+   "title": "Test method missing Arrange/Act/Assert comments",
+   "description": "This test method does not include the required '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 145,
+   "end_line": 164,
+   "problematic_code_snippet": "    [Fact]\n    public async Task SupportsLocalizationWithResourceType()\n    {\n        var model = new TestModel();\n        var rootComponent = new TestHostComponent\n        {\n            InnerContent = builder =>\n            {\n                builder.OpenComponent<DisplayName<string>>(0);\n                builder.AddComponentParameter(1, \"For\", (System.Linq.Expressions.Expression<Func<string>>)(() => model.PropertyWithResourceBasedDisplay));\n                builder.CloseComponent();\n            }\n        };\n\n        var output = await RenderAndGetOutput(rootComponent);\n        Assert.Equal(\"Localized Display Name\", output);\n    }",
+   "rule_name": "Rule 6: Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 13,
+   "end_line": 13,
+   "problematic_code_snippet": "    public async Task ThrowsIfNoForParameterProvided()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 38,
+   "end_line": 38,
+   "problematic_code_snippet": "    public async Task DisplaysPropertyNameWhenNoAttributePresent()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 64,
+   "end_line": 64,
+   "problematic_code_snippet": "    public async Task DisplaysDisplayAttributeName()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 90,
+   "end_line": 90,
+   "problematic_code_snippet": "    public async Task DisplaysDisplayNameAttributeName()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 116,
+   "end_line": 116,
+   "problematic_code_snippet": "    public async Task DisplayAttributeTakesPrecedenceOverDisplayNameAttribute()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 143,
+   "end_line": 143,
+   "problematic_code_snippet": "    public async Task WorksWithDifferentPropertyTypes()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 145,
+   "end_line": 145,
+   "problematic_code_snippet": "    public async Task SupportsLocalizationWithResourceType()",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async helper method name missing Async suffix",
+   "description": "This helper returns Task<string> but its name does not end with 'Async' as required.",
+   "file_path": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+   "start_line": 166,
+   "end_line": 166,
+   "problematic_code_snippet": "    private static async Task<string> RenderAndGetOutput(TestHostComponent rootComponent)",
+   "rule_name": "Rule 8: Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "E2E test method missing Arrange/Act/Assert comments",
+   "description": "This test method does not include the required '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases.",
+   "file_path": "src/Components/test/E2ETest/Tests/FormsTest.cs",
+   "start_line": 560,
+   "end_line": 586,
+   "problematic_code_snippet": "    [Fact]\n    public void DisplayNameReadsAttributesCorrectly()\n    {\n        var appElement = Browser.MountTestComponent<DisplayNameComponent>();\n\n        // Check that DisplayAttribute.Name is displayed\n        var displayNameLabel = appElement.FindElement(By.Id(\"product-name-label\"));\n        Browser.Equal(\"Product Name\", () => displayNameLabel.Text);\n\n        // Check that DisplayNameAttribute is displayed\n        var priceLabel = appElement.FindElement(By.Id(\"price-label\"));\n        Browser.Equal(\"Unit Price\", () => priceLabel.Text);\n\n        // Check that DisplayAttribute takes precedence over DisplayNameAttribute\n        var stockLabel = appElement.FindElement(By.Id(\"stock-label\"));\n        Browser.Equal(\"Stock Quantity\", () => stockLabel.Text);\n\n        // Check fallback to property name when no attributes present\n        var descriptionLabel = appElement.FindElement(By.Id(\"description-label\"));\n        Browser.Equal(\"Description\", () => descriptionLabel.Text);\n\n        // Check that ResourceType localization works with English resources\n        var localizedLabel = appElement.FindElement(By.Id(\"localized-label\"));\n        Browser.Equal(\"Product Name\", () => localizedLabel.Text);\n    }",
+   "rule_name": "Rule 6: Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "6d720c560e5d68f9d9cafa4f89255f111716d776",
+ "diff_chars": 34903,
+ "diff_lines": 733,
+ "user_prompt_chars": 38944,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 123689,
+ "wall_ms": 127033,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 24,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 0.15833968,
+ "spend_post_usd": 0.184662425,
+ "cost_settled": true,
+ "cost_wait_ms": 332,
+ "cost_usd": 0.02632274499999998,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.025524215,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 48799,
+  "cache_read_input_tokens": 409104,
+  "output_tokens": 30663,
+  "output_tokens_details": {
+   "thinking_tokens": 12515
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 48799
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 30663,
+   "cacheReadInputTokens": 409104,
+   "cacheCreationInputTokens": 48799,
+   "webSearchRequests": 0,
+   "costUSD": 0.025524215,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 12515,
+   "cacheCreationEphemeral5mInputTokens": 48799,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 4,
+   "title": "Code Review Bench PR #64636 - Blazor supports DisplayName for models",
+   "author": "unknown",
+   "baseSha": "a4cc9344595fc3cb37c9fd78ee174ed8062c9ff6",
+   "headSha": "6d720c560e5d68f9d9cafa4f89255f111716d776"
+  },
+  "summary": "This PR adds a `DisplayName<TValue>` component to the Blazor Web forms package. Given a `For` expression such as `() => model.Prop`, it renders the label text from `[Display(Name)]`, then `[DisplayName]`, then the raw property name. The Web project's `ExpressionMemberAccessor` does the lookup, and the PR also updates the BlazorWeb-CSharp account pages to use the component, adds a BasicTestApp E2E page with localized resources, and adds unit tests.\n\nThe core shape is sound and the attribute precedence matches DataAnnotations/MVC conventions. The main problem is a static cache in `ExpressionMemberAccessor` that is keyed on the `Expression` object itself. Razor builds a fresh expression tree on every parent render, so the cache grows without bound and pins the parent component. There are also smaller issues: an unused cache field, silent wording changes in the project templates, a base-class divergence from the PR description, and some weak or unused test scaffolding.",
+  "verdict": "request_changes",
+  "verdictRationale": "The Expression-keyed static cache is a real memory leak on a common path: any parent component that renders `<DisplayName For=\"@(() => ...)\" />` will add an entry per render and keep the closure alive. That should be fixed before merge. The template copy changes and test gaps are worth fixing in the same pass, but they are less urgent.",
+  "architecture": {
+   "overview": "Today, Blazor's form helpers (`ValidationMessage<TValue>`, `FieldIdentifier`) take a `For` lambda, parse it into a member, and cache per-member data. Those caches are keyed by `(Type, MemberInfo)`, which is bounded by the number of types and members. The new `DisplayName<TValue>` component in `src/Components/Web/src/Forms/DisplayName.cs` follows the same `For` contract. It implements `IComponent` directly, recomputes its text only when the `For` reference changes, and renders the text through `RenderHandle`.\n\nThis PR adds `ExpressionMemberAccessor` in `src/Components/Web/src/Forms/ExpressionMemberAccessor.cs` to resolve display text. It caches the `Expression` to `MemberInfo` mapping in a static `ConcurrentDictionary<Expression, MemberInfo>`. Because the Razor-generated lambda is a new object on each parent render, that cache is effectively unbounded and holds references into the parent component. The PR also changes account pages in the BlazorWeb-CSharp project template to use the component.",
+   "steps": [
+    "Entry point: a parent component's Razor markup passes `For=\"@(() => model.Prop)\"` to `DisplayName<TValue>`. This is the same contract `ValidationMessage<TValue>` uses today.",
+    "`DisplayName.SetParametersAsync` (DisplayName.cs) calls `parameters.SetParameterProperties`, validates that `For` is set, and compares `For` by reference with `_previousFieldAccessor`. A new lambda on each parent render therefore triggers a recompute.",
+    "`ExpressionMemberAccessor.GetDisplayName` (ExpressionMemberAccessor.cs) unwraps the expression to a `MemberInfo`. The PR caches that mapping in `_memberInfoCache`, keyed by the `Expression` instance. This is the new static state and the source of the leak.",
+    "Attribute resolution checks `DisplayAttribute.GetName()`, then `DisplayNameAttribute.DisplayName`, then `member.Name`. Hot-reload clears the cache, matching `FieldIdentifier`.",
+    "Surrounding changes: `PublicAPI.Unshipped.txt` adds the public surface, BasicTestApp adds a localized `DisplayNameComponent` page with an E2E test, and the BlazorWeb-CSharp account `.razor` pages replace hard-coded labels with `<DisplayName>`."
+   ],
+   "diagrams": [
+    {
+     "title": "DisplayName resolution path",
+     "kind": "flowchart",
+     "description": "Shows how a For lambda flows from a parent component through DisplayName into the attribute lookup and the new static cache.",
+     "mermaid": "flowchart LR\n  P[\"Parent Razor component\"] -->|\"For = () => model.Prop\"| DN[\"DisplayName.SetParametersAsync\"]\n  DN -->|\"For changed by reference\"| EMA[\"ExpressionMemberAccessor.GetDisplayName\"]\n  EMA --> MC[\"_memberInfoCache keyed by Expression (added in PR)\"]\n  EMA --> ATTR[\"DisplayAttribute, then DisplayNameAttribute, then member.Name\"]\n  ATTR --> DN\n  DN -->|\"RenderHandle.Render text\"| OUT[\"Rendered label text\"]"
+    },
+    {
+     "title": "Parent re-render updates the label",
+     "kind": "sequence",
+     "description": "Shows that each parent render can create a new For expression, which causes a cache insert in the static accessor.",
+     "mermaid": "sequenceDiagram\n  participant Parent as Parent component\n  participant DN as DisplayName\n  participant EMA as ExpressionMemberAccessor\n  Parent->>DN: SetParametersAsync with new For lambda\n  DN->>DN: compare For with previous reference\n  DN->>EMA: GetDisplayName(For)\n  EMA->>EMA: GetOrAdd keyed by Expression identity\n  EMA-->>DN: display text\n  DN-->>Parent: render label text"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Static cache keyed on Expression identity leaks memory and pins components",
+    "severity": "high",
+    "category": "performance",
+    "body": "`ExpressionMemberAccessor` stores `ConcurrentDictionary<Expression, MemberInfo>` as a static field. Razor evaluates `@(() => _product.Name)` on every render, which creates a new expression tree each time. Each `GetOrAdd` call therefore inserts a new entry that is never removed. The expression tree also captures the parent component's closure, so the cache keeps those components alive.\n\nThis happens on a normal path. Each time a parent that renders `DisplayName` re-renders, `DisplayName` sees a new `For` reference and calls `GetDisplayName`, which inserts another entry. The cache is only cleared on hot reload.\n\n::diff{file=\"src/Components/Web/src/Forms/ExpressionMemberAccessor.cs\" lines=\"15-16\"}\n\n::callout{type=\"perf\"}\nThe per-member display name is cheap to compute. The `Expression`-keyed cache is the part that needs to go. The existing `FieldIdentifier` cache is keyed on `(Type, MemberInfo)`, which stays bounded.\n\n::suggestion{file=\"src/Components/Web/src/Forms/ExpressionMemberAccessor.cs\" lines=\"30-49\"}\nprivate static MemberInfo GetMemberInfo<TValue>(Expression<Func<TValue>> accessor)\n{\n    ArgumentNullException.ThrowIfNull(accessor);\n\n    var accessorBody = accessor.Body;\n    if (accessorBody is UnaryExpression unary\n        && unary.NodeType == ExpressionType.Convert\n        && unary.Type == typeof(object))\n    {\n        accessorBody = unary.Operand;\n    }\n\n    if (accessorBody is not MemberExpression memberExpression)\n    {\n        throw new ArgumentException(\n            $\"The provided expression contains a {accessorBody.GetType().Name} which is not supported. \" +\n            $\"Only simple member accessors (fields, properties) of an object are supported.\");\n    }\n\n    return memberExpression.Member;\n}",
+    "files": [
+     "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+     "src/Components/Web/src/Forms/DisplayName.cs"
+    ],
+    "fixPrompt": "In `src/Components/Web/src/Forms/ExpressionMemberAccessor.cs`, remove the static `ConcurrentDictionary<Expression, MemberInfo> _memberInfoCache`. Razor creates a new `Expression` object on each parent render, so an Expression-keyed static cache grows without bound and keeps parent components alive. Compute the `MemberInfo` directly from the expression inside `GetMemberInfo`, keeping the existing Convert-unwrap and the `ArgumentException` for non-member expressions. If caching is still wanted, key it on a bounded value such as `(Type, MemberInfo)` or `MemberInfo`, following the `FieldIdentifier` cache in `src/Components/Forms/src/FieldIdentifier.cs`. Keep the existing hot-reload `ClearCache` wiring consistent with the new cache.",
+    "commentAnchor": {
+     "file": "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+     "lineStart": 15,
+     "lineEnd": 16
+    }
+   },
+   {
+    "title": "Unused _displayNameCache field",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "`_displayNameCache` is declared but never read or written. `GetDisplayName(MemberInfo)` returns the value directly without consulting it. It is dead state, and it also suggests the caching intent is unclear. Remove it, or use it if caching is actually wanted (keyed on `MemberInfo`, which is bounded).\n\n::code{file=\"src/Components/Web/src/Forms/ExpressionMemberAccessor.cs\" lines=\"15-16\"}",
+    "files": [
+     "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs"
+    ],
+    "fixPrompt": "In `src/Components/Web/src/Forms/ExpressionMemberAccessor.cs`, the field `_displayNameCache` (line 16) is never used. Delete it, or if caching the display name per MemberInfo is intended, actually consult it in `GetDisplayName(MemberInfo)`. Coordinate with the leak fix that removes the `Expression`-keyed `_memberInfoCache`.",
+    "commentAnchor": {
+     "file": "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs",
+     "lineStart": 16,
+     "lineEnd": 16
+    }
+   },
+   {
+    "title": "Template label text silently changes for several fields",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The template pages were converted from hard-coded labels to `<DisplayName>`, but several visible strings change. Nothing in the PR description mentions these copy changes:\n\n- `Manage/ChangePassword.razor`: `OldPassword` renders as \"Current password\" (was \"Old password\"). `ConfirmPassword` renders as \"Confirm new password\" (was \"Confirm password\").\n- `Register.razor`: \"Confirm Password\" becomes \"Confirm password\" (capitalization).\n\nThese are user-facing strings in a project template, so they should be either accepted deliberately or the `[Display]` names should be adjusted to keep the original text.\n\n::diff{file=\"src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/Manage/ChangePassword.razor\" lines=\"23-25\"}",
+    "files": [
+     "src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/Manage/ChangePassword.razor",
+     "src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/Register.razor"
+    ],
+    "fixPrompt": "In the BlazorWeb-CSharp account templates, the `<DisplayName>` conversion changed visible label text. In `Manage/ChangePassword.razor`, \"Old password\" became \"Current password\" and \"Confirm password\" became \"Confirm new password\". In `Register.razor`, \"Confirm Password\" became \"Confirm password\". Decide whether the new text is desired. If not, adjust the `[Display(Name=...)]` values on the matching `InputModel` properties so the rendered labels match the previous text. If the new text is intended, call it out in the PR description.",
+    "commentAnchor": {
+     "file": "src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/Manage/ChangePassword.razor",
+     "lineStart": 23,
+     "lineEnd": 25
+    }
+   },
+   {
+    "title": "Unrelated placeholder text edits in ResetPassword template",
+    "severity": "low",
+    "category": "style",
+    "body": "The ResetPassword template changes the `placeholder` on the password and confirm-password inputs from \"Please enter your password.\" and \"Please confirm your password.\" to \"password\". This is unrelated to the `DisplayName` feature and makes the change harder to review. The Login.razor password block also loses its original indentation in the diff, which adds noise.\n\n::code{file=\"src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/ResetPassword.razor\" lines=\"33-33\"}",
+    "files": [
+     "src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/ResetPassword.razor"
+    ],
+    "fixPrompt": "In `ResetPassword.razor` in the BlazorWeb-CSharp account templates, revert the `placeholder` attribute changes on the Password and ConfirmPassword inputs back to \"Please enter your password.\" and \"Please confirm your password.\". Those edits are unrelated to the DisplayName feature. Also restore the original indentation of the Password block in `Login.razor` so the diff only shows the label change.",
+    "commentAnchor": {
+     "file": "src/ProjectTemplates/Web.ProjectTemplates/content/BlazorWeb-CSharp/BlazorWebCSharp.1/Components/Account/Pages/ResetPassword.razor",
+     "lineStart": 33,
+     "lineEnd": 33
+    }
+   },
+   {
+    "title": "Implementation diverges from the documented ComponentBase base class",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The PR description says `DisplayName<TValue>` is `public class DisplayName<TValue> : ComponentBase`. The implementation instead implements `IComponent` directly and hand-rolls `Attach` and `SetParametersAsync`. `ValidationMessage<TValue>` and the other form components derive from `ComponentBase`. Users who expect `ComponentBase` members, or who subclass the component, will be surprised. The public API file also records the type as an `IComponent` implementation rather than the documented `ComponentBase`.\n\nIf the direct `IComponent` approach is deliberate, say so in the PR description and the XML doc. Otherwise, switch to `ComponentBase`, which also removes the manual `RenderHandle` handling.\n\n::diff{file=\"src/Components/Web/src/Forms/DisplayName.cs\" lines=\"17-17\"}",
+    "files": [
+     "src/Components/Web/src/Forms/DisplayName.cs"
+    ],
+    "fixPrompt": "In `src/Components/Web/src/Forms/DisplayName.cs`, the class `DisplayName<TValue>` implements `IComponent` directly. The PR description and the sibling `ValidationMessage<TValue>` use `ComponentBase`. Either change the base to `ComponentBase` and move the render logic into `BuildRenderTree`, updating `PublicAPI.Unshipped.txt` to match, or document in the XML summary why `IComponent` is required. Keep the `For` parameter, the `[EditorRequired]` attribute, and the InvalidOperationException for a missing `For`.",
+    "commentAnchor": {
+     "file": "src/Components/Web/src/Forms/DisplayName.cs",
+     "lineStart": 17,
+     "lineEnd": 17
+    }
+   },
+   {
+    "title": "Test scaffolding is unused and the render lookup is not scoped",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`RenderAndGetOutput` declares `displayLabelComponentFrame` and never uses it. The helper then picks the first `Text` frame in the batch, so it never checks that the text came from the `DisplayName` component. The test passes because `TestHostComponent` happens to emit no other text, not because the lookup is correct.\n\n`SupportsLocalizationWithResourceType` only reads a static property (`LocalizedDisplayName`). It does not exercise resource lookup, so its name overstates what it proves.\n\n::code{file=\"src/Components/Web/test/Forms/DisplayNameTest.cs\" lines=\"176-190\"}",
+    "files": [
+     "src/Components/Web/test/Forms/DisplayNameTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/Web/test/Forms/DisplayNameTest.cs`, `RenderAndGetOutput` (around line 176) declares an unused `displayLabelComponentFrame` and then takes the first `Text` frame from the whole batch. Find the `DisplayName` component frame, then read the text from its child frames (or the component's rendered batch) so the assertion is tied to that component. Remove the unused variable. Also rename or strengthen `SupportsLocalizationWithResourceType` (around line 159) so it actually goes through a resource lookup, for example with a `ResourceManager`-backed resource instead of a static property.",
+    "commentAnchor": {
+     "file": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "lineStart": 176,
+     "lineEnd": 190
+    }
+   },
+   {
+    "title": "Missing coverage for key branches",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The unit tests cover the happy paths but leave several branches that matter for this feature untested:\n\n- A non-member expression such as `() => Compute()` should throw `ArgumentException`. No test checks it.\n- A `[Display]` attribute with `Order` or `ShortName` but no `Name` should fall through to `DisplayNameAttribute` or the property name. No test checks it.\n- Changing `For` on an existing instance should re-render with the new label. The `_previousFieldAccessor` path is untested.\n- The cache-growth problem above is not covered by any test.\n\nAdd tests for these cases. The non-member and changed-`For` cases are the most valuable.\n\n::code{file=\"src/Components/Web/test/Forms/DisplayNameTest.cs\" lines=\"159-172\"}",
+    "files": [
+     "src/Components/Web/test/Forms/DisplayNameTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/Web/test/Forms/DisplayNameTest.cs`, add tests for: (1) a non-member expression such as `() => Compute()` throwing `ArgumentException` from `ExpressionMemberAccessor`; (2) a `[Display]` attribute without `Name` falling back to `DisplayNameAttribute` or the property name; (3) re-rendering with a new `For` value producing the new label. Use the existing `TestRenderer` and `RenderAndGetOutput` helpers, and keep assertions on the rendered text.",
+    "commentAnchor": {
+     "file": "src/Components/Web/test/Forms/DisplayNameTest.cs",
+     "lineStart": 159,
+     "lineEnd": 172
+    }
+   },
+   {
+    "title": "Attribute precedence matches DataAnnotations and MVC",
+    "severity": "info",
+    "category": "correctness",
+    "body": "`ExpressionMemberAccessor.GetDisplayName` checks `DisplayAttribute.GetName()` first, then `DisplayNameAttribute.DisplayName`, then the property name. This matches MVC's `DisplayNameFor` and `DataAnnotations` conventions, so developers who already use `[Display]` see the same result.\n\nUsing `GetName()` rather than `.Name` also handles `ResourceType` lookups, which is what makes the localization path work.",
+    "files": [
+     "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs"
+    ]
+   },
+   {
+    "title": "Public API surface is recorded and hot-reload handled",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The PR adds the new public members to `PublicAPI.Unshipped.txt`, so the API analyzer will track them. It also clears the accessor cache on hot-reload deltas through `HotReloadManager.Default.OnDeltaApplied`, following the same pattern as `FieldIdentifier` and `JSComponentInterop`.\n\nThe E2E test and BasicTestApp page exercise the attribute cases in a real browser, which is good coverage for the rendering path.",
+    "files": [
+     "src/Components/Web/src/PublicAPI.Unshipped.txt",
+     "src/Components/Web/src/Forms/ExpressionMemberAccessor.cs"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":4,\"title\":\"Code Review Bench PR #64636 - Blazor supports DisplayName for models\",\"author\":\"unknown\",\"baseSha\":\"a4cc9344595fc3cb37c9fd78ee174ed8062c9ff6\",\"headSha\":\"6d720c560e5d68f9d9cafa4f89255f111716d776\"},\"summary\":\"This PR adds a `DisplayName<TValue>` component to the Blazor Web forms package. Given a `For` expression such as `() => model.Prop`, it renders the label text from `[Display(Name)]`, then `[DisplayName]`, then the raw pr",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 9
+}

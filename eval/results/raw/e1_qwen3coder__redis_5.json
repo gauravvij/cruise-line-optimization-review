@@ -1,0 +1,259 @@
+{
+ "id": "redis#5",
+ "repo": "redis",
+ "num": 5,
+ "tag": "e1_qwen3coder",
+ "model": "qwen/qwen3-coder-next",
+ "effort": "high",
+ "maxTurns": 60,
+ "promptVariant": "baseline",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Direct malloc_usable_size instead of zmalloc_size",
+   "description": "The rule requires all memory operations to use Redis zmalloc wrappers (zmalloc_size) instead of direct libc functions (malloc_usable_size)",
+   "file_path": "src/object.c",
+   "start_line": 1216,
+   "end_line": 1217,
+   "problematic_code_snippet": "    /* All kv-objects has at least kvobj header and embedded key */\n    size_t asize = malloc_usable_size((void *)o);",
+   "rule_name": "Use zmalloc/zfree Wrappers Instead of Direct malloc/free"
+  },
+  {
+   "title": "Incorrect memory calculation for QUICKLIST due to wrong denominator",
+   "description": "In the QUICKLIST encoding branch, the average element size calculation uses `elesize/samples` instead of `elesize/elecount`. This divides the accumulated element size by the number of sampled nodes rather than the total element count in those nodes. Since `elecount` represents the sum of all `node->count` values (the actual number of elements), using `samples` (number of nodes) produces an incorrect average that doesn't represent the true per-element memory usage. This causes the MEMORY USAGE command to return wildly inaccurate values for quicklist-encoded lists.",
+   "file_path": "src/object.c",
+   "start_line": 1234,
+   "end_line": 1239,
+   "problematic_code_snippet": "            do {\n                elesize += sizeof(quicklistNode)+zmalloc_size(node->entry);\n                elecount += node->count;\n                samples++;\n            } while ((node = node->next) && samples < sample_size);\n            asize += (double)elesize/samples*ql->count;"
+  },
+  {
+   "title": "Variable shadowing breaks sampling consistency for STREAM objects",
+   "description": "A local `samples` variable is declared at line 1319 within the OBJ_STREAM branch, shadowing the outer `samples` variable declared at line 1214. This prevents the outer samples counter from being updated during stream memory calculation. While this doesn't break the stream calculation itself, it violates the function's sampling design pattern where the outer `samples` variable tracks total sampling across all object type branches. This inconsistency could lead to unexpected behavior if the function logic is modified to check or use the outer samples counter after processing.",
+   "file_path": "src/object.c",
+   "start_line": 1318,
+   "end_line": 1319,
+   "problematic_code_snippet": "        raxStart(&ri,s->rax);\n        raxSeek(&ri,\"^\",NULL,0);\n        size_t lpsize = 0;\n        size_t samples = 0;\n        while(samples < sample_size && raxNext(&ri)) {"
+  },
+  {
+   "title": "Double-counting last listpack in STREAM memory calculation",
+   "description": "The stream memory estimation algorithm samples the first N listpacks, computes their average size, and then explicitly adds the last listpack's actual size separately (line 1336). The multiplication at line 1330 should use `(s->rax->numele-1)` to account for all listpacks except the last one, but it incorrectly uses `s->rax->numele` without the subtraction. This causes the last listpack to be counted twice: once in the averaged estimate and once with its actual size, resulting in inflated memory usage reports for streams with more elements than the sample size.",
+   "file_path": "src/object.c",
+   "start_line": 1326,
+   "end_line": 1336,
+   "problematic_code_snippet": "        if (s->rax->numele <= samples) {\n            asize += lpsize;\n        } else {\n            if (samples) lpsize /= samples; /* Compute the average. */\n            asize += lpsize * s->rax->numele;\n            /* No need to check if seek succeeded, we enter this branch only\n             * if there are a few elements in the radix tree. */\n            raxSeek(&ri,\"$\",NULL,0);\n            raxNext(&ri);\n            /* Use the allocated size, since we overprovision the node initially. */\n            asize += zmalloc_size(ri.data);\n        }"
+  },
+  {
+   "title": "Unused variable 'elecount' causes build failure with -Werror",
+   "description": "The variable 'elecount' is declared and incremented in the QUICKLIST encoding branch (line 1236: 'elecount += node->count') but is never used after the PR changed the calculation from 'elesize/elecount' to 'elesize/samples'. This creates an unused-but-set variable which triggers compiler warnings under -Wall (enabled in Makefile) and causes build failures when compiling with -Werror flag. This violates AGENTS.MD Rule #4 which requires the codebase to compile without warnings when REDIS_CFLAGS=\"-Werror\" is enabled.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "size_t elesize = 0, elecount = 0, samples = 0;\n...\nif (o->encoding == OBJ_ENCODING_QUICKLIST) {\n    quicklist *ql = o->ptr;\n    quicklistNode *node = ql->head;\n    asize += sizeof(quicklist);\n    do {\n        elesize += sizeof(quicklistNode)+zmalloc_size(node->entry);\n        elecount += node->count;\n        samples++;\n    } while ((node = node->next) && samples < sample_size);\n    asize += (double)elesize/samples*ql->count;"
+  },
+  {
+   "title": "Internal helper function kvobjComputeSize is not declared static",
+   "description": "`kvobjComputeSize` appears to be an internal helper used within `src/object.c` (e.g., by the MEMORY USAGE handling code in the same file). Per the rule, such single-compilation-unit helper functions must be declared `static` to avoid exporting unnecessary global symbols.",
+   "file_path": "src/object.c",
+   "start_line": 1208,
+   "end_line": 1208,
+   "problematic_code_snippet": "size_t kvobjComputeSize(robj *key, kvobj *o, size_t sample_size, int dbid) {",
+   "rule_name": "Rule 7: Internal Helper Functions Must Be Declared Static"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd",
+ "diff_chars": 10143,
+ "diff_lines": 220,
+ "user_prompt_chars": 11195,
+ "exit_code": 0,
+ "timed_out": false,
+ "latency_ms": 60794,
+ "wall_ms": 62789,
+ "tool_calls": [
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/object.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/object.h"
+  },
+  {
+   "name": "Glob",
+   "detail": "**/object.h"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/db.c"
+  },
+  {
+   "name": "Grep",
+   "detail": "kvobjComputeSize"
+  },
+  {
+   "name": "Grep",
+   "detail": "dbFind"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/server.h"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/tests/unit/type/hash.tcl"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/tests/unit/type/list.tcl"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/tests/unit/type/string.tcl"
+  },
+  {
+   "name": "Grep",
+   "detail": "objectComputeSize"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/object.c"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/object.c"
+  },
+  {
+   "name": "Grep",
+   "detail": "moduleGetMemUsage"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/module.c"
+  },
+  {
+   "name": "Grep",
+   "detail": "typedef struct robj|struct robj|kvobj|iskvobj"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis/src/server.h"
+  },
+  {
+   "name": "Grep",
+   "detail": "memory_usage"
+  },
+  {
+   "name": "Grep",
+   "detail": "memory usage"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 21,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n[claude-code:unrecognized_model] {\"model\":\"qwen/qwen3-coder-next\",\"query_source\":\"sdk\"}\n",
+ "cost_usd": 0.05229079999999797,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 22,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.45509839999999996,
+ "usage": {
+  "input_tokens": 53862,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 752352,
+  "output_tokens": 4459,
+  "output_tokens_details": {
+   "thinking_tokens": 0
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "qwen/qwen3-coder-next": {
+   "inputTokens": 53862,
+   "outputTokens": 4459,
+   "cacheReadInputTokens": 752352,
+   "cacheCreationInputTokens": 0,
+   "webSearchRequests": 0,
+   "costUSD": 0.45509839999999996,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 32000,
+   "thinkingTokens": 0,
+   "cacheCreationEphemeral5mInputTokens": 0,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "qwen/qwen3-coder-next",
+   "provider": "firstParty",
+   "costBasis": "unknown"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 5,
+   "title": "Code Review Bench PR #14288 - Fix MEMORY USAGE command",
+   "author": "",
+   "baseSha": "5d0e57b83bcd5412e5778ab90f0c4113a861a587",
+   "headSha": "b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd"
+  },
+  "summary": "This PR fixes the MEMORY USAGE command after the key-value unification (kvobj) change. The issue is that the function was renamed from `objectComputeSize()` to `kvobjComputeSize()` and the original implementation used `sizeof(*o)` which only accounted for the object header, not the embedded key stored within the kvobj. The fix replaces `sizeof(*o)` with `malloc_usable_size((void *)o)` to correctly measure the full allocated size, including the embedded key. The function now properly accounts for both key and value memory in all object types (string, list, set, zset, hash, stream, module).",
+  "verdict": "request_changes",
+  "verdictRationale": "The PR has a critical correctness issue: there's a variable shadowing bug on line 1319 where `size_t samples = 0;` shadows the outer `samples` variable declared at line 1214. This can cause incorrect memory calculation for streams. Additionally, there's a potential incorrect calculation in the stream radix tree estimation (line 1330) where it multiplies by `s->rax->numele` instead of `s->rax->numele-1` after the loop. The tests look thorough but may not catch these subtle bugs. I recommend fixing these issues before merge.",
+  "architecture": {
+   "overview": "The MEMORY USAGE command in Redis estimates memory consumption for keys and their values. After the kvobj (key-value object) unification, objects store both the key and value together in a single allocated structure. The `kvobjComputeSize()` function calculates the total memory footprint by starting with `malloc_usable_size()` of the object and then adding the sizes of various data structure components. The function handles different object types (string, list, set, zset, hash, stream, module) with their specific memory layouts. For aggregated types, it uses sampling to estimate total size from a subset of elements.",
+   "steps": [
+    "The MEMORY USAGE command is invoked via `memoryCommand()` in object.c",
+    "1. `dbFind()` locates the kvobj by key in the database\n2. `kvobjComputeSize()` is called with the key, kvobj, sample size, and dbid",
+    "3. The function starts by getting the total allocated size of the kvobj using `malloc_usable_size((void *)o)`",
+    "4. Based on object type and encoding, it adds the size of value data structures (SDS, listpacks, quicklists, dicts, etc.)",
+    "5. For aggregated types, it samples elements to estimate total size",
+    "6. The result is returned as the estimated memory usage in bytes"
+   ],
+   "diagrams": [
+    {
+     "title": "MEMORY USAGE execution flow",
+     "kind": "flowchart",
+     "description": "Shows the flow from memoryCommand to kvobjComputeSize and back",
+     "mermaid": "flowchart TD\n    A[memoryCommand] --> B[dbFind key]\n    B --> C{kvobj found?}\n    C -->|No| D[Return NULL]\n    C -->|Yes| E[kvobjComputeSize]\n    E --> F{Object Type?}\n    F -->|String| G[SDS size + header]\n    F -->|List| H[Quicklist/Listpack]\n    F -->|Set| I[HT/Intset/Listpack]\n    F -->|ZSet| J[Skiplist/HT]\n    F -->|Hash| K[HT/Listpack]\n    F -->|Stream| L[Radix tree + listpacks]\n    F -->|Module| M[moduleGetMemUsage]\n    G & H & I & J & K & L & M --> N[Return total size]\n    N --> O[addReplyLongLong]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Variable shadowing in stream memory calculation",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In the stream type handling at line 1319, a new `samples` variable is declared which shadows the outer `samples` variable declared at line 1214. This causes the sampling logic for listpacks to use the inner `samples` variable, but the outer `samples` variable (which controls the loop) is never updated. This can lead to incorrect memory estimation for streams.\n\nThe outer `samples` variable at line 1214 is initialized to 0 and used in the loop condition `while(samples < sample_size)`, but the inner `samples = 0` at line 1319 shadows it, so the outer loop control is broken.\n\n::code{file=\"src/object.c\" lines=\"1214-1220\"}\n    size_t elesize = 0, elecount = 0, samples = 0;\n    \n    /* All kv-objects has at least kvobj header and embedded key */\n    size_t asize = malloc_usable_size((void *)o);\n\n::code{file=\"src/object.c\" lines=\"1315-1340\"}\n        raxIterator ri;\n        raxStart(&ri,s->rax);\n        raxSeek(&ri,\"^\",NULL,0);\n        size_t lpsize = 0;\n        size_t samples = 0;  // <-- SHADOWING BUG: shadows outer samples\n        while(samples < sample_size && raxNext(&ri)) {\n            unsigned char *lp = ri.data;\n            /* Use the allocated size, since we overprovision the node initially. */\n            lpsize += zmalloc_size(lp);\n            samples++;\n        }\n\nThe fix is to either:\n1. Remove the `size_t` declaration on line 1319 to reuse the outer variable\n2. Use a different variable name like `lp_samples` for the listpack sampling count\n\nThe same pattern occurs at lines 1256 and 1302 where `samples` is used with the outer scope correctly.",
+    "files": [
+     "src/object.c"
+    ],
+    "fixPrompt": "Fix the variable shadowing bug in src/object.c at line 1319 where `size_t samples = 0;` shadows the outer samples variable. Remove the `size_t` declaration to reuse the outer variable, or rename to a different name like `lp_samples` and use that consistently in the loop.",
+    "commentAnchor": {
+     "file": "src/object.c",
+     "lineStart": 1319,
+     "lineEnd": 1319
+    }
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":5,\"title\":\"Code Review Bench PR #14288 - Fix MEMORY USAGE command\",\"author\":\"\",\"baseSha\":\"5d0e57b83bcd5412e5778ab90f0c4113a861a587\",\"headSha\":\"b6ee4f12f443c1ee20660e2ac215e2fe054ba6bd\"},\"summary\":\"This PR fixes the MEMORY USAGE command after the key-value unification (kvobj) change. The issue is that the function was renamed from `objectComputeSize()` to `kvobjComputeSize()` and the original implementation used `sizeof(*o)` which only acco",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 1
+}

@@ -1,0 +1,143 @@
+{
+ "id": "prefect#5",
+ "repo": "prefect",
+ "num": 5,
+ "harness_version": "877ac98b39664866",
+ "tag": "r2_holdout_opus_baseline",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#6",
+  "Ghost#8",
+  "Ghost#10",
+  "aspnetcore#4",
+  "cal.com#6",
+  "cal.com#14",
+  "dify#6",
+  "dify#10",
+  "dify#11",
+  "firefox-ios#12",
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T15:50:28.614Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Cross-field validation using field_validator incorrectly",
+   "description": "The validation logic checks both bucket_folder and bucket fields (cross-field validation) but uses @field_validator instead of @model_validator, causing order-dependent validation issues and accessing potentially unvalidated fields via info.data",
+   "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+   "start_line": 698,
+   "end_line": 713,
+   "problematic_code_snippet": "@field_validator(\"bucket_folder\")\n@classmethod\ndef _bucket_folder_suffix(cls, value, info):\n    \"\"\"\n    Ensures that the bucket folder is suffixed with a forward slash.\n    Also validates that bucket_folder doesn't conflict with bucket name.\n    \"\"\"\n    if value != \"\" and not value.endswith(\"/\"):\n        value = f\"{value}/\"\n\n    # Cross-field validation: ensure bucket_folder doesn't match bucket name\n    # This should use @model_validator but incorrectly uses @field_validator\n    if info.data.get(\"bucket\") and value.strip(\"/\") == info.data.get(\"bucket\"):\n        raise ValueError(\"bucket_folder cannot be the same as bucket name\")\n\n    return value",
+   "rule_name": "Pydantic Models Must Use model_validator for Cross-Field Validation"
+  },
+  {
+   "title": "Incorrect string matching for path prefix detection causes false positives",
+   "description": "The double-nesting prevention logic uses `self.bucket_folder in path` instead of `path.startswith(self.bucket_folder)`. This causes false positives when bucket_folder appears anywhere in the path, not just as a prefix. For example, if bucket_folder is 'results/' and the path is 'my-results/file.txt', the code incorrectly treats it as already prefixed and returns it unchanged, skipping the necessary path resolution. This breaks the fix for issue #20174 in edge cases where folder names contain the bucket_folder as a substring.",
+   "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+   "start_line": 734,
+   "end_line": 735,
+   "problematic_code_snippet": "# See https://github.com/PrefectHQ/prefect/issues/20174\nif self.bucket_folder and self.bucket_folder in path:\n    return path\npath = (\n    str(PurePosixPath(self.bucket_folder, path)) if self.bucket_folder else path\n)"
+  },
+  {
+   "title": "Incorrect parameter name prevents timeout configuration in test harness",
+   "description": "The test fixture uses `server_timeout=60` when calling `prefect_test_harness()`, but the correct parameter name is `server_startup_timeout`. This means the intended 60-second timeout is not actually applied, leaving tests vulnerable to the same timeout issues in CI environments that the change was meant to fix. The prefect_test_harness function will ignore the invalid parameter and use its default timeout value instead, potentially causing intermittent test failures when multiple xdist workers start simultaneously in CI.",
+   "file_path": "src/integrations/prefect-gcp/tests/conftest.py",
+   "start_line": 19,
+   "end_line": 19,
+   "problematic_code_snippet": "# Increase timeout for CI environments where multiple xdist workers\n# start servers simultaneously, which can be slower on Python 3.11+\n# See https://github.com/PrefectHQ/prefect/issues/16397\nwith prefect_test_harness(server_timeout=60):\n    yield"
+  },
+  {
+   "title": "Test constructs invalid path with double slashes",
+   "description": "The test constructs `already_prefixed_path = f\"{bucket_folder}/abc123\"` but bucket_folder always ends with a trailing slash (enforced by the _bucket_folder_suffix validator). This creates paths like 'results//abc123' with double slashes. While the double-nesting prevention logic should handle this, the test no longer accurately simulates the actual scenario described in issue #20174 where paths are already correctly prefixed without double slashes. This makes the test less effective at catching regressions in the double-nesting prevention logic.",
+   "file_path": "src/integrations/prefect-gcp/tests/test_cloud_storage.py",
+   "start_line": 158,
+   "end_line": 158,
+   "problematic_code_snippet": "# Simulate path that already has bucket_folder prefix\n# (as would happen when create_result_record calls _resolve_path)\nalready_prefixed_path = f\"{bucket_folder}/abc123\"\n\n# When write_path calls _resolve_path again, it should NOT double-nest\nresult = gcs_bucket._resolve_path(already_prefixed_path)"
+  },
+  {
+   "title": "Unused import: model_validator",
+   "description": "`model_validator` is imported but not used anywhere in the modified code (the cross-field validation still uses `@field_validator`). This leaves an unused import in the module.",
+   "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+   "start_line": 10,
+   "end_line": 10,
+   "problematic_code_snippet": "from pydantic import Field, field_validator, model_validator",
+   "rule_name": "Unused Imports Must Be Automatically Removed"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect",
+ "head_sha": "ee03b77e9313cd59bf67cdbcb5869fd78cedb03e",
+ "diff_chars": 6597,
+ "diff_lines": 145,
+ "user_prompt_chars": 8828,
+ "exit_code": 1,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 2146,
+ "wall_ms": 34694,
+ "tool_calls": [],
+ "n_tool_calls": 0,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 1,
+ "turn_trace": {
+  "assistant_lines": 1,
+  "unique_message_ids": 1,
+  "lines_without_id": 0,
+  "tool_use_blocks": 0
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 3.089281557,
+ "spend_post_usd": 3.089281557,
+ "cost_settled": false,
+ "cost_wait_ms": 30308,
+ "cost_usd": 0,
+ "cost_flag": "key_delta_unsettled_after_30s",
+ "subtype": "success",
+ "is_error": true,
+ "num_turns": 1,
+ "stop_reason": "stop_sequence",
+ "cli_cost_usd": 0,
+ "usage": {
+  "output_tokens_details": {
+   "thinking_tokens": 0
+  },
+  "input_tokens": 0,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 0,
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {},
+ "structured_output": null,
+ "result_text_head": "API Error: 402 This request requires more credits, or fewer max_tokens. You requested up to 128000 tokens, but can only afford 114688. To increase, visit https://openrouter.ai/workspaces/default/keys/c11fc93ffbed165e461748ba5cf65716beccf8d2a850ea12e740f539ed089b6b and adjust the key's total limit",
+ "schema_valid": false,
+ "schema_errors": [
+  "structured_output missing"
+ ],
+ "n_findings": 0
+}

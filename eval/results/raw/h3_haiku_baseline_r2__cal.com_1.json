@@ -1,0 +1,395 @@
+{
+ "id": "cal.com#1",
+ "repo": "cal.com",
+ "num": 1,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline_r2",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T09:08:01.445Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "Features package imports from trpc",
+   "description": "The rule requires that the features package does not import from trpc, but permission-check.service.ts imports TRPCError from @trpc/server",
+   "file_path": "packages/features/pbac/services/permission-check.service.ts",
+   "start_line": 1,
+   "end_line": 6,
+   "problematic_code_snippet": "import { FeaturesRepository } from \"@calcom/features/flags/features.repository\";\nimport { MembershipRepository } from \"@calcom/features/membership/repositories/MembershipRepository\";\nimport logger from \"@calcom/lib/logger\";\nimport prisma from \"@calcom/prisma\";\nimport type { MembershipRole } from \"@calcom/prisma/enums\";\nimport { TRPCError } from \"@trpc/server\";",
+   "rule_name": "Prevent Circular Dependencies Between Core Packages"
+  },
+  {
+   "title": "orgId parameter not propagated in getTeamIdsWithPermission",
+   "description": "The method getTeamIdsWithPermission accepts an orgId parameter to scope permission checks to a specific organization, but it fails to pass this parameter to the underlying getTeamIdsWithPermissions method. This causes organization scoping to be ignored when checking single permissions, allowing users to potentially access teams from all organizations instead of only the specified one. The bug breaks the core security feature introduced in this PR where organization-scoped permission checks were meant to restrict access based on orgId.",
+   "file_path": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+   "start_line": 211,
+   "end_line": 223,
+   "problematic_code_snippet": "async getTeamIdsWithPermission({\n  userId,\n  permission,\n  fallbackRoles,\n  orgId,\n}: {\n  userId: number;\n  permission: PermissionString;\n  fallbackRoles: MembershipRole[];\n  orgId?: number;\n}): Promise<number[]> {\n  return this.getTeamIdsWithPermissions({ userId, permissions: [permission], fallbackRoles });\n}"
+  },
+  {
+   "title": "Incomplete orgId filtering in PBAC child team query",
+   "description": "In the SQL query for getTeamsWithPBACPermissions, the WHERE clause for child teams is missing a check for child.\"parentId\" = ${orgId}. The original PR added this condition to properly scope child teams when an orgId is provided, but this implementation only checks org.\"id\" and child.\"id\", missing the case where a child team's parent should match the orgId. This causes the query to incorrectly exclude child teams whose parentId matches the specified orgId, breaking the inheritance model where organization permissions should propagate to child teams.",
+   "file_path": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+   "start_line": 301,
+   "end_line": 309,
+   "problematic_code_snippet": "SELECT DISTINCT child.\"id\"\nFROM \"Membership\" m\nINNER JOIN \"Role\" r ON m.\"customRoleId\" = r.id\nINNER JOIN \"Team\" org ON m.\"teamId\" = org.id\nINNER JOIN \"Team\" child ON child.\"parentId\" = org.id\nWHERE m.\"userId\" = ${userId}\n  AND m.\"accepted\" = true\n  AND m.\"customRoleId\" IS NOT NULL\n  AND (${orgId}::bigint IS NULL OR org.\"id\" = ${orgId} OR child.\"id\" = ${orgId})"
+  },
+  {
+   "title": "Authorization bypass when filtering multiple userIds including current user",
+   "description": "The isCurrentUser check was changed from a strict equality check (filters.userIds.length === 1 && user.id === filters.userIds[0]) to a loose inclusion check (filters.userIds.includes(user.id)). This allows a user to bypass permission checks by including their own userId in a list alongside other userIds they don't have permission to access. For example, if a user requests bookings for [ownUserId, unauthorizedUserId], the check passes even though they lack permission for the unauthorized user, allowing them to access bookings they shouldn't see.",
+   "file_path": "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+   "start_line": 143,
+   "end_line": 159,
+   "problematic_code_snippet": "if (!!filters?.userIds && filters.userIds.length > 0) {\n  const areUserIdsWithinUserOrgOrTeam = filters.userIds.every((userId) =>\n    allAccessibleUserIds.includes(userId)\n  );\n\n  const isCurrentUser = filters.userIds.includes(user.id);\n\n  //  Scope depends on `user.orgId`:\n  // - Throw an error if trying to filter by usersIds that are not within your ORG\n  // - Throw an error if trying to filter by usersIds that are not within your TEAM\n  if (!areUserIdsWithinUserOrgOrTeam && !isCurrentUser) {\n    throw new TRPCError({\n      code: \"FORBIDDEN\",\n      message: \"You do not have permissions to fetch bookings for specified userIds\",\n    });\n  }\n}"
+  },
+  {
+   "title": "Service file uses forbidden `.service.ts` suffix",
+   "description": "Rule 1 forbids dot-suffix filenames like `.service.ts`. This service lives in `permission-check.service.ts` instead of a PascalCase `<Entity>Service.ts` filename matching the class name (e.g., `PermissionCheckService.ts`).",
+   "file_path": "packages/features/pbac/services/permission-check.service.ts",
+   "start_line": 1,
+   "end_line": 1,
+   "problematic_code_snippet": "export class PermissionCheckService {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Repository does not follow `Prisma<Entity>Repository` naming convention",
+   "description": "Rule 1 requires repository classes/files to follow the `Prisma<Entity>Repository.ts` pattern with matching exported class name. This repository is named `PermissionRepository` in `PermissionRepository.ts` (and not `PrismaPermissionRepository`).",
+   "file_path": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+   "start_line": 212,
+   "end_line": 212,
+   "problematic_code_snippet": "export class PermissionRepository implements IPermissionRepository {",
+   "rule_name": "Repository and Service Classes Must Follow Naming Conventions"
+  },
+  {
+   "title": "Line exceeds configured 110-character width",
+   "description": "Rule 3 requires Biome formatting with a 110 character line width. This newly added statement is formatted as a single long line exceeding that limit.",
+   "file_path": "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts",
+   "start_line": 1060,
+   "end_line": 1060,
+   "problematic_code_snippet": "await prisma.team.deleteMany({ where: { id: { in: [org1.id, org2.id, team1.id, team2.id] } } });",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  },
+  {
+   "title": "Import line exceeds configured 110-character width",
+   "description": "Rule 3 requires Biome formatting with a 110 character line width. This import line is long enough to exceed the configured limit and should be wrapped/formatted accordingly.",
+   "file_path": "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+   "start_line": 18,
+   "end_line": 18,
+   "problematic_code_snippet": "import type { Booking, Prisma, Prisma as PrismaClientType } from \"@calcom/prisma/client\";",
+   "rule_name": "Use Biome for Code Formatting with Standardized Configuration"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/cal.com",
+ "head_sha": "544a43bf4fd5e7e7fb086682ebd4362baf73ce14",
+ "diff_chars": 39343,
+ "diff_lines": 1059,
+ "user_prompt_chars": 42597,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 82225,
+ "wall_ms": 85470,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 5,
+ "turn_trace": {
+  "assistant_lines": 16,
+  "unique_message_ids": 5,
+  "lines_without_id": 0,
+  "tool_use_blocks": 7
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.539776736,
+ "spend_post_usd": 7.554344876,
+ "cost_settled": true,
+ "cost_wait_ms": 368,
+ "cost_usd": 0.01456813999999973,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.01575534,
+ "usage": {
+  "input_tokens": 10,
+  "cache_creation_input_tokens": 36596,
+  "cache_read_input_tokens": 205334,
+  "output_tokens": 18253,
+  "output_tokens_details": {
+   "thinking_tokens": 9562
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 36596
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 10,
+   "outputTokens": 18253,
+   "cacheReadInputTokens": 205334,
+   "cacheCreationInputTokens": 36596,
+   "webSearchRequests": 0,
+   "costUSD": 0.01575534,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 9562,
+   "cacheCreationEphemeral5mInputTokens": 36596,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/cal.com",
+   "number": 1,
+   "title": "Code Review Bench PR #25434 - fix: get bookings handler for pbac and fallback roles",
+   "author": "unknown",
+   "baseSha": "cb600a81cedca3bf8556411419f71cc8b2253662",
+   "headSha": "544a43bf4fd5e7e7fb086682ebd4362baf73ce14"
+  },
+  "summary": "This PR moves the bookings list handler (`getBookings` in `get.handler.ts`) off direct ADMIN/OWNER membership queries and onto `PermissionCheckService`, so PBAC custom roles and fallback roles grant booking visibility over team members. It also threads an optional `orgId` through the permission service and into the two `PermissionRepository` SQL queries so results can be scoped to an organization, and adds unit and integration tests.\n\nThe direction is right and the SQL stays parameterized. However, I found a critical authorization bypass in the new `userIds` guard: changing `isCurrentUser` from \"single ID that equals self\" to \"list includes self\" lets a caller pass `[self, victimId]` and read the victim's bookings. Separately, the `orgId` scoping the PR is built around is silently dropped on the single-permission path that the handler actually calls, so the org scoping never runs in production. The tests missed both because they mock the service in the handler tests and call the plural repository method directly in the integration tests.",
+  "verdict": "request_changes",
+  "verdictRationale": "The `isCurrentUser` change turns the userIds authorization check into a bypass, which is a data-exposure bug that has to be fixed before merge. The dropped `orgId` on `getTeamIdsWithPermission` means the advertised org scoping does not happen for the code path the handler uses. Both are small, localized fixes. The remaining items are test gaps and minor cleanup.",
+  "architecture": {
+   "overview": "The bookings list endpoint `getBookings` in `packages/trpc/server/routers/viewer/bookings/get.handler.ts` decides which bookings a caller may see. Before this PR it built a membership condition from ADMIN/OWNER rows, scoped to `user.orgId` when present, and used that to find event types, member users, and member emails. Those lookups feed a set of Kysely `UNION` queries over Booking, Attendee, and BookingSeat. A `userIds` filter is validated against the same accessible set and throws FORBIDDEN if it falls outside it.\n\nThis PR replaces the membership lookup with `PermissionCheckService.getTeamIdsWithPermission({ permission: \"booking.read\", fallbackRoles: [ADMIN, OWNER], orgId })`. That service delegates to `PermissionRepository`, which runs two raw SQL queries, one for PBAC custom roles and one for fallback roles on teams without the PBAC feature flag, and merges the results. The team IDs then feed `getUserIdsAndEmailsFromTeamIds` and the event-type lookup. The PR adds an optional `orgId` filter to the repository SQL, but the single-permission entry point does not pass it through.",
+   "steps": [
+    "Entry point: `getHandler` → `getBookings` in `get.handler.ts` receives `ctx.user` (with `orgId`) and an optional `filters.userIds`/`teamIds`/`eventTypeIds`.",
+    "Permission lookup: `getBookings` now calls `PermissionCheckService.getTeamIdsWithPermission` with `booking.read` and `[ADMIN, OWNER]` fallbacks. The service validates the permission and forwards to `PermissionRepository`.",
+    "Repository: `PermissionRepository.getTeamIdsWithPermission` forwards to the plural method, which fans out to `getTeamsWithPBACPermissions` and `getTeamsWithFallbackRoles` in parallel and unions the results. Both now accept an `orgId` filter in SQL. The single-permission method drops `orgId` before forwarding.",
+    "Scope resolution: the returned team IDs feed `getUserIdsAndEmailsFromTeamIds` (members, emails, user IDs) and `getEventTypeIdsFromTeamIdsFilter` (event types). The old membership-based helpers are removed.",
+    "userIds guard: the FORBIDDEN check now treats a filter that includes the caller's own ID as allowed, and the booking queries then filter on the full caller-supplied `userIds` list. This is where the bypass sits.",
+    "Tests: the new handler unit tests mock `PermissionCheckService` entirely, and the new integration tests call the plural repository method directly, so neither exercises the `orgId` path that the handler uses."
+   ],
+   "diagrams": [
+    {
+     "kind": "flowchart",
+     "title": "Booking visibility resolution after this PR",
+     "description": "How getBookings resolves visible teams, members and event types before building the booking union queries.",
+     "mermaid": "flowchart LR\n  H[\"get.handler getBookings\"] --> PCS[\"PermissionCheckService getTeamIdsWithPermission\"]\n  PCS --> PR[\"PermissionRepository getTeamIdsWithPermission\"]\n  PR --> PLURAL[\"getTeamIdsWithPermissions\"]\n  PLURAL --> PBAC[\"PBAC SQL: getTeamsWithPBACPermissions\"]\n  PLURAL --> FB[\"Fallback SQL: getTeamsWithFallbackRoles\"]\n  PBAC --> TIDS[\"teamIds\"]\n  FB --> TIDS\n  TIDS --> USERS[\"getUserIdsAndEmailsFromTeamIds\"]\n  TIDS --> ETS[\"getEventTypeIdsFromTeamIdsFilter\"]\n  USERS --> BQ[\"Kysely Booking union queries\"]\n  ETS --> BQ"
+    },
+    {
+     "kind": "sequence",
+     "title": "Bookings list request with permission lookup",
+     "description": "Runtime sequence for a bookings list request as it reaches the permission service and the database.",
+     "mermaid": "sequenceDiagram\n  participant C as Client\n  participant G as getBookings\n  participant S as PermissionCheckService\n  participant R as PermissionRepository\n  participant DB as Postgres via Prisma and Kysely\n  C->>G: list bookings with optional userIds filter\n  G->>S: getTeamIdsWithPermission booking.read orgId\n  S->>R: getTeamIdsWithPermission\n  R->>DB: $queryRaw PBAC and fallback queries\n  DB-->>R: team ids\n  R-->>S: team ids\n  S-->>G: team ids\n  G->>DB: member users and emails for team ids\n  G->>DB: Kysely booking union queries\n  DB-->>G: bookings\n  G-->>C: bookings and total count"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "userIds authorization check can be bypassed by mixing self with another user",
+    "severity": "critical",
+    "category": "security",
+    "files": [
+     "packages/trpc/server/routers/viewer/bookings/get.handler.ts"
+    ],
+    "body": "The `isCurrentUser` flag changed from \"the filter is exactly `[self]`\" to \"the filter includes self\". The FORBIDDEN guard only throws when `!areUserIdsWithinUserOrgOrTeam && !isCurrentUser`, so a filter of `[self, victimId]` passes whenever `isCurrentUser` is true. The booking queries then filter on the caller's full list, which includes `victimId`. A non-admin can therefore list another user's bookings by adding their own ID to the filter.\n\n::code{file=\"packages/trpc/server/routers/viewer/bookings/get.handler.ts\" lines=\"144-160\"}\n\n::callout{type=\"security\"}\nThe check on line 149 is the only gate on `filters.userIds`. Booking queries at line 170 (`Booking.userId in filters.userIds`) and the attendee-email query that follows use the unchecked list. Each query needs the guarded set, not the raw input.\n\n::suggestion{file=\"packages/trpc/server/routers/viewer/bookings/get.handler.ts\" lines=\"144-156\"}\n  if (!!filters?.userIds && filters.userIds.length > 0) {\n    const isCurrentUserOnly = filters.userIds.length === 1 && filters.userIds[0] === user.id;\n    const areUserIdsWithinUserOrgOrTeam = filters.userIds.every(\n      (userId) => userId === user.id || allAccessibleUserIds.includes(userId)\n    );\n    if (!areUserIdsWithinUserOrgOrTeam) {\n      throw new TRPCError({ code: \"FORBIDDEN\", message: \"...\" });\n    }\n    // use filters.userIds only after this check, and consider scoping it to the allowed set\n\nAdd a unit test with `userIds: [self, otherUserNotInTeams]` that expects FORBIDDEN, and make sure it fails on the current code.",
+    "fixPrompt": "In `packages/trpc/server/routers/viewer/bookings/get.handler.ts`, the `userIds` guard in `getBookings` (around lines 144-156) lets a caller bypass the FORBIDDEN check by including their own ID in a list that also contains another user's ID, because `isCurrentUser` now uses `filters.userIds.includes(user.id)`. Fix it so every ID in `filters.userIds` must be either the caller or in `allAccessibleUserIds`, and only treat the caller as allowed on its own. Then confirm the booking queries that use `filters.userIds` (around lines 165-175) only see IDs that passed the check. Add a unit test with `userIds: [user.id, <a user outside the accessible set>]` that expects FORBIDDEN.",
+    "commentAnchor": {
+     "file": "packages/trpc/server/routers/viewer/bookings/get.handler.ts",
+     "lineStart": 144,
+     "lineEnd": 156
+    }
+   },
+   {
+    "title": "orgId is dropped on the single-permission repository path",
+    "severity": "high",
+    "category": "correctness",
+    "files": [
+     "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+     "packages/features/pbac/services/permission-check.service.ts"
+    ],
+    "body": "`PermissionRepository.getTeamIdsWithPermission` accepts `orgId` in its signature but calls `this.getTeamIdsWithPermissions({ userId, permissions: [permission], fallbackRoles })` without it. The handler calls `permissionCheckService.getTeamIdsWithPermission({ ..., orgId: user.orgId ?? undefined })`, which forwards to this method, so the org scope is discarded before any SQL runs.\n\n::code{file=\"packages/features/pbac/infrastructure/repositories/PermissionRepository.ts\" lines=\"211-222\"}\n\nThe effect is that an org admin's booking list now includes members from every organization that user belongs to. The old code scoped the membership condition to `user.orgId`, so this is a scope regression. It is hidden because the integration tests call the plural `getTeamIdsWithPermissions` directly, which does take `orgId`.",
+    "fixPrompt": "In `packages/features/pbac/infrastructure/repositories/PermissionRepository.ts`, `getTeamIdsWithPermission` (around lines 211-222) accepts `orgId` but does not pass it to `getTeamIdsWithPermissions`. Forward `orgId` in that call, matching how `getTeamIdsWithPermissions` already uses it. Then add an integration test that calls the singular `getTeamIdsWithPermission` with `orgId` and asserts the other org's teams are excluded, since the existing `orgId` tests only exercise the plural method.",
+    "commentAnchor": {
+     "file": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+     "lineStart": 211,
+     "lineEnd": 222
+    }
+   },
+   {
+    "title": "Permission service swallows all errors and returns an empty array",
+    "severity": "medium",
+    "category": "correctness",
+    "files": [
+     "packages/features/pbac/services/permission-check.service.ts"
+    ],
+    "body": "`getTeamIdsWithPermission` and `getTeamIdsWithPermissions` wrap the repository call in `try/catch`, log the error, and return `[]`. That was low-stakes when this was only a helper. The booking handler now depends on it for visibility. A transient DB error therefore produces the same result as \"no permissions\", with no signal to the caller beyond a log line. For a booking list the failure mode is that members' bookings silently disappear rather than an error being shown.\n\n::code{file=\"packages/features/pbac/services/permission-check.service.ts\" lines=\"332-341\"}\n\nFail-closed is the right default for authorization, but the handler should be able to tell an empty result from a failure. Either let the error propagate from the booking path, or return a discriminated result. At minimum, add a test that asserts the handler surfaces a failure instead of quietly returning fewer bookings.",
+    "fixPrompt": "In `packages/features/pbac/services/permission-check.service.ts`, `getTeamIdsWithPermission` (around lines 314-341) and its plural counterpart catch every error and return `[]`. The booking handler in `packages/trpc/server/routers/viewer/bookings/get.handler.ts` now relies on this for visibility, so a DB failure silently hides data. Change the booking path so repository errors propagate, or add an explicit failure signal, while keeping the fail-closed behaviour for the permission-validation branch. Check other callers of these methods before changing the contract.",
+    "commentAnchor": {
+     "file": "packages/features/pbac/services/permission-check.service.ts",
+     "lineStart": 332,
+     "lineEnd": 341
+    }
+   },
+   {
+    "title": "Handler tests do not cover the paths that broke",
+    "severity": "medium",
+    "category": "correctness",
+    "files": [
+     "packages/trpc/server/routers/viewer/bookings/get.handler.test.ts",
+     "packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts"
+    ],
+    "body": "Several tests look like coverage but would not catch the two bugs above:\n\n- The \"should allow access when filtering by own userId\" test ends in `.resolves.not.toThrow()` on a resolved booking result. That is not a meaningful assertion. It passes whether or not the guard works. There is no test with a mixed `[self, other]` filter, which is the exploit.\n- No handler test checks that an org member's call forwards a non-null `orgId`. `toHaveBeenCalledWith` on line 189 and line 302 only checks `{ userId, permission, fallbackRoles }`, and the mock ignores the `orgId` argument.\n- `PermissionCheckService` is mocked wholesale in the handler test, so the repository's `orgId` forwarding is never exercised from the handler.\n- The integration tests added here call the plural repository method only, so the dropped `orgId` on the singular method goes unnoticed.\n\nFor the `.resolves` checks, assert on the returned bookings or on the queries that ran. For the guard, add the mixed-list case. For orgId, call the repository singular method, or assert `orgId` in the mock call.",
+    "fixPrompt": "Strengthen the tests for the bookings change. In `packages/trpc/server/routers/viewer/bookings/get.handler.test.ts`, replace the `.resolves.not.toThrow()` assertions (around lines 249-277 and 299-333) with assertions on the returned bookings or the calls made. Add a case with `userIds: [user.id, <outsider>]` that expects FORBIDDEN. Assert that `getTeamIdsWithPermission` receives `orgId` for an org user. In `packages/features/pbac/infrastructure/repositories/__tests__/PermissionRepository.integration-test.ts`, add a case that calls the singular `getTeamIdsWithPermission` with `orgId` so the dropped argument is caught.",
+    "commentAnchor": {
+     "file": "packages/trpc/server/routers/viewer/bookings/get.handler.test.ts",
+     "lineStart": 249,
+     "lineEnd": 277
+    }
+   },
+   {
+    "title": "Fallback child-team clause is inconsistent with the PBAC branch",
+    "severity": "low",
+    "category": "correctness",
+    "files": [
+     "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts"
+    ],
+    "body": "In the fallback child-team branch, the `orgId` filter includes `child.\"parentId\" = orgId`. That condition is redundant, because the join already requires `child.\"parentId\" = org.id`, so it only matches when `org.id = orgId`, which the preceding clause covers. The PBAC child-team branch on line 309 does not include the `child.\"parentId\"` term. Both branches should use the same scoping rule so future edits do not drift.",
+    "fixPrompt": "In `packages/features/pbac/infrastructure/repositories/PermissionRepository.ts`, the fallback child-team branch (around line 357) has an `orgId` filter that includes `child.\"parentId\" = orgId`, which is redundant because of the join. The PBAC child-team branch (around line 309) omits it. Pick one consistent rule for both branches, and check the integration tests still pass.",
+    "commentAnchor": {
+     "file": "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts",
+     "lineStart": 357,
+     "lineEnd": 357
+    }
+   },
+   {
+    "title": "Unused TRPCError import in permission-check.service.ts",
+    "severity": "low",
+    "category": "style",
+    "files": [
+     "packages/features/pbac/services/permission-check.service.ts"
+    ],
+    "body": "The new `import { TRPCError } from \"@trpc/server\";` on line 6 is never used in this file. It is the only occurrence. Linters that flag unused imports will fail on this, and it also adds a tRPC dependency to a domain service that otherwise has no transport concerns.",
+    "fixPrompt": "In `packages/features/pbac/services/permission-check.service.ts`, remove the unused `import { TRPCError } from \"@trpc/server\";` on line 6. Confirm nothing else in the file references `TRPCError`.",
+    "commentAnchor": {
+     "file": "packages/features/pbac/services/permission-check.service.ts",
+     "lineStart": 6,
+     "lineEnd": 6
+    }
+   },
+   {
+    "title": "SQL is parameterized and keeps the empty-permissions guard",
+    "severity": "info",
+    "category": "security",
+    "files": [
+     "packages/features/pbac/infrastructure/repositories/PermissionRepository.ts"
+    ],
+    "body": "All new `orgId` and `permissionsCount` values go through Prisma tagged-template parameters, and the `${orgId}::bigint IS NULL OR ...` pattern handles an absent org without string interpolation. The early return for an empty `permissions` array is kept, so the privilege-escalation guard still holds. Moving the two queries into separate private methods also makes them easier to read."
+   },
+   {
+    "title": "Permission logic is consolidated into the shared service",
+    "severity": "info",
+    "category": "maintainability",
+    "files": [
+     "packages/trpc/server/routers/viewer/bookings/get.handler.ts"
+    ],
+    "body": "Replacing the hand-written ADMIN/OWNER membership query with the shared `PermissionCheckService` means custom-role and fallback rules live in one place. The event-type lookup keeps its direct and parent-team handling by reusing `getEventTypeIdsFromTeamIdsFilter`. The integration tests for `orgId` filtering (direct team and child-team cases) are a good addition, though they cover only the plural repository method."
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/cal.com\",\"number\":1,\"title\":\"Code Review Bench PR #25434 - fix: get bookings handler for pbac and fallback roles\",\"author\":\"unknown\",\"baseSha\":\"cb600a81cedca3bf8556411419f71cc8b2253662\",\"headSha\":\"544a43bf4fd5e7e7fb086682ebd4362baf73ce14\"},\"summary\":\"This PR moves the bookings list handler (`getBookings` in `get.handler.ts`) off direct ADMIN/OWNER membership queries and onto `PermissionCheckService`, so PBAC custom roles and fallback roles grant booking v",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 8
+}

@@ -1,0 +1,281 @@
+{
+ "id": "redis#4",
+ "repo": "redis",
+ "num": 4,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_opus_baseline_retry12",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7"
+ ],
+ "run_started_at": "2026-11-23T17:13:52.952Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Direct malloc instead of zmalloc",
+   "description": "The rule requires using zmalloc() wrapper for memory allocation, but malloc() was used directly in the cluster initialization code",
+   "file_path": "src/cluster.c",
+   "start_line": 2135,
+   "end_line": 2141,
+   "problematic_code_snippet": "/* This function is called at server startup in order to initialize cluster data\n * structures that are shared between the different cluster implementations. */\nvoid clusterCommonInit(void) {\n    server.cluster_slot_stats = malloc(CLUSTER_SLOTS*sizeof(clusterSlotStat));\n    resetClusterStats();\n    asmInit();\n}",
+   "rule_name": "Use zmalloc/zfree Wrappers Instead of Direct malloc/free"
+  },
+  {
+   "title": "Incorrect operation order causes potential data loss during cluster verification",
+   "description": "The verifyClusterConfigWithData() function executes clusterDeleteKeysInUnownedSlots() before clusterClaimUnassignedSlots(). This reverses the intended logic: the function should first claim ownership of unassigned slots that contain keys (preventing orphaned data), then delete keys from slots that are genuinely owned by other nodes. With this bug, keys in unassigned slots may be incorrectly deleted before the node has a chance to claim ownership, resulting in permanent data loss during cluster startup or recovery scenarios.",
+   "file_path": "src/cluster.c",
+   "start_line": 2209,
+   "end_line": 2212,
+   "problematic_code_snippet": "    /* Delete keys in unowned slots */\n    clusterDeleteKeysInUnownedSlots();\n    /* Take over slots that we have keys for, but are assigned to no one. */\n    clusterClaimUnassignedSlots();\n    return C_OK;"
+  },
+  {
+   "title": "ASM cron runs before cluster state update causing stale state issues",
+   "description": "The serverCron() function now calls asmCron() before clusterCron(). This is problematic because clusterCron() contains the call to clusterUpdateState() which updates the cluster's operational state (CLUSTER_OK vs CLUSTER_FAIL). ASM (Atomic Slot Migration) operations depend on having an accurate view of the cluster state to make correct migration decisions. By executing asmCron() first, migration tasks may operate on stale cluster state information from the previous iteration, potentially leading to incorrect slot migration decisions, failed migrations, or data consistency issues during cluster rebalancing operations.",
+   "file_path": "src/server.c",
+   "start_line": 1658,
+   "end_line": 1659,
+   "problematic_code_snippet": "        if (server.cluster_enabled) {\n            asmCron();\n            clusterCron();\n        }"
+  },
+  {
+   "title": "Internal helper function clusterDeleteKeysInUnownedSlots missing static declaration",
+   "description": "The function clusterDeleteKeysInUnownedSlots() is defined and used only within cluster.c (no external callers, not declared in any header file), but lacks the 'static' keyword. According to AGENTS.md Rule #7, all internal helper functions that are not part of the public API must be declared static to enforce proper encapsulation and prevent symbol pollution. This violation could lead to naming conflicts in large codebases and breaks the repository's explicit encapsulation requirements.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "void clusterDeleteKeysInUnownedSlots(void) {\n    if (clusterNodeIsSlave(getMyClusterNode())) return;\n\n    /* Check that all the slots we have keys for are assigned to us. Otherwise,\n     * delete the keys. */"
+  },
+  {
+   "title": "Non-static internal helper function exported from cluster.c",
+   "description": "`clusterDeleteKeysInUnownedSlots()` is introduced as a file-local helper and is only used within `src/cluster.c` (called by `verifyClusterConfigWithData()`), but it is declared without `static`, unnecessarily exporting the symbol outside this compilation unit. Per the rule, internal helper functions must be declared `static`.",
+   "file_path": "src/cluster.c",
+   "start_line": 2143,
+   "end_line": 2176,
+   "problematic_code_snippet": "void clusterDeleteKeysInUnownedSlots(void) {\n    if (clusterNodeIsSlave(getMyClusterNode())) return;\n\n    /* Check that all the slots we have keys for are assigned to us. Otherwise,\n     * delete the keys. */\n    for (int i = 0; i < CLUSTER_SLOTS; i++) {\n        /* Skip if: no keys in the slot, it's our slot, or we are importing it. */\n        if (!countKeysInSlot(i) ||\n            clusterIsMySlot(i) ||\n            getImportingSlotSource(i))\n        {\n            continue;\n        }\n        ...\n        clusterDelKeysInSlot(i, 0);\n    }\n}",
+   "rule_name": "Rule 7: Internal Helper Functions Must Be Declared Static"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/redis",
+ "head_sha": "865827b49d7b7125377d812a06d3d0a0ce4ff860",
+ "diff_chars": 13138,
+ "diff_lines": 316,
+ "user_prompt_chars": 14132,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 73080,
+ "wall_ms": 75005,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 6,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 6,
+ "turn_trace": {
+  "assistant_lines": 10,
+  "unique_message_ids": 6,
+  "lines_without_id": 0,
+  "tool_use_blocks": 6
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 19.108714359,
+ "spend_post_usd": 19.410336559,
+ "cost_settled": true,
+ "cost_wait_ms": 331,
+ "cost_usd": 0.3016222000000006,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.2677022,
+ "usage": {
+  "input_tokens": 12,
+  "cache_creation_input_tokens": 17022,
+  "cache_read_input_tokens": 181621,
+  "output_tokens": 7311,
+  "output_tokens_details": {
+   "thinking_tokens": 1641
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 17022
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 4638,
+    "cache_creation_input_tokens": 661,
+    "cache_read_input_tokens": 35251,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 661,
+     "ephemeral_1h_input_tokens": 0
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 12,
+   "outputTokens": 7311,
+   "cacheReadInputTokens": 181621,
+   "cacheCreationInputTokens": 17022,
+   "webSearchRequests": 0,
+   "costUSD": 0.2677022,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1641,
+   "cacheCreationEphemeral5mInputTokens": 17022,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/redis",
+   "number": 4,
+   "title": "Code Review Bench PR #14587 - Refactor some of ASM and slot-stats functions",
+   "author": "",
+   "baseSha": "c52fabf32e76bc5bfd453e5298f3833c36cf1e66",
+   "headSha": "865827b49d7b7125377d812a06d3d0a0ce4ff860"
+  },
+  "summary": "This PR moves shared cluster logic out of `cluster_legacy.c`. It adds `clusterCommonInit()` for slot-stats and ASM setup, moves the `asmCron`/`asmBeforeSleep` calls into `server.c`, and moves CLUSTER MIGRATION/SYNCSLOTS dispatch into the generic `clusterCommand`. It also splits `verifyClusterConfigWithData()` into a shared part in `cluster.c` and two helpers: `clusterDeleteKeysInUnownedSlots` (shared) and `clusterClaimUnassignedSlots` (legacy). The description says nothing about behavior changes.\n\nThat claim doesn't hold. The split helpers run in the wrong order. Delete runs first, and its skip check (`clusterIsMySlot || importing`) doesn't exempt slots with no owner, so keys in unassigned slots get deleted at startup. The original code would have claimed those slots instead. That's silent data loss. Smaller drift: the slot-stats array is now allocated with raw `malloc` instead of `zmalloc`, and `asmCron` now runs before `clusterCron` instead of after.",
+  "verdict": "request_changes",
+  "verdictRationale": "The new order in verifyClusterConfigWithData deletes keys that the old code kept by claiming their slots. That's data loss in a PR that says it changes no behavior. The malloc/zmalloc swap is also an unintended change.",
+  "architecture": {
+   "overview": "Redis Cluster has a shared layer (`cluster.c`, which holds the generic CLUSTER command and helpers like `clusterIsMySlot` and `getImportingSlotSource`) and a mechanism-specific layer (`cluster_legacy.c`, which holds the gossip bus, `server.cluster` state, `clusterInit`, `clusterCron`, and `clusterBeforeSleep`). Atomic slot migration (ASM, `cluster_asm.c`) and slot stats used to be wired up from inside the legacy layer.\n\nThis PR moves that wiring up a level. `main()` now calls a new `clusterCommonInit()`, which allocates slot stats, resets them, and calls `asmInit`, before calling `clusterInit()`. `serverCron` and `beforeSleep` now call `asmCron` and `asmBeforeSleep` directly. MIGRATION and SYNCSLOTS are dispatched in the generic `clusterCommand`. The startup check `verifyClusterConfigWithData()` now lives in `cluster.c`: it validates DB0 and then calls two helpers. `clusterDeleteKeysInUnownedSlots` is shared and deletes keys in slots owned by other nodes. `clusterClaimUnassignedSlots` is legacy-specific and adds slots that have no owner to `myself`, then saves the config.",
+   "steps": [
+    "`server.c` `main()`: when cluster is enabled, it now calls `clusterCommonInit()` (slot-stats allocation, `resetClusterStats`, `asmInit`) before `clusterInit()`.",
+    "`cluster_legacy.c` `clusterInit()`: it no longer resets stats or initializes ASM; it only builds `server.cluster` and loads nodes.conf.",
+    "`server.c` `serverCron` / `beforeSleep`: they now call `asmCron()` and `asmBeforeSleep()` next to `clusterCron()` and `clusterBeforeSleep()`, instead of having the legacy functions call them.",
+    "`cluster.c` `clusterCommand`: it handles `migration` and `syncslots` before falling through to `clusterCommandSpecial`.",
+    "After `loadDataFromDisk()`, `verifyClusterConfigWithData()` in `cluster.c` checks DB0 only, then calls `clusterDeleteKeysInUnownedSlots()` followed by `clusterClaimUnassignedSlots()` from `cluster_legacy.c`. The order of these two calls matters."
+   ],
+   "diagrams": [
+    {
+     "title": "Startup and periodic hooks after refactor",
+     "kind": "flowchart",
+     "description": "How server.c now drives the shared cluster init, ASM hooks and the post-load data verification.",
+     "mermaid": "flowchart TD\n  main[server.c main] --> cci[clusterCommonInit]\n  cci --> stats[malloc cluster_slot_stats + resetClusterStats]\n  cci --> asmi[asmInit]\n  main --> ci[clusterInit legacy]\n  main --> load[loadDataFromDisk]\n  load --> verify[verifyClusterConfigWithData cluster.c]\n  verify --> del[clusterDeleteKeysInUnownedSlots cluster.c]\n  verify --> claim[clusterClaimUnassignedSlots cluster_legacy.c]\n  claim --> save[clusterSaveConfigOrDie]\n  cron[serverCron 100ms] --> asmc[asmCron]\n  cron --> cc[clusterCron]\n  bs[beforeSleep] --> cbs[clusterBeforeSleep]\n  bs --> abs[asmBeforeSleep]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Keys in unassigned slots are deleted before they can be claimed (data loss at startup)",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "`verifyClusterConfigWithData()` now calls the delete helper **before** the claim helper:\n\n::diff{file=\"src/cluster.c\" lines=\"2209-2213\"}\n\n`clusterDeleteKeysInUnownedSlots()` skips a slot only if it has no keys, is ours, or is being imported:\n\n::code{file=\"src/cluster.c\" lines=\"2151-2168\"}\n\nFor a slot with **no owner** (`server.cluster->slots[i] == NULL`), `clusterIsMySlot(i)` is `getMyClusterNode() == getNodeBySlot(i)`, which is `myself == NULL`, so it's false. Nothing is being imported either, so the slot isn't skipped and `clusterDelKeysInSlot(i, 0)` wipes it. It also logs the wrong reason: \"assigned to another node\". When `clusterClaimUnassignedSlots()` runs next, `countKeysInSlot(i)` is 0, so the slot is never claimed.\n\n::callout{type=\"warning\"}\nThe old single loop handled the `slots[j] == NULL` case first (Case A: take responsibility) and only deleted keys when another node owned the slot. Example: a primary restarts with an RDB/AOF holding keys for a slot nobody owns in nodes.conf (after `CLUSTER DELSLOTS`, a manual fix-up, or a fresh cluster bootstrapped from a dump). That data is now silently dropped.\n\nThe fix is to claim first, so slots that had no owner become ours before the delete pass. Making the delete helper also skip slots with no owner would protect any future caller that reorders them again:\n\n::suggestion{file=\"src/cluster.c\" lines=\"2209-2212\"}\n    /* Take over slots that we have keys for, but are assigned to no one. */\n    clusterClaimUnassignedSlots();\n    /* Delete keys in slots owned by other nodes. */\n    clusterDeleteKeysInUnownedSlots();\n\nThis path has no test coverage. A test that starts a node with keys in an unassigned slot and checks that the slot gets claimed would have caught this.",
+    "files": [
+     "src/cluster.c",
+     "src/cluster_legacy.c"
+    ],
+    "fixPrompt": "In `src/cluster.c`, `verifyClusterConfigWithData()` (around lines 2209-2213) calls `clusterDeleteKeysInUnownedSlots()` before `clusterClaimUnassignedSlots()`. The delete helper doesn't skip slots with no owner (`clusterIsMySlot` is false when `getNodeBySlot(i)` is NULL), so keys in unassigned slots are deleted before they can be claimed. This is a regression from the original single loop in `cluster_legacy.c`. Swap the two calls so `clusterClaimUnassignedSlots()` runs first. Also harden `clusterDeleteKeysInUnownedSlots()` (around line 2151) to skip slots where `getNodeBySlot(i) == NULL`, so the order no longer matters. Add a cluster test that restarts a primary with keys in a slot that has no owner and asserts the keys survive and the slot is assigned to that node.",
+    "commentAnchor": {
+     "file": "src/cluster.c",
+     "lineStart": 2209,
+     "lineEnd": 2212
+    }
+   },
+   {
+    "title": "Slot-stats array now allocated with raw malloc instead of zmalloc",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "The original code in `main()` used `zmalloc`. The new shared init uses plain `malloc`:\n\n::diff{file=\"src/cluster.c\" lines=\"2137-2141\"}\n\nThis is a behavior change in a PR that says it has none:\n- The array is about 16384 × sizeof(clusterSlotStat) (hundreds of KB). It's no longer counted in `used_memory`, `INFO memory`, or maxmemory accounting.\n- `zmalloc` calls the OOM handler and aborts on failure. `malloc` can return NULL, and `resetClusterStats()` would then `memset` a NULL pointer.\n- It's inconsistent with the rest of the cluster code, which uses `zmalloc`/`zcalloc` everywhere (for example `server.cluster = zmalloc(...)` in `clusterInit`).\n\n::suggestion{file=\"src/cluster.c\" lines=\"2138-2138\"}\n    server.cluster_slot_stats = zmalloc(CLUSTER_SLOTS*sizeof(clusterSlotStat));",
+    "files": [
+     "src/cluster.c",
+     "src/server.c"
+    ],
+    "fixPrompt": "In `src/cluster.c`, `clusterCommonInit()` (around line 2138) allocates `server.cluster_slot_stats` with raw `malloc`. Before this PR, `src/server.c` `main()` used `zmalloc`. Change it back to `zmalloc` so the allocation is counted in Redis memory accounting and uses the standard OOM handling. That matches the rest of the cluster code.",
+    "commentAnchor": {
+     "file": "src/cluster.c",
+     "lineStart": 2138,
+     "lineEnd": 2138
+    }
+   },
+   {
+    "title": "asmCron now runs before clusterCron instead of after",
+    "severity": "low",
+    "category": "correctness",
+    "body": "Before this PR, `asmCron()` was the last call inside `clusterCron()`, so it saw the cluster state as just updated by that tick (node failure detection, `clusterUpdateState`, and so on). Now it runs first:\n\n::diff{file=\"src/server.c\" lines=\"1656-1660\"}\n\nIn practice this probably just shifts ASM's reaction to topology changes by one 100ms tick. But it's an ordering change in a refactor that says it changes no behavior, and `beforeSleep` kept the original order (`clusterBeforeSleep` then `asmBeforeSleep`). Keeping `clusterCron(); asmCron();` would make both hooks consistent and keep the old semantics.\n\n::suggestion{file=\"src/server.c\" lines=\"1658-1659\"}\n            clusterCron();\n            asmCron();",
+    "files": [
+     "src/server.c"
+    ],
+    "fixPrompt": "In `src/server.c` `serverCron()` (around lines 1656-1660), the refactor calls `asmCron()` before `clusterCron()`. Before this PR it ran at the end of `clusterCron()`. Swap them so `clusterCron()` runs first and then `asmCron()`. That keeps the original ordering and matches the `beforeSleep` hook order.",
+    "commentAnchor": {
+     "file": "src/server.c",
+     "lineStart": 1658,
+     "lineEnd": 1659
+    }
+   },
+   {
+    "title": "Good separation of shared vs mechanism-specific cluster logic",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Moving ASM init, cron, and before-sleep hooks, plus MIGRATION/SYNCSLOTS dispatch, out of `cluster_legacy.c` into `server.c` and `cluster.c` makes sense. Another cluster implementation now gets ASM and slot stats without copying that wiring. Running `asmInit()` before `clusterInit()` is also safer, because nodes.conf loading now runs with `asmManager` already initialized. Both helpers use accessor functions (`getMyClusterNode`, `getImportingSlotSource`, `clusterIsMySlot`) instead of touching `server.cluster` directly, which keeps them usable by other implementations.",
+    "files": [
+     "src/cluster.c",
+     "src/server.c",
+     "src/cluster_legacy.c"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/redis\",\"number\":4,\"title\":\"Code Review Bench PR #14587 - Refactor some of ASM and slot-stats functions\",\"author\":\"\",\"baseSha\":\"c52fabf32e76bc5bfd453e5298f3833c36cf1e66\",\"headSha\":\"865827b49d7b7125377d812a06d3d0a0ce4ff860\"},\"summary\":\"This PR moves shared cluster logic out of `cluster_legacy.c`. It adds `clusterCommonInit()` for slot-stats and ASM setup, moves the `asmCron`/`asmBeforeSleep` calls into `server.c`, and moves CLUSTER MIGRATION/SYNCSLOTS dispa",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 4
+}

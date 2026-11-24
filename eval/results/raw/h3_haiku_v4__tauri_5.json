@@ -1,0 +1,413 @@
+{
+ "id": "tauri#5",
+ "repo": "tauri",
+ "num": 5,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T08:27:51.151Z",
+ "num_of_issues": 7,
+ "issues": [
+  {
+   "title": "Unsafe block lacks safety documentation",
+   "description": "The rule requires unsafe code blocks to include comprehensive comments explaining why the code is safe, what invariants must be maintained, and under what conditions the code is valid. This unsafe block uses mem::zeroed() and calls libc::ioctl() without documenting the safety invariants.",
+   "file_path": "crates/tauri-cli/src/interface/rust/desktop.rs",
+   "start_line": 350,
+   "end_line": 361,
+   "problematic_code_snippet": "  pub fn stderr_width() -> Option<usize> {\n    unsafe {\n      let mut winsize: libc::winsize = mem::zeroed();\n      #[allow(clippy::useless_conversion)]\n      if libc::ioctl(libc::STDERR_FILENO, libc::TIOCGWINSZ.into(), &mut winsize) < 0 {\n        return None;\n      }\n      if winsize.ws_col > 0 {\n        Some(winsize.ws_col as usize)\n      } else {\n        None\n      }\n    }\n  }",
+   "rule_name": "Unsafe Code Must Include Safety Documentation"
+  },
+  {
+   "title": "Missing tauri_dir parameter causes workspace resolution to use wrong directory",
+   "description": "The `get_workspace_dir()` function is called without the required `tauri_dir` parameter in `cargo_manifest_and_lock()`. This function now requires `tauri_dir` to correctly resolve the workspace directory after the refactoring. Without it, the code will fail to compile since `get_workspace_dir()` signature was changed to require a `&Path` parameter throughout the codebase. This breaks the Cargo.lock resolution logic which is critical for determining package versions and dependencies.",
+   "file_path": "crates/tauri-cli/src/helpers/cargo_manifest.rs",
+   "start_line": 59,
+   "end_line": 59,
+   "problematic_code_snippet": "  let lock: Option<CargoLock> = get_workspace_dir()\n    .ok()\n    .and_then(|p| fs::read_to_string(p.join(\"Cargo.lock\")).ok())\n    .and_then(|s| toml::from_str(&s).ok());"
+  },
+  {
+   "title": "Configuration merge bypasses validation when merging with empty configs",
+   "description": "The `merge_config_with` function returns early with `Ok(())` when `merge_configs.is_empty()`, but this skips critical validation and state updates that should occur even when no merge is performed. The original code in `merge_with` returned the handle, maintaining the contract that callers could safely use the config. This early return can cause downstream code to operate on stale or unvalidated configuration state, particularly affecting build and dev commands that rely on properly initialized config metadata.",
+   "file_path": "crates/tauri-cli/src/helpers/config.rs",
+   "start_line": 258,
+   "end_line": 261,
+   "problematic_code_snippet": "pub fn merge_config_with(\n  config: &mut ConfigMetadata,\n  merge_configs: &[&serde_json::Value],\n) -> crate::Result<()> {\n  if merge_configs.is_empty() {\n    return Ok(());\n  }"
+  },
+  {
+   "title": "Missing directory parameter breaks WiX upgrade code validation",
+   "description": "In `wix_settings`, the environment variable check `std::env::var_os(\"TAURI_BUNDLER_WIX_FIPS_COMPLIANT\")` was changed but the subsequent check incorrectly compares `OsString` with a string literal \"true\". The original code used `std::env::var()` which returns a `String`, but `var_os()` returns `OsString` which cannot be directly compared with `==` against a string slice. This breaks FIPS compliance detection for WiX installers, potentially creating non-compliant Windows builds when FIPS mode is required.",
+   "file_path": "crates/tauri-cli/src/helpers/config.rs",
+   "start_line": 73,
+   "end_line": 75,
+   "problematic_code_snippet": "    fips_compliant: std::env::var_os(\"TAURI_BUNDLER_WIX_FIPS_COMPLIANT\")\n      .map(|v| v == \"true\")\n      .unwrap_or(config.fips_compliant),"
+  },
+  {
+   "title": "New public struct and function lack rustdoc comments",
+   "description": "`Dirs` and `resolve_dirs` are newly introduced public API items but have no `///` documentation comments as required.",
+   "file_path": "crates/tauri-cli/src/helpers/app_paths.rs",
+   "start_line": 28,
+   "end_line": 147,
+   "problematic_code_snippet": "pub struct Dirs {\n  pub tauri: &'static Path,\n  pub frontend: &'static Path,\n}\n\npub fn resolve_dirs() -> Dirs {\n  let tauri = TAURI_DIR.get_or_init(|| resolve_tauri_dir().unwrap_or_else(|| {\n    ...\n  }));\n  ...\n  Dirs { tauri, frontend }\n}",
+   "rule_name": "Rule 7: Public APIs Must Include Documentation Comments"
+  },
+  {
+   "title": "New public config functions lack rustdoc comments",
+   "description": "The newly introduced public functions `get_config`, `reload_config`, and `merge_config_with` have no `///` documentation comments, violating the requirement that public APIs be documented.",
+   "file_path": "crates/tauri-cli/src/helpers/config.rs",
+   "start_line": 245,
+   "end_line": 330,
+   "problematic_code_snippet": "pub fn get_config(\n  target: Target,\n  merge_configs: &[&serde_json::Value],\n  tauri_dir: &Path,\n) -> crate::Result<ConfigMetadata> {\n  load_config(merge_configs, false, target, tauri_dir)\n}\n\npub fn reload_config(\n  config: &mut ConfigMetadata,\n  merge_configs: &[&serde_json::Value],\n  tauri_dir: &Path,\n) -> crate::Result<()> {\n  let target = config.target;\n  *config = load_config(merge_configs, true, target, tauri_dir)?;\n  Ok(())\n}\n\npub fn merge_config_with(\n  config: &mut ConfigMetadata,\n  merge_configs: &[&serde_json::Value],\n) -> crate::Result<()> {\n  ...\n}",
+   "rule_name": "Rule 7: Public APIs Must Include Documentation Comments"
+  },
+  {
+   "title": "New/modified path resolution introduces panics/unwraps for fallible operations",
+   "description": "`resolve_dirs` uses `panic!` and `unwrap()` (`tauri.parent().unwrap()`) for fallible operations (project discovery/path parent resolution) instead of returning a `Result`, violating the rule to make failure explicit rather than panicking.",
+   "file_path": "crates/tauri-cli/src/helpers/app_paths.rs",
+   "start_line": 127,
+   "end_line": 145,
+   "problematic_code_snippet": "pub fn resolve_dirs() -> Dirs {\n  let tauri = TAURI_DIR.get_or_init(|| resolve_tauri_dir().unwrap_or_else(|| {\n    let env_var_name = env_tauri_app_path().is_some().then(|| format!(\"`{ENV_TAURI_APP_PATH}`\"));\n    panic!(\"Couldn't recognize the {} folder as a Tauri project. It must contain a `{}`, `{}` or `{}` file in any subfolder.\",\n      env_var_name.as_deref().unwrap_or(\"current\"),\n      ConfigFormat::Json.into_file_name(),\n      ConfigFormat::Json5.into_file_name(),\n      ConfigFormat::Toml.into_file_name()\n    )\n  }));\n  let frontend = FRONTEND_DIR.get_or_init(|| {\n    resolve_frontend_dir().unwrap_or_else(|| tauri.parent().unwrap().to_path_buf())\n  });\n  Dirs { tauri, frontend }\n}",
+   "rule_name": "Rule 16: Functions Should Return Result Types for Fallible Operations"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "26a6cebd57ddb4621fb4fd3cbae556dd12d672be",
+ "diff_chars": 113790,
+ "diff_lines": 3352,
+ "user_prompt_chars": 101068,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 187517,
+ "wall_ms": 189562,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 10,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 9,
+ "turn_trace": {
+  "assistant_lines": 28,
+  "unique_message_ids": 9,
+  "lines_without_id": 0,
+  "tool_use_blocks": 10
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.111151831,
+ "spend_post_usd": 7.187577266,
+ "cost_settled": true,
+ "cost_wait_ms": 365,
+ "cost_usd": 0.07642543499999999,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 11,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.1080435,
+ "usage": {
+  "input_tokens": 18,
+  "cache_creation_input_tokens": 96790,
+  "cache_read_input_tokens": 780105,
+  "output_tokens": 42063,
+  "output_tokens_details": {
+   "thinking_tokens": 31242
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 96790
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 18,
+   "outputTokens": 42063,
+   "cacheReadInputTokens": 780105,
+   "cacheCreationInputTokens": 96790,
+   "webSearchRequests": 0,
+   "costUSD": 0.1080435,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 31242,
+   "cacheCreationEphemeral5mInputTokens": 96790,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 5,
+   "title": "Code Review Bench PR #14668 - Less statics",
+   "author": "unknown",
+   "baseSha": "50901ebda46033346b1b11bf6e453dad2d51479e",
+   "headSha": "26a6cebd57ddb4621fb4fd3cbae556dd12d672be"
+  },
+  "summary": "This refactor removes the process-wide `Mutex<Option<ConfigMetadata>>` config handle and the `tauri_dir()`/`frontend_dir()` accessors from `tauri-cli`. Callers now receive a `Dirs { tauri, frontend }` value from `app_paths::resolve_dirs()` and an owned `ConfigMetadata` from `config::get_config`, and pass them down explicitly. Reloads on file change go through `reload_config(&mut ConfigMetadata, ...)`, and the dev/mobile paths share config through a `Mutex` that is local to each command. The direction is sound and the change is mostly mechanical. Most of the churn is signature plumbing through build, bundle, dev, and the Android and iOS paths.\n\nThe main problem is a likely compile error in `dev.rs`: a non-`move` closure passed to `std::thread::spawn` borrows the `&Dirs` parameter, which the spawn's `'static` bound rejects. There are also a few smaller issues. An unrelated `features` default changed in the iOS config, several drive-by edits are bundled into a refactor PR, and a Mutex guard is held across the whole Android build. I could not run `cargo check` in this environment, so the compile finding is based on reading the code and on Rust's closure-capture rules rather than on a build.",
+  "verdict": "request_changes",
+  "verdictRationale": "The `thread::spawn` in `dev::setup` most likely fails to compile, which blocks the whole crate. The iOS `features` default change is an unexplained behaviour change inside a refactor. The remaining items are low-risk cleanups. Once the spawn is fixed and the iOS change is reverted or justified, this looks mergeable.",
+  "architecture": {
+   "overview": "Before this PR, `tauri-cli` kept two process-wide `OnceLock<PathBuf>` values (tauri dir and frontend dir) and a `static Mutex<Option<ConfigMetadata>>` config handle. Any module could reach them through `app_paths::tauri_dir()`, `frontend_dir()`, and `config::get`/`reload`/`merge_with`. Every access then went through `lock().unwrap().as_ref().unwrap()`, and a missing `resolve()` or config load panicked at runtime.\n\nThe PR moves ownership to the entry points. Each command calls `app_paths::resolve_dirs()` once and gets a `Dirs { tauri: &'static Path, frontend: &'static Path }`. It then calls `config::get_config(target, merges, tauri_dir)` to get an owned `ConfigMetadata`. That value is passed by reference into `AppInterface::new`, `build::setup`, `bundle::bundle`, and the mobile builders. Dev and mobile-dev wrap the config in a local `Mutex` so the file watcher can call `reload_config(&mut config.lock(), ...)`. The `&'static` fields in `Dirs` still point into the `OnceLock` globals, so the statics are reduced but not removed.",
+   "steps": [
+    "Entry point: each `command()` in `lib.rs`, `dev.rs`, `build.rs`, `bundle.rs`, `mobile/*` now calls `app_paths::resolve_dirs()` instead of `resolve()` followed by global accessors. `resolve_dirs` lazily initialises the two `OnceLock`s and returns `Dirs`.",
+    "Config load: `config::get_config(target, merges, tauri_dir)` parses `tauri.conf.json` and returns an owned `ConfigMetadata`. `reload_config` replaces it in place only after a successful load, and `merge_config_with` merges CLI `--config` overrides.",
+    "Interface plumbing: `Interface::new/build/dev/mobile_dev/watch` and `AppSettings::out_dir/get_binaries/get_bundler_settings` now take `tauri_dir` or `dirs` explicitly instead of reading the global.",
+    "Dev watcher: `Rust::run_dev_watcher` receives `&Mutex<ConfigMetadata>`. On a configuration-file change it calls `reload_config` and then `rewrite_manifest(&config, dirs.tauri)`. This replaces the old global reload with a per-command mutable value.",
+    "Mobile paths: Android and iOS `build`, `dev`, `run`, `init`, and `xcode_script` each load their own `ConfigMetadata`. Dev and run share it through a local `Mutex` passed into `mobile_dev`/`watch`. `init` and `xcode_script` use the same `get_config` call, and `build::setup` now takes `dirs`."
+   ],
+   "diagrams": [
+    {
+     "kind": "flowchart",
+     "title": "Directory and config ownership after the refactor",
+     "description": "Each CLI command resolves Dirs once, loads an owned ConfigMetadata, and passes both down explicitly. Dev and mobile-dev share the config through a Mutex for the watcher.",
+     "mermaid": "flowchart LR\n  CLI[\"CLI command (dev, build, ios, android, ...)\"] --> RD[\"app_paths::resolve_dirs()\"]\n  RD --> TD[\"TAURI_DIR OnceLock\"]\n  RD --> FD[\"FRONTEND_DIR OnceLock\"]\n  RD --> DIRS[\"Dirs { tauri, frontend }\"]\n  DIRS --> GC[\"config::get_config(target, merges, tauri_dir)\"]\n  GC --> CM[\"ConfigMetadata (owned)\"]\n  CM --> IF[\"AppInterface::new(&cfg, target, tauri_dir)\"]\n  CM --> BLD[\"build::setup / bundle::bundle\"]\n  CM --> MX[\"Mutex<ConfigMetadata> (dev and mobile-dev)\"]\n  MX --> W[\"run_dev_watcher\"]\n  W --> RC[\"config::reload_config(&mut lock, merges, tauri_dir)\"]\n  RC --> RM[\"rewrite_manifest(&config, tauri_dir)\"]"
+    },
+    {
+     "kind": "sequence",
+     "title": "Config reload on tauri.conf.json change during tauri dev",
+     "description": "The dev command shares one Mutex-wrapped ConfigMetadata with the watcher. A config file change reloads it in place and then rewrites the Cargo manifest.",
+     "mermaid": "sequenceDiagram\n  participant User\n  participant Dev as dev::command\n  participant Rust as Rust interface\n  participant Watch as run_dev_watcher\n  participant Cfg as config::reload_config\n  participant Man as rewrite_manifest\n  User->>Dev: tauri dev\n  Dev->>Rust: interface.dev(&Mutex<ConfigMetadata>, dirs)\n  Rust->>Watch: run_dev_watcher(config, dirs)\n  User-->>Watch: tauri.conf.json changed\n  Watch->>Cfg: reload_config(&mut config.lock(), merges, dirs.tauri)\n  Cfg-->>Watch: Ok (replaced) or Err (old config kept)\n  Watch->>Man: rewrite_manifest(&config.lock(), dirs.tauri)\n  Man-->>Watch: (manifest, modified)"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "`thread::spawn` closure borrows `dirs`, so the crate likely won't compile",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "In `dev::setup`, the thread spawned to check mismatched packages uses a non-`move` closure that reads `dirs.frontend` and `dirs.tauri`. `dirs` is a `&Dirs` parameter, so the closure borrows data that isn't `'static`, and `std::thread::spawn` requires `'static`. Before this PR both values were `&'static` globals, so the closure was fine. Now it should fail with E0373 or E0521. I could not run `cargo check` here to confirm.\n\n::diff{file=\"crates/tauri-cli/src/dev.rs\" lines=\"138-148\"}\n\n::callout{type=\"warning\"}\nThe fix is to copy the two `&'static Path` fields into locals and use `move`. Copying them is free because they are `'static`.\n\n::suggestion{file=\"crates/tauri-cli/src/dev.rs\" lines=\"144-148\"}\nlet (frontend, tauri) = (dirs.frontend, dirs.tauri);\nstd::thread::spawn(move || {\n  if let Err(error) = check_mismatched_packages(frontend, tauri) {\n    log::error!(\"{error}\");\n  }\n});\n",
+    "files": [
+     "crates/tauri-cli/src/dev.rs",
+     "crates/tauri-cli/src/helpers/app_paths.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/dev.rs`, `setup()` (around lines 138-148) spawns a thread whose non-`move` closure reads `dirs.frontend` and `dirs.tauri` from the `&Dirs` parameter. That borrows a non-'static value and `std::thread::spawn` will not compile. Copy the two `&'static Path` fields into local bindings before the spawn and change the closure to `move`. Keep the existing `check_mismatched_packages` call and its `log::error!` handling unchanged. This restores the behaviour the old global accessors gave for free.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/dev.rs",
+     "lineStart": 144,
+     "lineEnd": 148
+    }
+   },
+   {
+    "title": "iOS `features` default changed without explanation",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`mobile/ios/mod.rs::get_config` used to set `features` to `None` when there were no features, and `Some(features)` otherwise. The PR replaces that with an unconditional `Some(ios_options.features)`. This is unrelated to the statics refactor and changes the `ApplePlatform` values passed to cargo_mobile2 on every iOS invocation, even when no features are set. Depending on how cargo_mobile2 serialises an empty `Some(vec![])`, the generated project or build arguments may change.\n\n::diff{file=\"crates/tauri-cli/src/mobile/ios/mod.rs\" lines=\"268-276\"}\n\n::callout{type=\"warning\"}\nIf the change is not intentional, restore the original conditional. If it is intentional, call it out in the PR description and in the `.changes` entry.\n\nDo not change the default silently inside a refactor.\n",
+    "files": [
+     "crates/tauri-cli/src/mobile/ios/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/ios/mod.rs` inside `get_config` (around line 272), `ApplePlatform.features` was changed from `if ios_options.features.is_empty() { None } else { Some(ios_options.features) }` to an unconditional `Some(ios_options.features)`. This is unrelated to the statics refactor. Restore the original conditional so that an empty feature list yields `None`, unless the change is deliberate. If it is deliberate, explain why in the PR description.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/ios/mod.rs",
+     "lineStart": 270,
+     "lineEnd": 274
+    }
+   },
+   {
+    "title": "Mutex guard held across the entire Android build",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`android/build.rs::run` takes `let tauri_config = &tauri_config.lock().unwrap();`. The guard therefore lives until `run` returns, covering `set_current_dir`, `ensure_init`, `crate::build::setup`, and `run_build`. None of those lock the config again, so this doesn't deadlock today. But the build path only reads the config, so the lock adds nothing here. It also means any future code that locks the config during a build will deadlock silently.\n\n::code{file=\"crates/tauri-cli/src/mobile/android/build.rs\" lines=\"150-156\"}\n\nPrefer having `command` and `run.rs` hold the Mutex only where the watcher needs it, and passing `&ConfigMetadata` into `run`.",
+    "files": [
+     "crates/tauri-cli/src/mobile/android/build.rs",
+     "crates/tauri-cli/src/mobile/android/run.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/android/build.rs`, `run()` (around line 154) locks the Mutex and holds the guard for the whole function. The build path only reads the config, so this guard isn't needed and will deadlock if anything later locks the config during a build. Change `run()` to take `&ConfigMetadata` and do the locking at the call site in `android/run.rs` (where the Mutex is later shared with `watch`). Keep the same behaviour for `run_build`, `ensure_init`, and `build::setup`.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/android/build.rs",
+     "lineStart": 152,
+     "lineEnd": 156
+    }
+   },
+   {
+    "title": "Config loaded twice in iOS run path",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`ios/run.rs::command` calls `build::command`, and `build::command` loads its own `ConfigMetadata`. `run.rs` then loads a second copy with the same `--config` overrides so it can hand a `Mutex` to `watch`. The two loads read `tauri.conf.json` at different times, so the build and the watcher can disagree if the file changes between them. It also doubles the parse and schema validation work.\n\n::code{file=\"crates/tauri-cli/src/mobile/ios/run.rs\" lines=\"98-108\"}\n\nIf `build::command` exposed its `ConfigMetadata`, `run.rs` could reuse it and skip the second load.",
+    "files": [
+     "crates/tauri-cli/src/mobile/ios/run.rs",
+     "crates/tauri-cli/src/mobile/ios/build.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/ios/run.rs`, `command()` loads the Tauri config again (around line 101) after `build::command` has already loaded it. Have the iOS build path return the `ConfigMetadata` it used, or split `build::command` so the loaded config can be passed back to `run.rs`. Then pass that single config into the `Mutex` used by `watch`. This avoids two reads of `tauri.conf.json` that can diverge.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/ios/run.rs",
+     "lineStart": 98,
+     "lineEnd": 108
+    }
+   },
+   {
+    "title": "Unrelated drive-by edits bundled into a statics refactor",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "Several changes have nothing to do with removing statics, and they make the PR harder to review and revert:\n\n- `helpers/config.rs` switches `std::env::var(...).ok()` to `std::env::var_os(...)` for `TAURI_BUNDLER_WIX_FIPS_COMPLIANT`. A non-UTF-8 value that used to fall back to the config now compares as `false`.\n- `interface/rust/desktop.rs` deletes the comment explaining the FreeBSD `.into()` on `TIOCGWINSZ`, while keeping the conversion itself.\n- `mobile/mod.rs::local_ip_address` rewrites a `match` on `addresses.len()` as a slice pattern. The behaviour is the same, but it is unrelated churn.\n\n::diff{file=\"crates/tauri-cli/src/helpers/config.rs\" lines=\"71-78\"}\n\nSplit these into their own PRs, or revert them here.",
+    "files": [
+     "crates/tauri-cli/src/helpers/config.rs",
+     "crates/tauri-cli/src/interface/rust/desktop.rs",
+     "crates/tauri-cli/src/mobile/mod.rs"
+    ],
+    "fixPrompt": "This refactor PR contains unrelated edits. In `crates/tauri-cli/src/helpers/config.rs` (around line 74), `wix_settings` changed `std::env::var(...).ok()` to `var_os`, which changes behaviour for non-UTF-8 values. In `crates/tauri-cli/src/interface/rust/desktop.rs` (around line 352), the FreeBSD `.into()` explanatory comment was removed. In `crates/tauri-cli/src/mobile/mod.rs`, `local_ip_address` was rewritten as a slice match. Revert these three changes so the PR only contains the statics refactor, or move them to a separate PR.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/helpers/config.rs",
+     "lineStart": 71,
+     "lineEnd": 78
+    }
+   },
+   {
+    "title": "Redundant nested block in `xcode_script` config loading",
+    "severity": "low",
+    "category": "style",
+    "body": "`ios/xcode_script.rs` wraps `cli_options` in two nested blocks. The inner `read_options` call is only there to give the outer block a value, and the outer block's shadowing makes the control flow harder to follow. `read_options(&tauri_config)` is also called again a few lines later. The nested block could be flattened to a single `let cli_options = read_options(&tauri_config);` at the top level.\n\n::code{file=\"crates/tauri-cli/src/mobile/ios/xcode_script.rs\" lines=\"96-102\"}",
+    "files": [
+     "crates/tauri-cli/src/mobile/ios/xcode_script.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/mobile/ios/xcode_script.rs` around lines 97-100, the `cli_options` binding is wrapped in two nested blocks (`let cli_options = { let cli_options = { read_options(&tauri_config) }; ... cli_options };`). Flatten this to one top-level `let cli_options = read_options(&tauri_config);` followed by the `if !cli_options.config.is_empty()` reload. Keep the reload with `reload_tauri_config(&mut tauri_config, ...)` as is.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/mobile/ios/xcode_script.rs",
+     "lineStart": 98,
+     "lineEnd": 100
+    }
+   },
+   {
+    "title": "`Dirs` still depends on the statics it was meant to remove",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The PR is titled \"Less statics\", but `Dirs` holds `&'static Path` values that point into the `FRONTEND_DIR` and `TAURI_DIR` `OnceLock`s. That forces the globals to remain, and it is also why the spawn in `dev.rs` is tempting to write with a borrow. Storing owned `PathBuf`s in `Dirs` (or an `Arc<Path>`) would remove the need for `OnceLock` entirely. The cost is a clone per command, which is negligible here.\n\n::code{file=\"crates/tauri-cli/src/helpers/app_paths.rs\" lines=\"24-33\"}\n\nThis is a design trade-off, not a bug. It's worth deciding now, while the API is being reshaped.",
+    "files": [
+     "crates/tauri-cli/src/helpers/app_paths.rs"
+    ],
+    "fixPrompt": "In `crates/tauri-cli/src/helpers/app_paths.rs`, `Dirs` stores `&'static Path` fields that point into the `FRONTEND_DIR` and `TAURI_DIR` `OnceLock` statics, so the globals are kept. Consider making `Dirs` own `PathBuf` fields and having `resolve_dirs()` return them directly, which removes both `OnceLock`s. Update the callers that take `&Dirs` to borrow from the owned fields. Note that the `thread::spawn` in `dev.rs` is simpler with owned or `'static` data, but it also needs a `move` closure either way.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/helpers/app_paths.rs",
+     "lineStart": 26,
+     "lineEnd": 32
+    }
+   },
+   {
+    "title": "Reload keeps the previous config on failure and drops unwrap panics",
+    "severity": "low",
+    "category": "correctness",
+    "body": "The new `reload_config` builds the replacement `ConfigMetadata` fully before assigning it with `*config = load_config(...)?`. A failed reload therefore leaves the previous config in place, which matches the old behaviour where `reload` only replaced the global on success. The watcher only swaps in the new manifest when reload succeeds. This removes roughly twenty `lock().unwrap().as_ref().unwrap()` panic sites that the old global handle needed, and replaces the \"config not loaded\" bail paths with ownership that cannot be missing.\n\n::code{file=\"crates/tauri-cli/src/helpers/config.rs\" lines=\"246-252\"}\n\nThis is a good change.",
+    "files": [
+     "crates/tauri-cli/src/helpers/config.rs",
+     "crates/tauri-cli/src/interface/rust.rs"
+    ],
+    "fixPrompt": "No change needed. This is a positive note on the `reload_config` and watcher code, which keeps the old config on a failed reload and removes the old unwrap panic sites.",
+    "commentAnchor": {
+     "file": "crates/tauri-cli/src/interface/rust.rs",
+     "lineStart": 594,
+     "lineEnd": 602
+    }
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":5,\"title\":\"Code Review Bench PR #14668 - Less statics\",\"author\":\"unknown\",\"baseSha\":\"50901ebda46033346b1b11bf6e453dad2d51479e\",\"headSha\":\"26a6cebd57ddb4621fb4fd3cbae556dd12d672be\"},\"summary\":\"This refactor removes the process-wide `Mutex<Option<ConfigMetadata>>` config handle and the `tauri_dir()`/`frontend_dir()` accessors from `tauri-cli`. Callers now receive a `Dirs { tauri, frontend }` value from `app_paths::resolve_dirs()` and an owne",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 8
+}

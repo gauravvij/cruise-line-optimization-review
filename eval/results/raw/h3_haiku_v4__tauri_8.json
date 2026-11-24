@@ -1,0 +1,323 @@
+{
+ "id": "tauri#8",
+ "repo": "tauri",
+ "num": 8,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_v4",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/v4_recall_anchor.txt",
+ "promptVariant": "v4_recall_anchor.txt",
+ "prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-19T08:35:21.988Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "new_click method missing must_use attribute",
+   "description": "The new_click method returns a TrayIconEvent that represents an important event which should not be ignored. Factory methods that create event objects should be marked with #[must_use] to prevent accidentally creating an event without handling it, which could lead to silent logic errors.",
+   "file_path": "crates/tauri/src/tray/mod.rs",
+   "start_line": 138,
+   "end_line": 154,
+   "problematic_code_snippet": "  /// Creates a new Click event with default values.\n  /// Useful for testing or creating mock events.\n  pub fn new_click(id: TrayIconId) -> Self {\n    TrayIconEvent::Click {\n      id,\n      position: PhysicalPosition { x: 0.0, y: 0.0 },\n      rect: Rect {\n        position: PhysicalPosition { x: 0.0, y: 0.0 },\n        size: crate::PhysicalSize {\n          width: 0.0,\n          height: 0.0,\n        },\n      },\n      button: MouseButton::default(),\n      button_state: MouseButtonState::default(),\n    }\n  }",
+   "rule_name": "Functions Returning Values Should Be Marked with must_use Where Appropriate"
+  },
+  {
+   "title": "Inverted mouse button state mapping in tray icon event conversion",
+   "description": "The From implementation for converting tray_icon::MouseButtonState to MouseButtonState has the Up and Down states inverted. When a mouse button is released (Up) from the underlying tray_icon library, it's incorrectly mapped to Down in the Tauri TrayIconEvent, and vice versa. This will cause all tray icon click handlers to receive the opposite button state than what actually occurred, breaking event handling logic that depends on distinguishing between button press and release events. The new_click factory method added in this PR uses MouseButtonState::default() which is Up, but when real events are converted through this From implementation, the states will be backwards.",
+   "file_path": "crates/tauri/src/tray/mod.rs",
+   "start_line": 31,
+   "end_line": 37,
+   "problematic_code_snippet": "impl From<tray_icon::MouseButtonState> for MouseButtonState {\n  fn from(value: tray_icon::MouseButtonState) -> Self {\n    match value {\n      tray_icon::MouseButtonState::Up => MouseButtonState::Down,\n      tray_icon::MouseButtonState::Down => MouseButtonState::Up,\n    }\n  }\n}"
+  },
+  {
+   "title": "PatternJavascript struct gated behind isolation feature breaks brownfield pattern",
+   "description": "The PatternJavascript struct was moved behind a #[cfg(feature = \"isolation\")] gate, but this struct is used in webview initialization code (manager/webview.rs line 131) for all pattern types including Pattern::Brownfield. When the isolation feature is disabled, the PatternJavascript struct won't be defined, causing a compilation error in webview.rs when it tries to instantiate PatternJavascript for brownfield applications. This change in the derive attribute placement breaks the fundamental pattern system for non-isolation builds, preventing any Tauri application that doesn't use the isolation pattern from compiling.",
+   "file_path": "crates/tauri/src/pattern.rs",
+   "start_line": 78,
+   "end_line": 83,
+   "problematic_code_snippet": "#[cfg(feature = \"isolation\")]\n#[derive(Template)]\n#[default_template(\"../scripts/pattern.js\")]\npub(crate) struct PatternJavascript {\n  pub(crate) pattern: PatternObject,\n}"
+  },
+  {
+   "title": "Config schema/source changed without corresponding generated artifacts update",
+   "description": "This PR modifies `crates/tauri-utils/src/config.rs` (a source file explicitly called out by Rule 14 as driving generated artifacts such as schemas). The diff does not include any updates to the corresponding generated outputs (e.g., regenerated JSON schemas / other generated artifacts that depend on this config). Under Rule 14, changes to this file require regenerating and committing the generated files to keep them in sync.",
+   "file_path": "crates/tauri-utils/src/config.rs",
+   "start_line": 208,
+   "end_line": 218,
+   "problematic_code_snippet": "+#[derive(Debug, PartialEq, Eq, Clone, Default)]\n pub enum BundleTarget {\n   /// Bundle all targets.\n+  #[default]\n   All,",
+   "rule_name": "Generated Files Must Be Kept in Sync with Source Code"
+  },
+  {
+   "title": "v1 config schema/source changed without corresponding generated artifacts update",
+   "description": "This PR also modifies `crates/tauri-utils/src/config_v1/mod.rs`, which is part of configuration/schema definitions. The diff does not include any regenerated artifacts that would normally need updating when configuration schema-related code changes (as required by Rule 14).",
+   "file_path": "crates/tauri-utils/src/config_v1/mod.rs",
+   "start_line": 131,
+   "end_line": 141,
+   "problematic_code_snippet": "+#[derive(Debug, PartialEq, Eq, Clone, Default)]\n pub enum BundleTarget {\n   /// Bundle all targets.\n+  #[default]\n   All,",
+   "rule_name": "Generated Files Must Be Kept in Sync with Source Code"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri",
+ "head_sha": "c8b8f92420138488ba8d0104472bedab126e24c4",
+ "diff_chars": 16756,
+ "diff_lines": 508,
+ "user_prompt_chars": 18382,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 40458,
+ "wall_ms": 42462,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri/src/pattern.rs"
+  },
+  {
+   "name": "Read",
+   "detail": "/home/azureuser/optimize-cruiseline/eval/data/repos/tauri/crates/tauri/src/tray/mod.rs"
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 6,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 10,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 6
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 7.255136816,
+ "spend_post_usd": 7.264545051,
+ "cost_settled": true,
+ "cost_wait_ms": 355,
+ "cost_usd": 0.009408234999999543,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 7,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.00824633,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 20626,
+  "cache_read_input_tokens": 126628,
+  "output_tokens": 8802,
+  "output_tokens_details": {
+   "thinking_tokens": 2952
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 20626
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 8802,
+   "cacheReadInputTokens": 126628,
+   "cacheCreationInputTokens": 20626,
+   "webSearchRequests": 0,
+   "costUSD": 0.00824633,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 2952,
+   "cacheCreationEphemeral5mInputTokens": 20626,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/tauri",
+   "number": 8,
+   "title": "Code Review Bench PR #14395 - chore: fix new clippy warnings (derive default)",
+   "author": "",
+   "baseSha": "3a860c17563896d1ac61b3bfea73f1bdbf8a2be6",
+   "headSha": "c8b8f92420138488ba8d0104472bedab126e24c4"
+  },
+  "summary": "The PR clears a batch of new clippy warnings by replacing hand-written `impl Default` blocks with `#[derive(Default)]` plus `#[default]` on the variant, across tauri-utils (both config and config_v1), tauri-cli, tauri-runtime, tauri-bundler, and tauri. Most of the mechanical conversions are correct and preserve behavior. Three changes go beyond that: a `From<tray_icon::MouseButtonState>` mapping in `tauri/src/tray/mod.rs` that now inverts Up and Down, a `#[cfg(feature = \"isolation\")]` attribute in `tauri/src/pattern.rs` that was left attached to `PatternJavascript` and now gates a struct that is used unconditionally, and a new public `TrayIconEvent::new_click` test helper added to production code.\n\nThe tray inversion is a silent behavior change in a public event type that reaches JavaScript. The `pattern.rs` change looks like it breaks builds without the `isolation` feature. Both are one-line-scale problems but should block merge. The `new_click` addition is unrelated to clippy and expands the public API without a caller. Overall I would not approve as-is, though the bulk of the derive refactor is fine.",
+  "verdict": "request_changes",
+  "verdictRationale": "Two defects are likely to break things: the tray `MouseButtonState` mapping now inverts Up/Down for every tray click event sent to the frontend, and removing the `impl Default` block left `#[cfg(feature = \"isolation\")]` attached to `PatternJavascript`, which `manager/webview.rs` uses unconditionally, so non-isolation builds should fail to compile. The `new_click` helper is an unrelated public API addition. The remaining derive conversions look correct.",
+  "architecture": {
+   "overview": "Tauri's config, runtime, and tray types are plain Rust enums that the crates share. Several of them carried hand-written `impl Default` blocks that clippy now flags as `derivable_impls`. This PR replaces those blocks with `#[derive(Default)]` plus a `#[default]` attribute on the chosen variant, in tauri-utils (config and config_v1), tauri-runtime, tauri-cli, tauri-bundler, and the tauri crate. Those changes are mechanical and keep the same default values.\n\nThree edits go beyond that pattern. The tray `From<tray_icon::MouseButtonState>` conversion now maps Up to Down and Down to Up. The `#[cfg(feature = \"isolation\")]` attribute, which used to guard an `impl` block, now sits in front of `PatternJavascript` in `pattern.rs`. A new `TrayIconEvent::new_click` constructor is added to the public API.",
+   "steps": [
+    "Entry point: the tray backend (`tray_icon` crate) emits raw events, which `tauri/src/tray/mod.rs` converts into the public `TrayIconEvent` type through the `From` impls. Those events are serialized to JavaScript.",
+    "Default-derive refactor: the `Default` impls for `MouseButtonState`, `MouseButton`, `NsisCompression`, `NSISInstallerMode`, `BundleTarget`, `PatternKind`, `WindowsUpdateInstallMode`, `TitleBarStyle`, `IsolationSide`, and `DeviceEventFilter` are replaced by `#[default]` variants. Defaults are preserved.",
+    "Tray conversion (changed): `From<tray_icon::MouseButtonState>` now returns the opposite state, so the button state observed by JavaScript is inverted.",
+    "Isolation pattern (changed): `IsolationSide` is still gated by the isolation feature, but the struct `PatternJavascript` that follows now also carries that gate. `manager/webview.rs` constructs it without any cfg.",
+    "Test helper (added): `TrayIconEvent::new_click` is a public constructor with no call sites in the repository and no test that uses it."
+   ],
+   "diagrams": [
+    {
+     "kind": "flowchart",
+     "title": "Where the changed types sit in the tray and pattern paths",
+     "description": "Shows how raw tray events are converted into the public types and where the changed conversions and gates sit.",
+     "mermaid": "flowchart LR\n  TI[tray_icon events] -->|From impl| TE[TrayIconEvent in tauri/src/tray/mod.rs]\n  TE -->|serde JSON| JS[JavaScript listeners]\n  TE -.->|changed: Up/Down swapped| TE\n  MS[MouseButtonState default derive] --> TE\n  PJ[PatternJavascript in tauri/src/pattern.rs] --> WV[manager/webview.rs]\n  CFG[cfg feature isolation] -.->|now also gates| PJ"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Tray MouseButtonState conversion inverts Up and Down",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The `From<tray_icon::MouseButtonState>` impl used to map `Up` to `Up` and `Down` to `Down`. This PR swaps them, so every tray click event now reports the opposite button state to JavaScript listeners. The derive refactor was supposed to be mechanical, and this edit is not part of it.\n\n::diff{file=\"crates/tauri/src/tray/mod.rs\" lines=\"31-38\"}\n\nThe existing test `tray_event_json_serialization` builds the enum directly and never goes through the `From` impl, so it does not catch the swap. Any frontend code that reacts to `buttonState === \"Down\"` will now see the wrong value for every click.\n\n::callout{type=\"warning\"}\nRevert these two match arms to the original identity mapping. Consider adding a unit test that converts each `tray_icon::MouseButtonState` variant and asserts the matching `MouseButtonState`.\n",
+    "files": [
+     "crates/tauri/src/tray/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri/src/tray/mod.rs`, the `From<tray_icon::MouseButtonState>` impl (around lines 31-38) maps `Up` to `MouseButtonState::Down` and `Down` to `MouseButtonState::Up`. Restore the identity mapping so `tray_icon::MouseButtonState::Up` maps to `MouseButtonState::Up` and `Down` maps to `Down`, as it was on the base commit. Then add a small unit test in the existing `#[cfg(test)] mod tests` that checks both conversions, so a future swap is caught.",
+    "commentAnchor": {
+     "file": "crates/tauri/src/tray/mod.rs",
+     "lineStart": 31,
+     "lineEnd": 38
+    }
+   },
+   {
+    "title": "Isolation cfg now gates PatternJavascript, which is used unconditionally",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "Before this PR, `#[cfg(feature = \"isolation\")]` applied only to the `impl Default for IsolationSide` block. That block was removed, but the attribute was left in place. It now sits directly above `#[derive(Template)]`, so it gates the `PatternJavascript` struct.\n\n::diff{file=\"crates/tauri/src/pattern.rs\" lines=\"65-83\"}\n\n`PatternJavascript` is constructed in `crates/tauri/src/manager/webview.rs` around line 131 with no cfg guard around it. A build without the `isolation` feature should fail with an unresolved-name error. Only isolation builds would compile.\n\n::suggestion{file=\"crates/tauri/src/pattern.rs\" lines=\"78-83\"}\n#[derive(Template)]\n#[default_template(\"../scripts/pattern.js\")]\npub(crate) struct PatternJavascript {\n  pub(crate) pattern: PatternObject,\n}\n\nRemove the `#[cfg(feature = \"isolation\")]` line that sits above `#[derive(Template)]`, so the struct is available in every build as it was before.\n",
+    "files": [
+     "crates/tauri/src/pattern.rs",
+     "crates/tauri/src/manager/webview.rs"
+    ],
+    "fixPrompt": "In `crates/tauri/src/pattern.rs`, the `#[cfg(feature = \"isolation\")]` attribute at around line 78 is now attached to `PatternJavascript` (line 81) rather than to a removed `impl Default for IsolationSide`. `PatternJavascript` is used unconditionally in `crates/tauri/src/manager/webview.rs` around line 131. Remove that stray cfg attribute so the struct is compiled in all feature combinations, and keep the cfg on `IsolationSide` (line 66) and on the `Pattern::Isolation` match arm. Verify that the crate still builds with and without the `isolation` feature.",
+    "commentAnchor": {
+     "file": "crates/tauri/src/pattern.rs",
+     "lineStart": 78,
+     "lineEnd": 81
+    }
+   },
+   {
+    "title": "New public new_click constructor added with no callers",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "This PR adds `TrayIconEvent::new_click` as a `pub` method. The method is unrelated to the clippy fix. It has no call sites in the repository, and the only in-repo test builds the enum literal directly. It also puts test scaffolding (\"Useful for testing or creating mock events\") into the public API of a shipped crate, and that becomes a permanent surface to maintain.\n\n::diff{file=\"crates/tauri/src/tray/mod.rs\" lines=\"137-151\"}\n\nIf a test helper is needed, make it `pub(crate)` and put it inside the `#[cfg(test)]` module. Otherwise, drop it from this PR and reintroduce it in a separate change that explains the public use case.\n",
+    "files": [
+     "crates/tauri/src/tray/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri/src/tray/mod.rs`, remove the public `TrayIconEvent::new_click` helper (around lines 137-151), which has no callers and is unrelated to the clippy fix. If a test needs a click event, construct it inside the existing `#[cfg(test)] mod tests` block instead, following the literal used in `tray_event_json_serialization`. Keep the public API unchanged.",
+    "commentAnchor": {
+     "file": "crates/tauri/src/tray/mod.rs",
+     "lineStart": 137,
+     "lineEnd": 151
+    }
+   },
+   {
+    "title": "Doc comment on MouseButtonState::Up describes the wrong state",
+    "severity": "low",
+    "category": "style",
+    "body": "The doc comment on `Up` says \"Mouse button pressed.\" and the comment on `Down` says \"Mouse button released.\" That is backwards. This was already present before the PR, but the PR touches this exact enum and adds `#[default]` to `Up`, so it is a good time to fix it. The default value is the release state, so the comment on the default variant is misleading to anyone reading the derive.\n\n::code{file=\"crates/tauri/src/tray/mod.rs\" lines=\"21-29\"}\n\nSwap the two doc comments so that `Up` is documented as released and `Down` as pressed.\n",
+    "files": [
+     "crates/tauri/src/tray/mod.rs"
+    ],
+    "fixPrompt": "In `crates/tauri/src/tray/mod.rs`, the doc comments on `MouseButtonState` (around lines 24-28) are swapped: `Up` is documented as \"Mouse button pressed\" and `Down` as \"Mouse button released\". Swap them so `Up` documents release and `Down` documents press. Do not change the enum variants or the derive.",
+    "commentAnchor": {
+     "file": "crates/tauri/src/tray/mod.rs",
+     "lineStart": 24,
+     "lineEnd": 28
+    }
+   },
+   {
+    "title": "Default-derive conversions are correct and behavior-preserving",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Across tauri-utils (config and config_v1), tauri-runtime, tauri-cli, tauri-bundler, and tauri, the hand-written `impl Default` blocks are replaced with `#[derive(Default)]` plus `#[default]` on the same variant that the old impl returned. I checked each pair against the removed bodies and the chosen variants match. The `#[default]` attribute is stable on enum variants, so the MSRV is not affected.\n\n::diff{file=\"crates/tauri-utils/src/config.rs\" lines=\"801-835\"}\n\nThe bundler `error.rs` change is also equivalent. The two `#[cfg(target_os)]` variants are collapsed into one variant with `cfg_attr`-selected messages, and the variant name and message text are preserved on each platform.",
+    "files": [
+     "crates/tauri-utils/src/config.rs",
+     "crates/tauri-utils/src/config_v1/mod.rs",
+     "crates/tauri-runtime/src/lib.rs",
+     "crates/tauri-cli/src/interface/rust.rs",
+     "crates/tauri-bundler/src/error.rs",
+     "crates/tauri/src/pattern.rs"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/tauri\",\"number\":8,\"title\":\"Code Review Bench PR #14395 - chore: fix new clippy warnings (derive default)\",\"author\":\"\",\"baseSha\":\"3a860c17563896d1ac61b3bfea73f1bdbf8a2be6\",\"headSha\":\"c8b8f92420138488ba8d0104472bedab126e24c4\"},\"summary\":\"The PR clears a batch of new clippy warnings by replacing hand-written `impl Default` blocks with `#[derive(Default)]` plus `#[default]` on the variant, across tauri-utils (both config and config_v1), tauri-cli, tauri-runti",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 5
+}

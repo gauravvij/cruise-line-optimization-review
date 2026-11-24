@@ -1,0 +1,396 @@
+{
+ "id": "aspnetcore#5",
+ "repo": "aspnetcore",
+ "num": 5,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T16:00:43.540Z",
+ "num_of_issues": 8,
+ "issues": [
+  {
+   "title": "Traditional namespace declaration with braces",
+   "description": "The rule requires C# files to use file-scoped namespace declarations (ending with semicolon without braces), but this file uses traditional namespace declarations with opening and closing braces.",
+   "file_path": "src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs",
+   "start_line": 9,
+   "end_line": 11,
+   "problematic_code_snippet": "using Microsoft.AspNetCore.Components.Endpoints;\nusing Microsoft.AspNetCore.DataProtection;\nusing Microsoft.Extensions.Logging.Abstractions;\n\nnamespace Microsoft.AspNetCore.Components.Server.Circuits\n{\n    public class ServerComponentDeserializerTest\n    {",
+   "rule_name": "Use File-Scoped Namespace Declarations"
+  },
+  {
+   "title": "Incorrect type conversion in generic component parameter assertion",
+   "description": "The test validates a generic component with an int type parameter but uses Convert.ToInt64 instead of Convert.ToInt32 to assert the parameter value. Since the parameter is defined as int (System.Int32) in GenericTestComponent<int>, this creates a type mismatch. The assertion compares a long (Int64) value to the expected int (Int32) value 42, which will cause the test to fail even though the component deserialization is working correctly. This breaks the validation logic for generic component parameters.",
+   "file_path": "src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs",
+   "start_line": 121,
+   "end_line": 124,
+   "problematic_code_snippet": "var parameters = deserializedDescriptor.Parameters.ToDictionary();\nAssert.Single(parameters);\nAssert.Contains(\"Value\", parameters.Keys);\nAssert.Equal(42, Convert.ToInt64(parameters[\"Value\"]!, CultureInfo.InvariantCulture));"
+  },
+  {
+   "title": "Incorrect sequence validation for multiple generic components",
+   "description": "The test validates deserialization of multiple closed generic components but checks that both descriptors have sequence number 0 instead of verifying that the second descriptor has sequence number 1. Component descriptors in a collection must have sequential ordering starting from 0, and this test should verify the second component has sequence 1. This incorrect assertion fails to validate proper sequence ordering, which is critical for component initialization and rendering order in Blazor.",
+   "file_path": "src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs",
+   "start_line": 142,
+   "end_line": 144,
+   "problematic_code_snippet": "var secondDescriptor = descriptors[1];\nAssert.Equal(typeof(GenericTestComponent<string>).FullName, secondDescriptor.ComponentType.FullName);\nAssert.Equal(0, secondDescriptor.Sequence);"
+  },
+  {
+   "title": "Generic type parameter mismatch in component marker validation",
+   "description": "The test creates and renders a GenericComponent<int> with value 456, but then validates the component marker against GenericComponent<string> type instead of GenericComponent<int>. This causes the test to check for the wrong fully qualified type name and assembly metadata. The type validation will fail because the actual rendered component is GenericComponent<int> while the test expects GenericComponent<string>, breaking the validation of WebAssembly component prerendering for closed generic types.",
+   "file_path": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+   "start_line": 833,
+   "end_line": 838,
+   "problematic_code_snippet": "var preamble = match.Groups[\"preamble\"].Value;\nvar preambleMarker = JsonSerializer.Deserialize<ComponentMarker>(preamble, ServerComponentSerializationSettings.JsonSerializationOptions);\nAssert.NotNull(preambleMarker.PrerenderId);\nAssert.Equal(\"webassembly\", preambleMarker.Type);\nAssert.Equal(typeof(GenericComponent<string>).Assembly.GetName().Name, preambleMarker.Assembly);\nAssert.Equal(typeof(GenericComponent<string>).FullName, preambleMarker.TypeName);"
+  },
+  {
+   "title": "Async test method missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+   "start_line": 720,
+   "end_line": 736,
+   "problematic_code_snippet": "[Fact]\npublic async Task CanRender_ClosedGenericComponent()",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+   "start_line": 738,
+   "end_line": 786,
+   "problematic_code_snippet": "[Fact]\npublic async Task CanRender_ClosedGenericComponent_ServerMode()",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+   "start_line": 788,
+   "end_line": 836,
+   "problematic_code_snippet": "[Fact]\npublic async Task CanPrerender_ClosedGenericComponent_ServerMode()",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Async test method missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+   "start_line": 838,
+   "end_line": 878,
+   "problematic_code_snippet": "[Fact]\npublic async Task CanPrerender_ClosedGenericComponent_ClientMode()",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "a8d897e3229de0627221b39113721370ef6c143b",
+ "diff_chars": 13218,
+ "diff_lines": 264,
+ "user_prompt_chars": 21222,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 99430,
+ "wall_ms": 101917,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 13,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 12,
+ "turn_trace": {
+  "assistant_lines": 31,
+  "unique_message_ids": 12,
+  "lines_without_id": 0,
+  "tool_use_blocks": 13
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.616123151,
+ "spend_post_usd": 5.637725581,
+ "cost_settled": true,
+ "cost_wait_ms": 434,
+ "cost_usd": 0.021602429999999728,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 14,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.021614755,
+ "usage": {
+  "input_tokens": 24,
+  "cache_creation_input_tokens": 40657,
+  "cache_read_input_tokens": 479773,
+  "output_tokens": 23465,
+  "output_tokens_details": {
+   "thinking_tokens": 8621
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 40657
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 24,
+   "outputTokens": 23465,
+   "cacheReadInputTokens": 479773,
+   "cacheCreationInputTokens": 40657,
+   "webSearchRequests": 0,
+   "costUSD": 0.021614755,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 8621,
+   "cacheCreationEphemeral5mInputTokens": 40657,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 5,
+   "title": "Code Review Bench PR #64643 - Add test coverage for prerendering closed generic components",
+   "author": "",
+   "baseSha": "78e439da5e8e27e6ec2800d9f265905dcfc9719c",
+   "headSha": "a8d897e3229de0627221b39113721370ef6c143b"
+  },
+  "summary": "This PR adds tests only, no source changes, to show that closed generic components (for example `GenericComponent<int>`) can be prerendered and that their type names survive the server and WebAssembly marker round trip. It adds a `GenericComponent.razor` test component, four renderer tests in `EndpointHtmlRendererTest.cs`, and four deserializer tests in `ServerComponentDeserializerTest.cs`. The coverage idea is sound and the server-side tests are well built. However, one of the new renderer tests asserts against the wrong closed type (`GenericComponent<string>` while rendering `<int>`), so it will fail as written. The deserializer file also picked up an unrelated namespace conversion and indentation churn.\n\nThe core behavior claim, that closed generics already serialize and resolve correctly, is consistent with the marker code I read (`WebAssemblyComponentSerializer` writes `typeof(T).FullName`, and `ComponentMarker`/`ServerComponent` carry the type name). The tests therefore document existing behavior rather than verify a fix, which is fine for a test-only PR but means the \"Fixes #27579\" wording overstates what changed.",
+  "verdict": "request_changes",
+  "verdictRationale": "One new test is wrong by construction: `CanPrerender_ClosedGenericComponent_ClientMode` renders `GenericComponent<int>` but asserts the WebAssembly marker's `TypeName` equals `typeof(GenericComponent<string>).FullName`. That assertion cannot pass, so the PR breaks the test suite. The deserializer file also has unrelated namespace and indentation churn that will not pass the repo's formatting checks. Both are small fixes, so the PR is close to mergeable once they are addressed.",
+  "architecture": {
+   "overview": "Prerendering a component in ASP.NET Core Components goes through `EndpointHtmlRenderer`, which emits a `ComponentMarker` into the HTML response for each interactive root component. For Server render mode the marker carries a data-protected `Descriptor` built by `ServerComponentSerializer`, which records the assembly name, the full type name, and the parameter definitions and values. For WebAssembly mode, `WebAssemblyComponentSerializer` writes the assembly name and `typeof(T).FullName` into the marker directly. On the server, `ServerComponentDeserializer` reads the descriptor back and resolves the type from its assembly-qualified name.\n\nThis PR changes no production code. It adds a `GenericComponent<TValue>` test component and tests that exercise the existing path for closed generic root components: static render, Server prerender and non-prerender, and WebAssembly prerender. It also adds deserializer tests that round-trip closed generic descriptors through `ServerComponentDeserializer`. The tests assert on the marker and descriptor fields, so they document the behavior the issue asked about rather than changing it.",
+   "steps": [
+    "Entry point: `EndpointHtmlRenderer.PrerenderComponentAsync` receives a component `Type` (here a closed generic such as `GenericComponent<int>`) and a render mode, which is unchanged by this PR.",
+    "Serialization: Server mode produces a data-protected `ServerComponent` descriptor via `ServerComponentSerializer`, and WebAssembly mode writes the assembly and `FullName` directly into `ComponentMarker`. The new renderer tests assert on both shapes.",
+    "Deserialization: `ServerComponentDeserializer` reads the marker's descriptor and resolves the closed type from its `FullName`. The new `ServerComponentDeserializerTest` cases cover `int`, `string`, and parameterized closed generics.",
+    "New test surface: `GenericComponent.razor` in `TestComponents` is the single fixture. `EndpointHtmlRendererTest` adds four tests, and `ServerComponentDeserializerTest` adds four tests with a private nested `GenericTestComponent<T>`.",
+    "Review focus: the WebAssembly prerender test compares against the `<string>` type while rendering `<int>`, so it will fail. The deserializer file's namespace and indentation changes are unrelated to the feature and should be reverted."
+   ],
+   "diagrams": [
+    {
+     "title": "Closed generic component marker path",
+     "kind": "flowchart",
+     "description": "Shows how a closed generic root component's type flows through prerender serialization into the markers that the new tests assert on.",
+     "mermaid": "flowchart LR\n    T[\"EndpointHtmlRendererTest<br/>GenericComponent&lt;int&gt;\"] --> P[\"EndpointHtmlRenderer.PrerenderComponentAsync\"]\n    P -->|Server mode| S[\"ServerComponentSerializer<br/>data-protected Descriptor\"]\n    P -->|WebAssembly mode| W[\"WebAssemblyComponentSerializer<br/>Assembly + TypeName\"]\n    S --> M[\"ComponentMarker\"]\n    W --> M\n    M --> D[\"ServerComponentDeserializer<br/>resolves type from FullName\"]\n    D --> R[\"ServerComponentDeserializerTest<br/>round-trip assertions\"]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "WebAssembly prerender test asserts the wrong closed generic type",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The test renders `GenericComponent<int>` but asserts the WebAssembly marker's `TypeName` and `Assembly` against `GenericComponent<string>`. `WebAssemblyComponentSerializer` writes `typeof(T).FullName`, which for `<int>` contains `System.Int32`, so `Assert.Equal` on `TypeName` fails.\n\n::diff{file=\"src/Components/Endpoints/test/EndpointHtmlRendererTest.cs\" lines=\"825-838\"}\n\n::callout{type=\"warning\"}\nThe `Assembly` assertion passes by accident because both generic instantiations come from the same assembly. The `TypeName` assertion is the one that breaks.\n\n::suggestion{file=\"src/Components/Endpoints/test/EndpointHtmlRendererTest.cs\" lines=\"837-838\"}\nAssert.Equal(typeof(GenericComponent<int>).Assembly.GetName().Name, preambleMarker.Assembly);\nAssert.Equal(typeof(GenericComponent<int>).FullName, preambleMarker.TypeName);\n",
+    "files": [
+     "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/Endpoints/test/EndpointHtmlRendererTest.cs`, the test `CanPrerender_ClosedGenericComponent_ClientMode` (around lines 817-840) renders `typeof(GenericComponent<int>)` but asserts `preambleMarker.Assembly` and `preambleMarker.TypeName` against `typeof(GenericComponent<string>)`. Change those two assertions to use `GenericComponent<int>` so they match the rendered type. Leave the rest of the test unchanged.",
+    "commentAnchor": {
+     "file": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+     "lineStart": 837,
+     "lineEnd": 838
+    }
+   },
+   {
+    "title": "Unrelated namespace and indentation churn in deserializer test",
+    "severity": "medium",
+    "category": "style",
+    "body": "The diff converts `ServerComponentDeserializerTest.cs` from a file-scoped namespace to a block-scoped one. The class body keeps its old 4-space indentation, and the file now ends with an extra closing brace. None of this is needed for the new tests. It makes the diff noisy and will fail the repo's whitespace and formatting checks.\n\n::diff{file=\"src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs\" lines=\"10-12\"}\n\n::callout{type=\"info\"}\nThe new tests and the `GenericTestComponent<T>` helper can stay as they are. Only the namespace and indentation need restoring.\n\n::suggestion{file=\"src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs\" lines=\"10-12\"}\nnamespace Microsoft.AspNetCore.Components.Server.Circuits;\n\npublic class ServerComponentDeserializerTest\n{\n",
+    "files": [
+     "src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs`, the PR changed the file-scoped `namespace ...;` declaration to a block-scoped one and left the class body mis-indented, with an extra closing `}` at the end of the file. Restore the original file-scoped namespace and class declaration, remove the extra closing brace, and keep the new tests and the `GenericTestComponent<T>` helper. Make sure the file matches the repo's indentation style.",
+    "commentAnchor": {
+     "file": "src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs",
+     "lineStart": 10,
+     "lineEnd": 12
+    }
+   },
+   {
+    "title": "Weak NotEqual(default) assertion in server prerender test",
+    "severity": "low",
+    "category": "correctness",
+    "body": "`Assert.NotEqual(default, serverComponent)` compares a populated `ServerComponent` struct against its default value. The check passes for any populated value, even if the deserialized fields are wrong. The assertions that follow already check the meaningful fields, so this line adds nothing.\n\n::code{file=\"src/Components/Endpoints/test/EndpointHtmlRendererTest.cs\" lines=\"800-803\"}\n\n::suggestion{file=\"src/Components/Endpoints/test/EndpointHtmlRendererTest.cs\" lines=\"802-802\"}\n// Remove this line; the field-level assertions below cover the descriptor.\n",
+    "files": [
+     "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/Endpoints/test/EndpointHtmlRendererTest.cs`, in `CanPrerender_ClosedGenericComponent_ServerMode` (around line 802), remove `Assert.NotEqual(default, serverComponent);`. It is a trivially passing check on a struct and the following field-level assertions already cover the deserialized descriptor. Do not change the other assertions.",
+    "commentAnchor": {
+     "file": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+     "lineStart": 802,
+     "lineEnd": 802
+    }
+   },
+   {
+    "title": "Test name suggests Server prerender but renders non-prerendered",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "`CanRender_ClosedGenericComponent_ServerMode` uses `new InteractiveServerRenderMode(false)`, which is the non-prerendered Server mode. The sibling `CanPrerender_ClosedGenericComponent_ServerMode` prerenders. The names are close enough that a reader could mix them up when scanning the file.\n\n::code{file=\"src/Components/Endpoints/test/EndpointHtmlRendererTest.cs\" lines=\"739-748\"}\n",
+    "files": [
+     "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs"
+    ],
+    "fixPrompt": "In `src/Components/Endpoints/test/EndpointHtmlRendererTest.cs`, rename `CanRender_ClosedGenericComponent_ServerMode` (around line 739) to something that signals non-prerendered Server mode, for example `CanRender_ClosedGenericComponent_NonPrerenderedServerMode`. Update no other logic.",
+    "commentAnchor": {
+     "file": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+     "lineStart": 739,
+     "lineEnd": 739
+    }
+   },
+   {
+    "title": "PR claims to fix #27579 but only adds tests",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "The description says this \"Fixes dotnet/aspnetcore#27579\", and the issue asks to support wrapper components that pass attributes through, such as `<TComponent @attributes=\"Params\" />` with `CaptureUnmatchedValues`. This PR adds no production code. It covers only direct prerendering of a closed generic root component. The wrapper scenario from the issue is not tested here, so the \"fix\" wording overstates what the change proves.\n\n::code{file=\"src/Components/Endpoints/test/EndpointHtmlRendererTest.cs\" lines=\"722-736\"}\n",
+    "files": [
+     "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs"
+    ],
+    "fixPrompt": "Update the PR description so it does not say `Fixes #27579`. Use wording like `Relates to #27579` or `Adds coverage for #27579`, since the change only adds tests and does not change behavior. Optionally add one test for the wrapper pattern from the issue (a generic component that forwards unmatched attributes) in `src/Components/Endpoints/test/EndpointHtmlRendererTest.cs`.",
+    "commentAnchor": {
+     "file": "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+     "lineStart": 722,
+     "lineEnd": 736
+    }
+   },
+   {
+    "title": "Closed generic serialization covered on both sides of the round trip",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The deserializer tests exercise the full path: a closed generic marker is serialized, then deserialized, and the resolved `ComponentType.FullName` and `Sequence` are checked. The cases cover `int`, `string`, and a parameterized `GenericTestComponent<int>`. The parameter test uses `Convert.ToInt64` on the boxed value, which works because `ComponentParameterDeserializer` deserializes to the declared parameter type. The helpers (`CreateMarkers` tuple overload, `SerializeMarkers`) match existing usage in the file.",
+    "files": [
+     "src/Components/Server/test/Circuits/ServerComponentDeserializerTest.cs"
+    ]
+   },
+   {
+    "title": "Renderer tests reuse the file's existing helpers and patterns",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The new renderer tests reuse `PrerenderedComponentPattern`, `ComponentPattern`, `AssertAndStripWebAssemblyOptions`, `_dataprotectorProvider`, and `GetHttpContext`, which all exist in `EndpointHtmlRendererTest.cs`. The new fixture `GenericComponent.razor` sits in the existing `TestComponents` namespace and is picked up by the `using` directive. Following the file's conventions keeps the additions easy to read.",
+    "files": [
+     "src/Components/Endpoints/test/EndpointHtmlRendererTest.cs",
+     "src/Components/Endpoints/test/TestComponents/GenericComponent.razor"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":5,\"title\":\"Code Review Bench PR #64643 - Add test coverage for prerendering closed generic components\",\"author\":\"\",\"baseSha\":\"78e439da5e8e27e6ec2800d9f265905dcfc9719c\",\"headSha\":\"a8d897e3229de0627221b39113721370ef6c143b\"},\"summary\":\"This PR adds tests only, no source changes, to show that closed generic components (for example `GenericComponent<int>`) can be prerendered and that their type names survive the server and WebAssembly mark",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 7
+}

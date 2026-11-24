@@ -1,0 +1,277 @@
+{
+ "id": "aspnetcore#2",
+ "repo": "aspnetcore",
+ "num": 2,
+ "tag": "baseline",
+ "model": "claude-opus-5-5",
+ "effort": "high",
+ "maxTurns": 60,
+ "promptVariant": "baseline",
+ "num_of_issues": 9,
+ "issues": [
+  {
+   "title": "Internal class missing sealed keyword",
+   "description": "Internal implementation classes that are not designed for inheritance must be marked with the 'sealed' keyword. The WebSocketWrapper class is an internal implementation class that should be sealed to prevent unintended subclassing.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 362,
+   "end_line": 365,
+   "problematic_code_snippet": "internal class WebSocketWrapper : WebSocket\n{\n    private readonly WebSocket _inner;\n    private TaskCompletionSource<(WebSocketReceiveResult, ReadOnlyMemory<byte>)> _receiveTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);",
+   "rule_name": "Sealed Keyword Required for Internal Implementation Classes"
+  },
+  {
+   "title": "Incorrect boolean operator in regex validation",
+   "description": "The test assertion uses AND (&&) operator instead of OR (||) when checking if the log message matches either the old or new CSP error pattern. This causes the test to fail because a log message cannot simultaneously match both regex patterns - they represent different browser error message formats. The original intent was to accept either format, but the AND operator requires both patterns to match at the same time, which is impossible. This will cause the test to fail even when receiving a valid CSP error message in either format.",
+   "file_path": "src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs",
+   "start_line": 107,
+   "end_line": 110,
+   "problematic_code_snippet": "Assert.True(\n    ParseErrorMessageRegexOld.IsMatch(logs[0].Message) &&\n    ParseErrorMessageRegexNew.IsMatch(logs[0].Message),\n    $\"Expected log message to match one of the CSP error patterns: {ParseErrorMessageRegexOld} or {ParseErrorMessageRegexNew}. Actual: {logs[0].Message}\");"
+  },
+  {
+   "title": "Disposal order causing potential race condition",
+   "description": "The connection disposal order is reversed - disposing secondConnection before the connection that is still being used. In the test, 'connection' performs an InvokeAsync call and its TaskCompletionSource (tcs) is awaited immediately before disposal. However, disposing secondConnection first may cause premature cleanup of shared resources or message handlers since both connections share the same user ('*'). This can lead to flaky test behavior where the connection's pending operations are interrupted by the disposal of secondConnection, especially in distributed scenarios where both connections interact with the same Redis backplane.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 210,
+   "end_line": 214,
+   "problematic_code_snippet": "await connection.InvokeAsync(\"EchoUser\", \"*\", \"Hello, World!\").DefaultTimeout();\nAssert.Equal(\"Hello, World!\", await tcs.Task.DefaultTimeout());\n\nawait secondConnection.DisposeAsync().DefaultTimeout();\nawait connection.DisposeAsync().DefaultTimeout();"
+  },
+  {
+   "title": "Race condition from premature TaskCompletionSource recreation",
+   "description": "The _receiveTcs TaskCompletionSource is recreated before checking if the buffer is zero-sized, creating a race condition in the WebSocketWrapper's ReceiveAsync implementation. When a zero-byte read occurs (buffer.Count == 0), the method returns early with the result but the TCS has already been reset. This means if another thread or the background task tries to set a result on the now-recreated TCS while this zero-byte read is in progress, it will affect the next receive operation rather than completing the current one. This breaks the synchronization contract and can cause message loss or out-of-order receives in the stateful reconnection test scenarios where WebSocket message sequencing is critical.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 406,
+   "end_line": 417,
+   "problematic_code_snippet": "public override async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)\n{\n    var res = await _receiveTcs.Task;\n    _receiveTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);\n    // Handle zero-byte reads\n    if (buffer.Count == 0)\n    {\n        return res.Item1;\n    }"
+  },
+  {
+   "title": "Test method missing Arrange/Act/Assert comments",
+   "description": "The modified test method does not contain explicit '// Arrange', '// Act', and '// Assert' (or '// Act & Assert') comments to delineate phases, violating the required AAA comment pattern.",
+   "file_path": "src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs",
+   "start_line": 104,
+   "end_line": 113,
+   "problematic_code_snippet": "public void EmbeddingServerAppInsideIframe_WithCompressionEnabled_Fails()\n{\n    ...\n    Assert.True(\n        ParseErrorMessageRegexOld.IsMatch(logs[0].Message) &&\n        ParseErrorMessageRegexNew.IsMatch(logs[0].Message),\n        $\"Expected log message to match one of the CSP error patterns: {ParseErrorMessageRegexOld} or {ParseErrorMessageRegexNew}. Actual: {logs[0].Message}\");\n}",
+   "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 90,
+   "end_line": 90,
+   "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesFromMultipleConnectionsWithSameUser(HttpTransportType transportType, string protocolName)",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Test method missing Arrange/Act/Assert comments",
+   "description": "The modified test method does not include explicit AAA structure comments ('// Arrange', '// Act', '// Assert' or '// Act & Assert'), violating the test readability rule.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 90,
+   "end_line": 120,
+   "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesFromMultipleConnectionsWithSameUser(HttpTransportType transportType, string protocolName)\n{\n    using (StartVerifiableLog())\n    {\n        ...\n    }\n}",
+   "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  },
+  {
+   "title": "Async test method name missing Async suffix",
+   "description": "This method returns Task and is marked async, but its name does not end with the required 'Async' suffix.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 186,
+   "end_line": 186,
+   "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesUserNameWithPatternIsTreatedAsLiteral(HttpTransportType transportType, string protocolName)",
+   "rule_name": "Async Methods Must Be Named with Async Suffix"
+  },
+  {
+   "title": "Test method missing Arrange/Act/Assert comments",
+   "description": "The modified test method does not include explicit AAA structure comments ('// Arrange', '// Act', '// Assert' or '// Act & Assert'), violating the test readability rule.",
+   "file_path": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+   "start_line": 186,
+   "end_line": 235,
+   "problematic_code_snippet": "public async Task CanSendAndReceiveUserMessagesUserNameWithPatternIsTreatedAsLiteral(HttpTransportType transportType, string protocolName)\n{\n    using (StartVerifiableLog())\n    {\n        ...\n    }\n}",
+   "rule_name": "Test Methods Must Use Arrange-Act-Assert Pattern with Comments"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/aspnetcore",
+ "head_sha": "b71ad44079ecd98463942a9aa067667a7639ac3a",
+ "diff_chars": 15595,
+ "diff_lines": 281,
+ "user_prompt_chars": 17575,
+ "exit_code": 0,
+ "timed_out": false,
+ "latency_ms": 130561,
+ "wall_ms": 141108,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 7,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "cost_usd": 0.2962699999999998,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 8,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.4303986,
+ "usage": {
+  "input_tokens": 14,
+  "cache_creation_input_tokens": 26213,
+  "cache_read_input_tokens": 235688,
+  "output_tokens": 12607,
+  "output_tokens_details": {
+   "thinking_tokens": 1498
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 26213
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 14,
+   "outputTokens": 12607,
+   "cacheReadInputTokens": 235688,
+   "cacheCreationInputTokens": 26213,
+   "webSearchRequests": 0,
+   "costUSD": 0.4303986,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 1498,
+   "cacheCreationEphemeral5mInputTokens": 26213,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/aspnetcore",
+   "number": 2,
+   "title": "Code Review Bench PR #64685 - [release/9.0] Update dependencies from dotnet/arcade",
+   "author": "",
+   "baseSha": "07803ab5e98eb8adc5535f8173428a04a4c5e4f6",
+   "headSha": "b71ad44079ecd98463942a9aa067667a7639ac3a"
+  },
+  "summary": "This is a Maestro-driven Arcade bump on release/9.0, moving from 9.0.0-beta.25562.4 to 9.0.0-beta.25626.6. Most of it is routine. Version.Details.xml, Versions.props and global.json are updated. The vendored `eng/common` scripts pick up `-UseBasicParsing`, tolerate a missing `tools.vs` in `LocateVisualStudio`, and point at the `ci.dot.net` feed and the azurelinux-3 image. The source-index template now defaults to running on main only. All of that is consistent with upstream Arcade.\n\nThe PR also changes two test files, and both changes have real bugs. In `WebSocketCompressionTests`, the new check meant to accept either the old or the new Chrome CSP message joins the two regexes with `&&`. One message can't match both, so the assertion always fails. In `RedisEndToEnd.WebSocketWrapper.ReceiveAsync`, the line that replaces the TaskCompletionSource now runs before the zero-byte-read early return. The SignalR client always issues a zero-byte read before the real read, so that read now consumes each message and throws its payload away. The other test changes look fine: two new `[QuarantinedTest]` attributes, the swapped dispose order, and dropping `sealed`.",
+  "verdict": "request_changes",
+  "verdictRationale": "The dependency and `eng/common` updates are fine. The CSP assertion, though, can never pass, and the wrapper's zero-byte-read change drops every received message in the stateful-reconnect test. Both should be fixed before merge.",
+  "architecture": {
+   "overview": "Arcade dependency flow works like this: Maestro opens a PR that bumps the versions in `eng/Version.Details.xml`, `eng/Versions.props` and the `global.json` msbuild-sdks entries, and syncs the shared `eng/common` scripts and pipeline templates from the matching Arcade commit. Those scripts (`tools.ps1`, the core-templates) run the CI bootstrap: installing dotnet, finding VS/MSBuild, and running the source-build and source-index jobs.\n\nOn top of the infra sync, this PR changes two test files. A Blazor E2E test (`BlockedWebSocketCompressionTests`) is rewritten to accept either of two Chrome CSP log formats. A Redis backplane test helper (`WebSocketWrapper`) changes when it resets its receive TaskCompletionSource. That helper sits between the SignalR client's `WebSocketsTransport` receive loop and a background pump that reads from the real `ClientWebSocket`.",
+   "steps": [
+    "Start with `eng/Version.Details.xml`, `eng/Versions.props` and `global.json`. These are the mechanical version and SHA bumps to 9.0.0-beta.25626.6.",
+    "Next, the `eng/common` sync. `tools.ps1` (`-UseBasicParsing`, null-safe `vs` lookup in `LocateVisualStudio`), `internal-feed-operations.ps1` and `nuget-verification.ps1` all come straight from upstream Arcade.",
+    "Then the pipeline templates: the source-build pool image moves to `1es-azurelinux-3`, the internal runtime feed moves to `ci.dot.net`, and source-index defaults to main only (ci.yml already gates it to main).",
+    "In `WebSocketCompressionTests.cs`, the single `Assert.Matches` is replaced by two partial-property `GeneratedRegex` patterns combined into one boolean check.",
+    "In `RedisEndToEnd.cs`, the `_receiveTcs` reset in `WebSocketWrapper.ReceiveAsync` moves above the zero-byte-read check. That changes how the wrapper hands off data to the `WebSocketsTransport` zero-byte-then-real read pattern."
+   ],
+   "diagrams": [
+    {
+     "title": "Arcade dependency update surface",
+     "kind": "flowchart",
+     "description": "Which files the Maestro bump touches and how they feed into the build.",
+     "mermaid": "flowchart LR\n  Maestro[Maestro subscription] --> VD[eng/Version.Details.xml]\n  Maestro --> VP[eng/Versions.props]\n  Maestro --> GJ[global.json msbuild-sdks]\n  Maestro --> EC[eng/common sync]\n  EC --> Tools[tools.ps1]\n  EC --> Tmpl[core-templates source-build / source-index]\n  GJ --> SDK[Arcade.Sdk / Helix.Sdk]\n  Tools --> CI[CI bootstrap]\n  Tmpl --> CI\n  Tests[Test file edits] --> E2E[WebSocketCompressionTests]\n  Tests --> Redis[RedisEndToEnd WebSocketWrapper]"
+    },
+    {
+     "title": "WebSocketWrapper receive handoff",
+     "kind": "sequence",
+     "description": "How the test wrapper passes data from the background pump to the SignalR transport's zero-byte read followed by a real read.",
+     "mermaid": "sequenceDiagram\n  participant Pump as Background pump\n  participant Wrap as WebSocketWrapper\n  participant WST as WebSocketsTransport\n  WST->>Wrap: ReceiveAsync(empty buffer)\n  Pump->>Wrap: SetReceiveResult(msg1)\n  Wrap-->>WST: result (zero-byte read)\n  Note over Wrap: _receiveTcs replaced (new order)\n  WST->>Wrap: ReceiveAsync(real buffer)\n  Wrap-->>WST: waits on new TCS"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "CSP log assertion uses && so it can never pass",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The stated goal is to accept *either* the old Chrome message (`Refused to frame ... because an ancestor violates`) or the new one (`Framing ... violates`). The failure message says so too: \"match one of the CSP error patterns\". The code, however, requires both regexes to match the same string:\n\n::diff{file=\"src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs\" lines=\"107-110\"}\n\nThe two patterns are mutually exclusive. One starts with `security - Refused to frame`, the other with `security - Framing`. No log line can satisfy both, so `EmbeddingServerAppInsideIframe_WithCompressionEnabled_Fails` now fails on every browser version, including the old one the previous `Assert.Matches` accepted.\n\n::suggestion{file=\"src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs\" lines=\"107-110\"}\n        Assert.True(\n            ParseErrorMessageRegexOld.IsMatch(logs[0].Message) ||\n            ParseErrorMessageRegexNew.IsMatch(logs[0].Message),\n            $\"Expected log message to match one of the CSP error patterns: {ParseErrorMessageRegexOld} or {ParseErrorMessageRegexNew}. Actual: {logs[0].Message}\");\n",
+    "files": [
+     "src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs"
+    ],
+    "fixPrompt": "In `src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs`, lines 107-110, `EmbeddingServerAppInsideIframe_WithCompressionEnabled_Fails` combines `ParseErrorMessageRegexOld.IsMatch(...)` and `ParseErrorMessageRegexNew.IsMatch(...)` with `&&`. The two patterns are mutually exclusive (old vs. new Chrome CSP wording), so the assertion always fails. Change `&&` to `||` so the test accepts either format, as the assertion message already says. Keep the descriptive failure message.",
+    "commentAnchor": {
+     "file": "src/Components/test/E2ETest/ServerExecutionTests/WebSocketCompressionTests.cs",
+     "lineStart": 107,
+     "lineEnd": 110
+    }
+   },
+   {
+    "title": "WebSocketWrapper zero-byte read now consumes and drops each message",
+    "severity": "high",
+    "category": "correctness",
+    "body": "`_receiveTcs` used to be reset only after the payload was copied out. A zero-byte read just waited for data to arrive and left the completed TCS in place for the next real read. The PR moves the reset above the zero-byte early return:\n\n::diff{file=\"src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs\" lines=\"406-417\"}\n\nThe SignalR client's `WebSocketsTransport` always does a zero-byte read and then a real read (`src/SignalR/clients/csharp/Http.Connections.Client/src/Internal/WebSocketsTransport.cs` lines 443 and 461). Here is what now happens:\n\n1. The pump calls `SetReceiveResult(msg1)`, completing TCS1.\n2. The zero-byte read awaits TCS1, swaps in TCS2 and returns without copying anything.\n3. The real read awaits TCS2, and msg1's bytes are lost.\n\nThe handshake and every later frame are dropped or misaligned, so `StatefulReconnectPreservesMessageFromOtherServer` can't work. The test is already quarantined, which is likely why this would go unnoticed.\n\n::suggestion{file=\"src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs\" lines=\"406-417\"}\n        public override async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)\n        {\n            var res = await _receiveTcs.Task;\n            // Handle zero-byte reads\n            if (buffer.Count == 0)\n            {\n                return res.Item1;\n            }\n            _receiveTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);\n            res.Item2.CopyTo(buffer);\n            return res.Item1;\n        }\n",
+    "files": [
+     "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "src/SignalR/clients/csharp/Http.Connections.Client/src/Internal/WebSocketsTransport.cs"
+    ],
+    "fixPrompt": "In `src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs`, `WebSocketWrapper.ReceiveAsync` (around lines 406-417) now resets `_receiveTcs` before the `buffer.Count == 0` early return. `WebSocketsTransport` does a zero-byte read before each real read, so the zero-byte read now consumes the pending result and the real read waits for the next frame, dropping data. Move the `_receiveTcs = new(...)` line back below the zero-byte check, so a zero-byte read only waits for data and the following real read consumes it and resets the TCS.",
+    "commentAnchor": {
+     "file": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "lineStart": 408,
+     "lineEnd": 414
+    }
+   },
+   {
+    "title": "Unrelated test edits ride along on an automated dependency PR",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "This PR is labeled as a Maestro Arcade update, but it also changes test behavior. It adds quarantines, reorders dispose calls, drops `sealed` from `WebSocketWrapper` and changes its receive logic:\n\n::diff{file=\"src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs\" lines=\"362-362\"}\n\nNothing derives from `WebSocketWrapper`, so removing `sealed` has no purpose. CA1852 is only a suggestion in test folders, so it won't break the build, but it is churn. Splitting these test fixes into their own PR would keep the dependency-flow history clean and get them a proper review.",
+    "files": [
+     "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs"
+    ],
+    "fixPrompt": "In `src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs` line 362, restore `internal sealed class WebSocketWrapper`. Nothing subclasses it, and the repo convention (CA1852) is to seal internal types. Also consider moving the non-dependency test changes in this file and in `WebSocketCompressionTests.cs` into a separate PR from the Arcade bump.",
+    "commentAnchor": {
+     "file": "src/SignalR/server/StackExchangeRedis/test/RedisEndToEnd.cs",
+     "lineStart": 362,
+     "lineEnd": 362
+    }
+   },
+   {
+    "title": "eng/common sync matches upstream Arcade and hardens LocateVisualStudio",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "The vendored script changes are good:\n\n- Every `Invoke-WebRequest` gets `-UseBasicParsing`, which avoids the IE-engine dependency on Windows PowerShell 5.1.\n- `LocateVisualStudio` now checks that `tools.vs` and its `version`/`components` exist before reading them, so a `global.json` without a `vs` section no longer errors.\n- The source-index default of main-only is harmless here, because `.azure/pipelines/ci.yml` already enables source indexing only on `refs/heads/main`.\n\n::code{file=\"eng/common/tools.ps1\" lines=\"550-573\"}",
+    "files": [
+     "eng/common/tools.ps1",
+     "eng/common/core-templates/job/source-index-stage1.yml"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/aspnetcore\",\"number\":2,\"title\":\"Code Review Bench PR #64685 - [release/9.0] Update dependencies from dotnet/arcade\",\"author\":\"\",\"baseSha\":\"07803ab5e98eb8adc5535f8173428a04a4c5e4f6\",\"headSha\":\"b71ad44079ecd98463942a9aa067667a7639ac3a\"},\"summary\":\"This is a Maestro-driven Arcade bump on release/9.0, moving from 9.0.0-beta.25562.4 to 9.0.0-beta.25626.6. Most of it is routine. Version.Details.xml, Versions.props and global.json are updated. The vendored `eng/",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 4
+}

@@ -1,0 +1,282 @@
+{
+ "id": "prefect#5",
+ "repo": "prefect",
+ "num": 5,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "r2_holdout_opus_baseline_retry",
+ "model": "anthropic/claude-opus-5.5",
+ "openrouter_model": "anthropic/claude-opus-5.5",
+ "effort": "high",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "firefox-ios#13",
+  "prefect#5",
+  "prefect#10",
+  "redis#6",
+  "tauri#1",
+  "tauri#9"
+ ],
+ "run_started_at": "2026-11-17T19:10:59.464Z",
+ "num_of_issues": 5,
+ "issues": [
+  {
+   "title": "Cross-field validation using field_validator incorrectly",
+   "description": "The validation logic checks both bucket_folder and bucket fields (cross-field validation) but uses @field_validator instead of @model_validator, causing order-dependent validation issues and accessing potentially unvalidated fields via info.data",
+   "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+   "start_line": 698,
+   "end_line": 713,
+   "problematic_code_snippet": "@field_validator(\"bucket_folder\")\n@classmethod\ndef _bucket_folder_suffix(cls, value, info):\n    \"\"\"\n    Ensures that the bucket folder is suffixed with a forward slash.\n    Also validates that bucket_folder doesn't conflict with bucket name.\n    \"\"\"\n    if value != \"\" and not value.endswith(\"/\"):\n        value = f\"{value}/\"\n\n    # Cross-field validation: ensure bucket_folder doesn't match bucket name\n    # This should use @model_validator but incorrectly uses @field_validator\n    if info.data.get(\"bucket\") and value.strip(\"/\") == info.data.get(\"bucket\"):\n        raise ValueError(\"bucket_folder cannot be the same as bucket name\")\n\n    return value",
+   "rule_name": "Pydantic Models Must Use model_validator for Cross-Field Validation"
+  },
+  {
+   "title": "Incorrect string matching for path prefix detection causes false positives",
+   "description": "The double-nesting prevention logic uses `self.bucket_folder in path` instead of `path.startswith(self.bucket_folder)`. This causes false positives when bucket_folder appears anywhere in the path, not just as a prefix. For example, if bucket_folder is 'results/' and the path is 'my-results/file.txt', the code incorrectly treats it as already prefixed and returns it unchanged, skipping the necessary path resolution. This breaks the fix for issue #20174 in edge cases where folder names contain the bucket_folder as a substring.",
+   "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+   "start_line": 734,
+   "end_line": 735,
+   "problematic_code_snippet": "# See https://github.com/PrefectHQ/prefect/issues/20174\nif self.bucket_folder and self.bucket_folder in path:\n    return path\npath = (\n    str(PurePosixPath(self.bucket_folder, path)) if self.bucket_folder else path\n)"
+  },
+  {
+   "title": "Incorrect parameter name prevents timeout configuration in test harness",
+   "description": "The test fixture uses `server_timeout=60` when calling `prefect_test_harness()`, but the correct parameter name is `server_startup_timeout`. This means the intended 60-second timeout is not actually applied, leaving tests vulnerable to the same timeout issues in CI environments that the change was meant to fix. The prefect_test_harness function will ignore the invalid parameter and use its default timeout value instead, potentially causing intermittent test failures when multiple xdist workers start simultaneously in CI.",
+   "file_path": "src/integrations/prefect-gcp/tests/conftest.py",
+   "start_line": 19,
+   "end_line": 19,
+   "problematic_code_snippet": "# Increase timeout for CI environments where multiple xdist workers\n# start servers simultaneously, which can be slower on Python 3.11+\n# See https://github.com/PrefectHQ/prefect/issues/16397\nwith prefect_test_harness(server_timeout=60):\n    yield"
+  },
+  {
+   "title": "Test constructs invalid path with double slashes",
+   "description": "The test constructs `already_prefixed_path = f\"{bucket_folder}/abc123\"` but bucket_folder always ends with a trailing slash (enforced by the _bucket_folder_suffix validator). This creates paths like 'results//abc123' with double slashes. While the double-nesting prevention logic should handle this, the test no longer accurately simulates the actual scenario described in issue #20174 where paths are already correctly prefixed without double slashes. This makes the test less effective at catching regressions in the double-nesting prevention logic.",
+   "file_path": "src/integrations/prefect-gcp/tests/test_cloud_storage.py",
+   "start_line": 158,
+   "end_line": 158,
+   "problematic_code_snippet": "# Simulate path that already has bucket_folder prefix\n# (as would happen when create_result_record calls _resolve_path)\nalready_prefixed_path = f\"{bucket_folder}/abc123\"\n\n# When write_path calls _resolve_path again, it should NOT double-nest\nresult = gcs_bucket._resolve_path(already_prefixed_path)"
+  },
+  {
+   "title": "Unused import: model_validator",
+   "description": "`model_validator` is imported but not used anywhere in the modified code (the cross-field validation still uses `@field_validator`). This leaves an unused import in the module.",
+   "file_path": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+   "start_line": 10,
+   "end_line": 10,
+   "problematic_code_snippet": "from pydantic import Field, field_validator, model_validator",
+   "rule_name": "Unused Imports Must Be Automatically Removed"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/prefect",
+ "head_sha": "ee03b77e9313cd59bf67cdbcb5869fd78cedb03e",
+ "diff_chars": 6597,
+ "diff_lines": 145,
+ "user_prompt_chars": 8828,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 66926,
+ "wall_ms": 99146,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 4,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 8,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 4
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 3.772608482,
+ "spend_post_usd": 3.772608482,
+ "cost_settled": false,
+ "cost_wait_ms": 30510,
+ "cost_usd": 0,
+ "cost_flag": "key_delta_unsettled_after_30s",
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 5,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.2440848,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 15872,
+  "cache_read_input_tokens": 108364,
+  "output_tokens": 7151,
+  "output_tokens_details": {
+   "thinking_tokens": 930
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 15872
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-opus-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 7151,
+   "cacheReadInputTokens": 108364,
+   "cacheCreationInputTokens": 15872,
+   "webSearchRequests": 0,
+   "costUSD": 0.2440848,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 930,
+   "cacheCreationEphemeral5mInputTokens": 15872,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-opus-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/prefect",
+   "number": 5,
+   "title": "Code Review Bench PR #20177 - fix(prefect-gcp): prevent double-nesting in GcsBucket._resolve_path",
+   "author": "",
+   "baseSha": "cc189e8d3e001288fc6c394c0cb4fd2945493093",
+   "headSha": "ee03b77e9313cd59bf67cdbcb5869fd78cedb03e"
+  },
+  "summary": "The PR is meant to stop `GcsBucket._resolve_path` from adding `bucket_folder` twice when a path already carries it (issue #20174). It also changes the test harness timeout, fixes the `.prefectignore` fixture, and edits pytest warning filters. The goal is right, but the code doesn't carry it out.\n\nThe guard uses a substring check (`bucket_folder in path`) where it should use `startswith`, as `_join_bucket_folder` does. Any path that merely contains the folder name, like `archive/results/x` or `myresults/x`, skips the prefix, so files get written outside the configured folder. The regression test can't catch this: it builds a path with a double slash, which `_resolve_path` never produces, and its second assertion always passes. On top of that, `conftest.py` calls `prefect_test_harness(server_timeout=60)`, but the parameter is named `server_startup_timeout`. That session-scoped autouse fixture will raise `TypeError` and error out the whole prefect-gcp test suite. The PR also adds an unrelated validator that rejects `bucket_folder == bucket`, which breaks existing saved blocks, and it leaves `model_validator` imported but unused.",
+  "verdict": "request_changes",
+  "verdictRationale": "The test harness call uses the wrong keyword argument, so every prefect-gcp test errors at setup. The core fix uses a substring check that writes data to the wrong location. The regression test is too weak to catch either problem, and the new validator breaks existing blocks.",
+  "architecture": {
+   "overview": "`GcsBucket` is the GCS storage block. Its `_resolve_path` helper joins the configured `bucket_folder` with a caller-supplied key. It's used by `write_path`, `read_path`, `get_directory` and `put_directory`. A separate helper, `_join_bucket_folder`, does the same job for the blob/folder-listing APIs and already guards against double-prefixing with `startswith` (from #18237). When the result-persistence layer has already resolved a storage key through the block (because `storage_block_id` is null), `write_path` resolves it again and the folder appears twice.\n\nThis PR adds an early return to `_resolve_path` when the path is judged to already include `bucket_folder`. It also adds a cross-field check to the `bucket_folder` field validator and changes test infrastructure: the harness timeout, the conftest logging fixture, warning filters, and the `.prefectignore` fixture.",
+   "steps": [
+    "Start with `GcsBucket._resolve_path` (cloud_storage.py ~715). Every path-based read and write goes through it: `write_path`, `read_path`, `get_directory`, `put_directory`.",
+    "Look at the new early-return guard (line 734) and compare it with the existing `_join_bucket_folder` guard (line 928), which uses `startswith`.",
+    "Review the `_bucket_folder_suffix` validator change (lines 698-713). It now reads `info.data['bucket']` and rejects folders that match the bucket name.",
+    "Check `tests/conftest.py`. The session-wide `prefect_db` fixture now calls `prefect_test_harness` with a new keyword, and the `disable_logging` fixture has been removed.",
+    "Finally, look at the new regression test `test_resolve_path_no_double_nesting` and the `.prefectignore` fixture fix in `tests/projects/test_steps.py`."
+   ],
+   "diagrams": [
+    {
+     "title": "GcsBucket path resolution",
+     "kind": "flowchart",
+     "description": "How a key flows through `_resolve_path` after this PR.",
+     "mermaid": "flowchart TD\n  A[write_path / read_path / get_directory / put_directory] --> B[_resolve_path path]\n  B --> C{bucket_folder set AND bucket_folder in path?}\n  C -- yes --> D[return path unchanged]\n  C -- no --> E[PurePosixPath bucket_folder, path]\n  E --> F{path in '', '.', '/'}\n  F -- yes --> G[None = bucket root]\n  F -- no --> H[joined key]\n  I[_join_bucket_folder] --> J{startswith bucket_folder?}\n  J -- yes --> D2[return unchanged]\n  J -- no --> E"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "`prefect_test_harness` called with a nonexistent `server_timeout` kwarg",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The harness signature is `def prefect_test_harness(server_startup_timeout: int | None = 30)` (see ::file{file=\"src/prefect/testing/utilities.py\"} line 114). It has no `server_timeout` parameter.\n\n::diff{file=\"src/integrations/prefect-gcp/tests/conftest.py\" lines=\"14-20\"}\n\n::callout{type=\"warning\"}\n`prefect_db` is a session-scoped autouse fixture. The `TypeError: prefect_test_harness() got an unexpected keyword argument 'server_timeout'` will error out every prefect-gcp test, including the new regression test.\n\n::suggestion{file=\"src/integrations/prefect-gcp/tests/conftest.py\" lines=\"19-19\"}\n    with prefect_test_harness(server_startup_timeout=60):\n\nSeparately, this hunk deletes the `disable_logging` fixture, which set `PREFECT_LOGGING_TO_API_ENABLED=False`. The PR description doesn't mention that, and other integrations (e.g. prefect-kubernetes) keep it. Unless the removal is intentional, put it back.",
+    "files": [
+     "src/integrations/prefect-gcp/tests/conftest.py",
+     "src/prefect/testing/utilities.py"
+    ],
+    "fixPrompt": "In `src/integrations/prefect-gcp/tests/conftest.py` line 19, `prefect_test_harness(server_timeout=60)` uses a keyword that doesn't exist. The real parameter, defined in `src/prefect/testing/utilities.py:114`, is `server_startup_timeout`. Change the call to `prefect_test_harness(server_startup_timeout=60)`. Also restore the removed session-scoped autouse `disable_logging` fixture, which wraps `temporary_settings({PREFECT_LOGGING_TO_API_ENABLED: False})`, along with its import, unless the removal was intentional.",
+    "commentAnchor": {
+     "file": "src/integrations/prefect-gcp/tests/conftest.py",
+     "lineStart": 19,
+     "lineEnd": 19
+    }
+   },
+   {
+    "title": "Substring check in `_resolve_path` skips the prefix for unrelated paths",
+    "severity": "high",
+    "category": "correctness",
+    "body": "The guard returns early whenever `bucket_folder` appears anywhere in `path`. It should only do that when the path starts with it.\n\n::diff{file=\"src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py\" lines=\"728-737\"}\n\nWith `bucket_folder=\"results/\"`:\n- `_resolve_path(\"archive/results/abc\")` returns `\"archive/results/abc\"` instead of `\"results/archive/results/abc\"`\n- `_resolve_path(\"myresults/abc\")` returns `\"myresults/abc\"`\n\n::callout{type=\"warning\"}\nThe guard applies to `write_path`, `read_path`, `get_directory` and `put_directory`, so in these cases data is silently read from or written to the bucket root instead of the configured folder. That can overwrite objects that belong to other users of the bucket.\n\nThe prior fix in `_join_bucket_folder` (line 928) uses `startswith`. Match it:\n\n::suggestion{file=\"src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py\" lines=\"734-735\"}\n        if self.bucket_folder and path.startswith(self.bucket_folder):\n            return path",
+    "files": [
+     "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py"
+    ],
+    "fixPrompt": "In `src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py` line 734, `_resolve_path` uses `self.bucket_folder in path` (a substring check) to detect an existing prefix. Any path that contains the folder name anywhere, e.g. `archive/results/x`, then skips the prefix and is written to the wrong location. Change it to `path.startswith(self.bucket_folder)` to match the existing guard in `_join_bucket_folder` (line 928). Then add tests asserting that `_resolve_path('other/base_folder/x')` and `_resolve_path('xbase_folder/y')` still get the prefix.",
+    "commentAnchor": {
+     "file": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+     "lineStart": 734,
+     "lineEnd": 735
+    }
+   },
+   {
+    "title": "Unrelated validator rejects existing blocks where `bucket_folder` equals the bucket name",
+    "severity": "high",
+    "category": "correctness",
+    "body": "This PR adds a new validation rule that has nothing to do with double-nesting:\n\n::diff{file=\"src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py\" lines=\"698-713\"}\n\nProblems:\n- **Breaking change**: a folder named after the bucket (e.g. `bucket=\"data\"`, `bucket_folder=\"data\"`) is a perfectly valid GCS layout. Any saved block with that config will now fail on `GcsBucket.load(...)`, which breaks existing deployments and result storage.\n- The inline comment says the code *\"should use @model_validator but incorrectly uses @field_validator\"*, so it's knowingly wrong. It also depends on `bucket` being declared before `bucket_folder` to show up in `info.data`.\n- `model_validator` is imported at line 10 but never used, which will fail ruff's F401 lint.\n\nI'd drop this rule entirely, revert the signature to `(cls, value)`, and remove the unused import.",
+    "files": [
+     "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py"
+    ],
+    "fixPrompt": "In `src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py`, remove the cross-field check added to `_bucket_folder_suffix` (lines ~698-713). It rejects valid configs where `bucket_folder` equals the bucket name, which breaks loading of existing saved blocks, and it's unrelated to the double-nesting fix. Restore the validator signature to `(cls, value)` and remove the unused `model_validator` import on line 10.",
+    "commentAnchor": {
+     "file": "src/integrations/prefect-gcp/prefect_gcp/cloud_storage.py",
+     "lineStart": 707,
+     "lineEnd": 711
+    }
+   },
+   {
+    "title": "Regression test uses an unrealistic path and an assertion that can't fail",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "::diff{file=\"src/integrations/prefect-gcp/tests/test_cloud_storage.py\" lines=\"156-165\"}\n\n- `bucket_folder` always ends with `/`, so `f\"{bucket_folder}/abc123\"` gives `\"base_folder//abc123\"`. `_resolve_path` never produces that; the realistic first-pass output is `\"base_folder/abc123\"`.\n- `assert not result.startswith(f\"{bucket_folder}{bucket_folder}\")` is redundant after `result == already_prefixed_path`, so it can never fail on its own.\n- No test covers the negative case, so the substring bug above passes unnoticed.\n\nA stronger test makes the double call explicit and checks the negative case:\n\n::suggestion{file=\"src/integrations/prefect-gcp/tests/test_cloud_storage.py\" lines=\"156-165\"}\n        once = gcs_bucket._resolve_path(\"abc123\")\n        assert once == f\"{bucket_folder}abc123\"\n        assert gcs_bucket._resolve_path(once) == once\n        # paths merely containing the folder name must still be prefixed\n        assert gcs_bucket._resolve_path(f\"other/{bucket_folder}x\") == f\"{bucket_folder}other/{bucket_folder}x\"",
+    "files": [
+     "src/integrations/prefect-gcp/tests/test_cloud_storage.py"
+    ],
+    "fixPrompt": "In `src/integrations/prefect-gcp/tests/test_cloud_storage.py`, `test_resolve_path_no_double_nesting` (lines 143-165) builds `f\"{bucket_folder}/abc123\"`. Since `bucket_folder` already ends with '/', that produces a double slash `_resolve_path` never emits, and the second assertion is redundant. Rewrite the test to: (1) call `_resolve_path('abc123')`, (2) assert that calling `_resolve_path` again on that result returns it unchanged, and (3) add a negative case showing a path that contains the folder name somewhere other than the start (e.g. `other/base_folder/x`) still gets prefixed.",
+    "commentAnchor": {
+     "file": "src/integrations/prefect-gcp/tests/test_cloud_storage.py",
+     "lineStart": 156,
+     "lineEnd": 165
+    }
+   },
+   {
+    "title": "Existing protobuf warning filter dropped; described filters missing",
+    "severity": "low",
+    "category": "maintainability",
+    "body": "::diff{file=\"src/integrations/prefect-gcp/pyproject.toml\" lines=\"103-106\"}\n\nThe diff replaces the existing `google._upb._message ... PyType_Spec` filter instead of adding to it, so that deprecation noise comes back. The description also promises filters for `google.api_core` and `coolname`, but none were added. Keep the original entry and add the new ones next to it.",
+    "files": [
+     "src/integrations/prefect-gcp/pyproject.toml"
+    ],
+    "fixPrompt": "In `src/integrations/prefect-gcp/pyproject.toml` (filterwarnings, ~line 103), restore the removed `google._upb._message ... PyType_Spec` ignore entry alongside the new httplib2 and pathspec entries. If the google.api_core and coolname filters from the PR description are actually needed, add them too.",
+    "commentAnchor": {
+     "file": "src/integrations/prefect-gcp/pyproject.toml",
+     "lineStart": 103,
+     "lineEnd": 106
+    }
+   },
+   {
+    "title": "`.prefectignore` fixture fix is correct",
+    "severity": "info",
+    "category": "correctness",
+    "body": "The old triple-quoted string wrote indented lines, `    testdir1/*`, so those patterns didn't match what was intended. Writing `\"testdir1/*\\n.prefectignore\\n\"` makes the `push_to_gcs` ignore test actually exercise the ignore logic.\n\n::code{file=\"src/integrations/prefect-gcp/tests/projects/test_steps.py\" lines=\"57-57\"}",
+    "files": [
+     "src/integrations/prefect-gcp/tests/projects/test_steps.py"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/prefect\",\"number\":5,\"title\":\"Code Review Bench PR #20177 - fix(prefect-gcp): prevent double-nesting in GcsBucket._resolve_path\",\"author\":\"\",\"baseSha\":\"cc189e8d3e001288fc6c394c0cb4fd2945493093\",\"headSha\":\"ee03b77e9313cd59bf67cdbcb5869fd78cedb03e\"},\"summary\":\"The PR is meant to stop `GcsBucket._resolve_path` from adding `bucket_folder` twice when a path already carries it (issue #20174). It also changes the test harness timeout, fixes the `.prefectignore` f",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 6
+}

@@ -1,0 +1,784 @@
+{
+ "round": "validation_round2",
+ "status": "complete",
+ "generated_utc": "2026-11-17T14:00:00+00:00",
+ "resumed_round": {
+  "key_label": "sk-or-v1-fa8...7b3",
+  "key_ends": "7b3",
+  "key_limit_usd": 20,
+  "anchor_usage_monthly": 0.0,
+  "budget_usd": 4.0,
+  "final_usage_monthly": 0.606793757,
+  "total_resumed_round_spend_usd": 0.606794,
+  "note": "Resumed round uses the new key only; prior-session spend on the old key is recorded separately in spend_prior_session and is not counted against the resumed-round $4.00 cap."
+ },
+ "harness": {
+  "harness_version": "877ac98b39664866",
+  "run_review_mjs_sha256": "20fac015e4e7065f399aa9303029019ae28d6c315f6234a7519b88dff44c5ff8",
+  "score_py_sha256": "0709e84e5332a5fdd473d869211f9de1736ceca01c66658b44ff46cbf4ab00a8",
+  "baseline_prompt_file": "eval/prompts/baseline_original.txt",
+  "baseline_prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+  "v4_prompt_file": "eval/prompts/v4_recall_anchor.txt",
+  "v4_prompt_sha256": "34ab4b8270e81b23b3f027da7cefa08897dbf98faa885d5c7a9100b58af74f02",
+  "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+  "note": "working-tree prompt.ts is byte-identical to v4 (sha 34ab4b82); runner requires --prompt-file and never imports SYSTEM_PROMPT"
+ },
+ "harness_fixes": {
+  "turn_cap": {
+   "enforcement": "live stream-json parse; distinct assistant message.id counted; process group killed when count > maxTurns; counter frozen at cap; turn_cap_hit with reason",
+   "fake_cli_verification": "eval/test_suite/cap_test.sh 6/6 pass (prior session)",
+   "real_cli_verification": {
+    "tag": "r2_capcheck",
+    "pr": "redis#5",
+    "model": "anthropic/claude-haiku-5.5",
+    "effort": "medium",
+    "max_turns": 3,
+    "num_turns_counted": 3,
+    "turn_cap_hit": false,
+    "turn_check_ok": true,
+    "cli_num_turns": 4,
+    "subtype": "error_max_turns",
+    "cost_usd": 0.00554567,
+    "conclusion": "PASS: counted=3 <= maxTurns=3 and turn_check_ok=true on the real CLI. CLI's own num_turns=4 confirms the historical +1 offset (n_tool_calls = num_turns-1). Issue run-review-maxturns-not-enforced is closed."
+   }
+  },
+  "per_pr_cost": "usage_monthly key-delta around each PR, concurrency 1, settle-polling, cost_flag on zero/unsettled; cli_cost_usd secondary",
+  "provenance": "harness_version, prompt_sha256, cruise_line_git_head, pr_list, tag in every record; tag reuse refused without --force; score.py refuses mismatched harness versions",
+  "prompt_default": "--prompt-file required"
+ },
+ "holdout_preflight": {
+  "manifest_prs": 20,
+  "slice_prs": 4,
+  "holdout_prs": 16,
+  "holdout_gt_issues": 114,
+  "overlap_with_slice": 0,
+  "duplicates": 0,
+  "clones": "all 8 repos present in eval/data/repos (Ghost, cal.com, dify, prefect cloned this round, blob-filtered); prepare.py --verify: 20/20 OK (clone+head+non-empty diff)",
+  "holdout_ids": [
+   "Ghost#6",
+   "Ghost#8",
+   "Ghost#10",
+   "aspnetcore#4",
+   "cal.com#6",
+   "cal.com#14",
+   "dify#6",
+   "dify#10",
+   "dify#11",
+   "firefox-ios#12",
+   "firefox-ios#13",
+   "prefect#5",
+   "prefect#10",
+   "redis#6",
+   "tauri#1",
+   "tauri#9"
+  ]
+ },
+ "paid_runs": {
+  "executed": [
+   {
+    "tag": "r2_capcheck",
+    "desc": "real-CLI max-turns 3 check, haiku medium + v4, redis#5",
+    "cost_usd": 0.00554567,
+    "result": "counted=3, turn_check_ok=true"
+   },
+   {
+    "tag": "r2_noise1",
+    "desc": "noise repeat 1: haiku medium + v4, 4-PR slice",
+    "cost_usd": 0.059684,
+    "micro_f1": 0.4706,
+    "schema_validity_rate": 0.75
+   },
+   {
+    "tag": "r2_noise2",
+    "desc": "noise repeat 2: haiku medium + v4, 4-PR slice",
+    "cost_usd": 0.049621,
+    "micro_f1": 0.5556,
+    "schema_validity_rate": 1.0
+   },
+   {
+    "tag": "r2_holdout_haiku_baseline",
+    "desc": "holdout a: haiku medium + ORIGINAL baseline prompt, 16 PRs",
+    "cost_usd": 0.208505,
+    "micro_f1": 0.534,
+    "micro_precision": 0.6623,
+    "micro_recall": 0.4474,
+    "tp": 51,
+    "fp": 26,
+    "fn": 63,
+    "schema_validity_rate": 0.9375,
+    "judge_failures": 0
+   },
+   {
+    "tag": "r2_holdout_haiku_v4",
+    "desc": "holdout b: haiku medium + v4_recall_anchor, same 16 PRs",
+    "cost_usd": 0.215018,
+    "micro_f1": 0.5674,
+    "micro_precision": 0.604,
+    "micro_recall": 0.5351,
+    "tp": 61,
+    "fp": 40,
+    "fn": 53,
+    "schema_validity_rate": 1.0,
+    "judge_failures": 0
+   },
+   {
+    "tag": "r2_holdout_opus_baseline",
+    "desc": "follow-up holdout c: opus-5.5 @ high + ORIGINAL baseline prompt, 16 PRs (PARTIAL: 8/16 schema-valid; 8 PRs failed with OpenRouter 402 credit-reservation errors)",
+    "cost_usd": 2.722732,
+    "micro_f1": 0.32,
+    "micro_precision": 0.6667,
+    "micro_recall": 0.2105,
+    "tp": 24,
+    "fp": 12,
+    "fn": 90,
+    "schema_validity_rate": 0.5,
+    "judge_failures": 0,
+    "judge_calls": 8,
+    "judge_pairs": 84,
+    "n_cost_flags": 5,
+    "run_spend_delta_usd": 2.4824878
+   },
+   {
+    "tag": "r2_opus_test_dify11",
+    "desc": "follow-up diagnostic single-PR test: opus-5.5 @ high + baseline prompt on dify#11 with CLAUDE_CODE_MAX_OUTPUT_TOKENS=16000 (fix verification; NOT part of holdout tag)",
+    "cost_usd": 0.243831,
+    "micro_f1": 0.6667,
+    "micro_precision": 1.0,
+    "micro_recall": 0.5,
+    "tp": 3,
+    "fp": 0,
+    "fn": 3,
+    "schema_validity_rate": 1.0,
+    "judge_failures": 0
+   }
+  ],
+  "skipped": [
+   {
+    "run": "holdout c completion: remaining 7 PRs (firefox-ios#12,#13 prefect#5,#10 redis#6 tauri#1,#9) after 402 failures",
+    "status": "aborted_budget_cap",
+    "reason": "Follow-up delta after partial opus run + diagnostic test + scoring was $2.8318 of $4.00 cap (remaining $1.1682). Remaining 7 PRs at measured opus rate ~$0.28/PR (8 valid PRs averaged $0.28; dify#11 test $0.2438) project to ~$1.96, which would exceed the $4.00 additional cap. Per task instruction to abort and report if cap would be exceeded, no further paid runs were launched. The 402 root cause and verified fix are recorded in followup_round so a future round can complete the holdout."
+   }
+  ]
+ },
+ "noise_check": {
+  "config": "haiku-5.5 @ medium + v4_recall_anchor on 4-PR slice (firefox-ios#1, aspnetcore#2, tauri#10, redis#5)",
+  "runs": [
+   {
+    "tag": "e4_winner_combo (prior round, same config)",
+    "micro_f1": 0.6296
+   },
+   {
+    "tag": "r2_noise1",
+    "micro_f1": 0.4706
+   },
+   {
+    "tag": "r2_noise2",
+    "micro_f1": 0.5556
+   }
+  ],
+  "mean_micro_f1": 0.5519,
+  "range": [
+   0.4706,
+   0.6296
+  ],
+  "note": "Spread of 0.159 across identical-config repeats on 4 PRs. One repeat had a schema-invalid PR (tauri#10 in r2_noise1, F1 0 for that PR), which alone explains much of the low outlier."
+ },
+ "statistics": {
+  "bootstrap": {
+   "method": "paired bootstrap over 16 holdout PRs (resample PRs with replacement, recompute micro F1 from summed tp/fp/fn), 10000 resamples, seed 42",
+   "n_prs": 16,
+   "resamples": 10000,
+   "seed": 42,
+   "baseline_prompt_micro_f1": {
+    "mean": 0.5363,
+    "ci95": [
+     0.4278,
+     0.6413
+    ]
+   },
+   "v4_micro_f1": {
+    "mean": 0.5694,
+    "ci95": [
+     0.4647,
+     0.6634
+    ]
+   },
+   "paired_diff_v4_minus_baseline": {
+    "mean": 0.0331,
+    "ci95": [
+     -0.0354,
+     0.116
+    ]
+   },
+   "paired_diff_includes_zero": true,
+   "observed_diff": 0.0334
+  },
+  "bootstrap_opus": {
+   "method": "paired bootstrap over 16 holdout PRs (resample PRs with replacement, recompute micro F1 from summed tp/fp/fn), 10000 resamples, seed 42",
+   "n_prs": 16,
+   "resamples": 10000,
+   "seed": 42,
+   "opus_baseline_micro_f1": {
+    "mean": 0.3175,
+    "ci95": [
+     0.1719,
+     0.4568
+    ],
+    "observed": 0.32
+   },
+   "paired_diff_haiku_v4_minus_opus_baseline": {
+    "mean": 0.2519,
+    "ci95": [
+     0.0926,
+     0.4417
+    ],
+    "observed": 0.2474,
+    "includes_zero": false
+   },
+   "paired_diff_haiku_v4_minus_haiku_baseline": {
+    "mean": 0.0331,
+    "ci95": [
+     -0.0354,
+     0.116
+    ],
+    "observed": 0.0334,
+    "includes_zero": true
+   },
+   "note": "Opus run r2_holdout_opus_baseline is partial: 8/16 PRs schema-valid (8 PRs failed with OpenRouter 402 credit-reservation errors, see validation_round2.json followup_round). CIs describe the scored records as-is; the 8 failed PRs score F1 0 and drag the opus estimate down. Do not declare a winner if CI includes zero."
+  },
+  "winner_declared": false,
+  "reason": "Full-16 paired CI for haiku-v4 minus opus-baseline is [-0.0586,+0.0509] (observed -0.0086), includes zero. Haiku-v4 minus haiku-baseline CI [-0.0354,+0.1160] also includes zero. No winner declared.",
+  "bootstrap_opus_full16": {
+   "method": "paired bootstrap over 16 holdout PRs (resample PRs with replacement, recompute micro F1 from summed tp/fp/fn), 10000 resamples, seed 42",
+   "n_prs": 16,
+   "resamples": 10000,
+   "seed": 42,
+   "opus_baseline_micro_f1": {
+    "mean": 0.5778,
+    "ci95": [
+     0.4713,
+     0.678
+    ],
+    "observed": 0.5761
+   },
+   "paired_diff_haiku_v4_minus_opus_baseline": {
+    "mean": -0.0084,
+    "ci95": [
+     -0.0586,
+     0.0509
+    ],
+    "observed": -0.0086,
+    "includes_zero": true
+   },
+   "paired_diff_haiku_v4_minus_haiku_baseline": {
+    "mean": 0.0331,
+    "ci95": [
+     -0.0354,
+     0.116
+    ],
+    "observed": 0.0334,
+    "includes_zero": true
+   },
+   "note": "Full-16 opus set: 8 original valid + dify#11 diagnostic + 7 retry (CLAUDE_CODE_MAX_OUTPUT_TOKENS=16000). All 16 schema-valid. Do not declare a winner if CI includes zero."
+  }
+ },
+ "spend": {
+  "resumed_round_anchor_usage_monthly": 0.0,
+  "budget_usd": 4.0,
+  "per_step": [
+   {
+    "step": "cap check r2_capcheck",
+    "usage_monthly_after": 0.00554567
+   },
+   {
+    "step": "noise1 run+score",
+    "usage_monthly_after": 0.06990792
+   },
+   {
+    "step": "noise2 run+score",
+    "usage_monthly_after": 0.124584505
+   },
+   {
+    "step": "holdout baseline run+score",
+    "usage_monthly_after": 0.34282537
+   },
+   {
+    "step": "holdout v4 run+score",
+    "usage_monthly_after": 0.604174173
+   },
+   {
+    "step": "final reading",
+    "usage_monthly_after": 0.606793757
+   },
+   {
+    "step": "follow-up opus holdout run r2_holdout_opus_baseline",
+    "usage_monthly_after": 3.089281557
+   },
+   {
+    "step": "follow-up diagnostic test r2_opus_test_dify11",
+    "usage_monthly_after": 3.333112357
+   },
+   {
+    "step": "follow-up scoring (judge)",
+    "usage_monthly_after": 3.435340357
+   },
+   {
+    "step": "follow-up final reading",
+    "usage_monthly_after": 3.438574282
+   },
+   {
+    "step": "retry-round anchor (credits added, same key 7b3)",
+    "usage_monthly_after": 3.438574282
+   },
+   {
+    "step": "retry smoke firefox-ios#12",
+    "usage_monthly_after": 3.652419282
+   },
+   {
+    "step": "retry remaining 6 PRs run",
+    "usage_monthly_after": 5.488529282
+   },
+   {
+    "step": "scoring full16 + retry (LLM judge)",
+    "usage_monthly_after": 5.492239796
+   },
+   {
+    "step": "retry-round final reading",
+    "usage_monthly_after": 5.493348639
+   }
+  ],
+  "total_resumed_round_spend_usd": 0.606794,
+  "under_budget": true,
+  "followup_anchor_usage_monthly": 0.606793757,
+  "followup_total_usd": 2.831781,
+  "followup_under_budget": true,
+  "retry_anchor_usage_monthly": 3.438574282,
+  "retry_total_usd": 2.054774,
+  "retry_under_budget": true
+ },
+ "spend_prior_session": {
+  "note": "Prior session on the old key (anchor usage_monthly 20.65877423) ended partial_blocked with unattributed background-automation spend. The project root /home/azureuser/optimize-cruiseline is not a git repository (no .git), so there is no git history for this record; the only git repo in the tree is cruise-line/ (HEAD d98cfa767551da72c23d52fb6d5cecd78901a0d9). Prior-session spend is not counted against the resumed-round $4.00 cap. No background-automation names are recorded in this record."
+ },
+ "verdict_original_claim": "INCONCLUSIVE. On complete 16/16 data, opus-baseline micro F1 is 0.576 (P0.757/R0.465, tp53 fp17 fn61) vs haiku-v4 0.567 and haiku-baseline 0.534. Paired diff haiku-v4 minus opus-baseline -0.009, 95% CI [-0.059,+0.051] includes zero, so claim 'haiku-5.5 @ medium + v4 beats opus-5.5 @ high on quality' is not supported. Haiku-v4 minus haiku-baseline +0.033 CI [-0.035,+0.116] also includes zero.",
+ "cleanup": {
+  "agent/config.ts": "comments claim only the measured cost gap; quality marked unestablished (prior session)",
+  "gates": "bun test agent/analysis/prompt.test.ts exit 0 (3 pass); bunx tsc --noEmit exit 0 (prior session)",
+  "forbidden_name_grep": {
+   "command": "grep -r -I -n -i -E \"<forbidden background-automation names, case-insensitive>\" . --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=.git --exclude-dir=__pycache__ --exclude-dir=repos --exclude-dir=.tmp  (pattern: the stopped background automation names; see task spec)",
+   "result": "exit 1 (no matches) on project text files; eval/data/repos (third-party clones), .venv, node_modules, .git excluded per task. .tmp exec-wrapper scratch scripts embed the grep pattern itself and are not project content.",
+   "note": "Docs/code/records refer only to 'background automation' where needed."
+  }
+ },
+ "open_items": [
+  "Schema-invalid runs occur occasionally when CLI emits no structured output; retry round had 7/7 valid after token-cap fix.",
+  "4 retry PRs had key_delta_unsettled_after_30s; costs settled late and are included in whole-run delta."
+ ],
+ "followup_round": {
+  "key_label": "sk-or-v1-fa8...7b3",
+  "key_ends": "7b3",
+  "anchor_usage_monthly": 0.606793757,
+  "budget_usd": 4.0,
+  "final_usage_monthly": 3.438574282,
+  "total_followup_spend_usd": 2.831781,
+  "remaining_of_cap_usd": 1.168219,
+  "per_step": [
+   {
+    "step": "opus holdout run r2_holdout_opus_baseline (16 PRs attempted)",
+    "usage_monthly_after": 3.089281557,
+    "run_spend_delta_usd": 2.4824878,
+    "sum_key_delta_cost_usd": 2.7227322
+   },
+   {
+    "step": "diagnostic test r2_opus_test_dify11 (dify#11, CLAUDE_CODE_MAX_OUTPUT_TOKENS=16000)",
+    "usage_monthly_after": 3.333112357,
+    "run_spend_delta_usd": 0.24383080000000001
+   },
+   {
+    "step": "scoring r2_holdout_opus_baseline + r2_opus_test_dify11 (LLM judge, deepseek-v4.1-flash default)",
+    "usage_monthly_after": 3.435340357
+   },
+   {
+    "step": "final reading",
+    "usage_monthly_after": 3.438574282
+   }
+  ],
+  "opus_run": {
+   "tag": "r2_holdout_opus_baseline",
+   "model": "anthropic/claude-opus-5.5",
+   "effort": "high",
+   "prompt_file": "eval/prompts/baseline_original.txt",
+   "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+   "harness_version": "877ac98b39664866",
+   "concurrency": 1,
+   "n_prs": 16,
+   "n_schema_valid": 8,
+   "schema_validity_rate": 0.5,
+   "micro_f1": 0.32,
+   "micro_precision": 0.6667,
+   "micro_recall": 0.2105,
+   "tp": 24,
+   "fp": 12,
+   "fn": 90,
+   "total_cost_usd": 2.722732,
+   "n_cost_flags": 5,
+   "judge_failures": 0,
+   "per_pr_costs": [
+    {
+     "id": "Ghost#10",
+     "cost_usd": 0.4192866000000002,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "Ghost#6",
+     "cost_usd": 0.20511479999999993,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "Ghost#8",
+     "cost_usd": 0.22589119999999996,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "aspnetcore#4",
+     "cost_usd": 0.42204319999999984,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "cal.com#14",
+     "cost_usd": 0.3961999999999999,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "cal.com#6",
+     "cost_usd": 0.25740600000000025,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "dify#10",
+     "cost_usd": 0.23213440000000007,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "dify#11",
+     "cost_usd": 0.12012219999999996,
+     "schema_valid": false,
+     "cost_flag": null
+    },
+    {
+     "id": "dify#6",
+     "cost_usd": 0.20428939999999995,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "firefox-ios#12",
+     "cost_usd": 0.12012219999999996,
+     "schema_valid": false,
+     "cost_flag": null
+    },
+    {
+     "id": "firefox-ios#13",
+     "cost_usd": 0.12012219999999996,
+     "schema_valid": false,
+     "cost_flag": null
+    },
+    {
+     "id": "prefect#10",
+     "cost_usd": 0,
+     "schema_valid": false,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "prefect#5",
+     "cost_usd": 0,
+     "schema_valid": false,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "redis#6",
+     "cost_usd": 0,
+     "schema_valid": false,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "tauri#1",
+     "cost_usd": 0,
+     "schema_valid": false,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "tauri#9",
+     "cost_usd": 0,
+     "schema_valid": false,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    }
+   ],
+   "failed_prs": [
+    "dify#11",
+    "firefox-ios#12",
+    "firefox-ios#13",
+    "prefect#5",
+    "prefect#10",
+    "redis#6",
+    "tauri#1",
+    "tauri#9"
+   ],
+   "failure_root_cause": "OpenRouter 402: CLI requests max_tokens=128000 (model max_completion_tokens); OpenRouter reserves 128000 * $0.00002 = $2.56 against account remaining before the request. After 8 PRs account remaining fell below $2.56, so PRs 9-16 were rejected with 'API Error: 402 This request requires more credits, or fewer max_tokens... can only afford ~114k'. Records show is_error=true, exit_code=1, structured_output missing, zero tokens used. This is a billing/reservation failure, not a quality failure.",
+   "fix_verified": "CLAUDE_CODE_MAX_OUTPUT_TOKENS=16000 caps the CLI request max_tokens (CLI reads this env var; verified in CLI binary and by test run). Diagnostic tag r2_opus_test_dify11 on dify#11 with this env var: schema-valid 1/1, F1 0.667 (tp3 fp0 fn3), cost $0.2438, no cost flags. Fix was verified AFTER the main run; main-run records were not re-run with it because remaining budget ($1.1682) cannot cover the 7 remaining PRs (~$1.96 projected).",
+   "partial_run_warning": "Opus micro F1 0.320 is computed over all 16 PRs with 8 failed PRs scoring F1 0. It is a lower bound biased downward by billing failures, not a clean quality estimate. On the 8 valid PRs opus precision was high (0.667 overall) but recall low (0.211 overall, dragged by zeros)."
+  },
+  "statistics_opus": {
+   "method": "paired bootstrap over 16 holdout PRs (resample PRs with replacement, recompute micro F1 from summed tp/fp/fn), 10000 resamples, seed 42",
+   "n_prs": 16,
+   "resamples": 10000,
+   "seed": 42,
+   "opus_baseline_micro_f1": {
+    "mean": 0.3175,
+    "ci95": [
+     0.1719,
+     0.4568
+    ],
+    "observed": 0.32
+   },
+   "paired_diff_haiku_v4_minus_opus_baseline": {
+    "mean": 0.2519,
+    "ci95": [
+     0.0926,
+     0.4417
+    ],
+    "observed": 0.2474,
+    "includes_zero": false
+   },
+   "paired_diff_haiku_v4_minus_haiku_baseline": {
+    "mean": 0.0331,
+    "ci95": [
+     -0.0354,
+     0.116
+    ],
+    "observed": 0.0334,
+    "includes_zero": true
+   },
+   "note": "Opus run r2_holdout_opus_baseline is partial: 8/16 PRs schema-valid (8 PRs failed with OpenRouter 402 credit-reservation errors, see validation_round2.json followup_round). CIs describe the scored records as-is; the 8 failed PRs score F1 0 and drag the opus estimate down. Do not declare a winner if CI includes zero."
+  }
+ },
+ "retry_round": {
+  "key_label": "sk-or-v1-fa8...7b3",
+  "key_ends": "7b3",
+  "key_limit_usd": 20,
+  "anchor_usage_monthly": 3.438574282,
+  "budget_usd": 4.0,
+  "final_usage_monthly": 5.493348639,
+  "total_retry_spend_usd": 2.054774,
+  "note": "Credits added to same key ending 7b3; anchor verified via GET /key (usage_monthly 3.438574282, limit_remaining 16.561425718). Runner edited to set CLAUDE_CODE_MAX_OUTPUT_TOKENS=16000 in CLI env (eval/run_review.mjs); harness_version changed 877ac98b39664866 -> 0abca51995d3f7cf. Scored merged set with --allow-harness-mismatch.",
+  "harness_version_new": "0abca51995d3f7cf",
+  "run_review_mjs_sha256": "932aab082a7d16da692d8d1048deba5ac8d3ac960eea0552a33c6602833d7fcf",
+  "score_py_sha256": "0709e84e5332a5fdd473d869211f9de1736ceca01c66658b44ff46cbf4ab00a8",
+  "failed_prs_rerun": [
+   "firefox-ios#12",
+   "firefox-ios#13",
+   "prefect#5",
+   "prefect#10",
+   "redis#6",
+   "tauri#1",
+   "tauri#9"
+  ],
+  "dify11_note": "dify#11 already recovered diagnostically as r2_opus_test_dify11 (F1 0.667, $0.2438); not re-run in retry.",
+  "retry_run": {
+   "tag": "r2_holdout_opus_baseline_retry",
+   "model": "anthropic/claude-opus-5.5",
+   "effort": "high",
+   "prompt_file": "eval/prompts/baseline_original.txt",
+   "concurrency": 1,
+   "n_prs": 7,
+   "n_schema_valid": 7,
+   "micro_f1": 0.6842,
+   "micro_precision": 0.8387,
+   "micro_recall": 0.5778,
+   "tp": 26,
+   "fp": 5,
+   "fn": 19,
+   "total_cost_usd": 1.819108,
+   "judge_failures": 0,
+   "cost_flag_note": "4 PRs key_delta_unsettled_after_30s (firefox-ios#13,prefect#5,prefect#10,redis#6) settled late and were captured in tauri#1 key-delta ($1.2742); whole-run usage delta is authoritative for total spend."
+  },
+  "full16_opus": {
+   "tag": "r2_holdout_opus_baseline_full16",
+   "merged_from": {
+    "original_valid8": "r2_holdout_opus_baseline",
+    "dify11": "r2_opus_test_dify11",
+    "retry7": "r2_holdout_opus_baseline_retry"
+   },
+   "model": "anthropic/claude-opus-5.5",
+   "effort": "high",
+   "prompt_file": "eval/prompts/baseline_original.txt",
+   "n_prs": 16,
+   "n_schema_valid": 16,
+   "schema_validity_rate": 1.0,
+   "micro_f1": 0.5761,
+   "micro_precision": 0.7571,
+   "micro_recall": 0.4649,
+   "tp": 53,
+   "fp": 17,
+   "fn": 61,
+   "total_cost_usd": 4.425304,
+   "judge_failures": 0,
+   "per_pr_costs": [
+    {
+     "id": "Ghost#10",
+     "cost_usd": 0.4192866000000002,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "Ghost#6",
+     "cost_usd": 0.20511479999999993,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "Ghost#8",
+     "cost_usd": 0.22589119999999996,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "aspnetcore#4",
+     "cost_usd": 0.42204319999999984,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "cal.com#14",
+     "cost_usd": 0.3961999999999999,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "cal.com#6",
+     "cost_usd": 0.25740600000000025,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "dify#10",
+     "cost_usd": 0.23213440000000007,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "dify#11",
+     "cost_usd": 0.24383080000000001,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "dify#6",
+     "cost_usd": 0.20428939999999995,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "firefox-ios#12",
+     "cost_usd": 0.21384500000000006,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "firefox-ios#13",
+     "cost_usd": 0,
+     "schema_valid": true,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "prefect#10",
+     "cost_usd": 0,
+     "schema_valid": true,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "prefect#5",
+     "cost_usd": 0,
+     "schema_valid": true,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "redis#6",
+     "cost_usd": 0,
+     "schema_valid": true,
+     "cost_flag": "key_delta_unsettled_after_30s"
+    },
+    {
+     "id": "tauri#1",
+     "cost_usd": 1.2742408000000003,
+     "schema_valid": true,
+     "cost_flag": null
+    },
+    {
+     "id": "tauri#9",
+     "cost_usd": 0.3310219999999999,
+     "schema_valid": true,
+     "cost_flag": null
+    }
+   ]
+  },
+  "bootstrap_full16": {
+   "method": "paired bootstrap over 16 holdout PRs (resample PRs with replacement, recompute micro F1 from summed tp/fp/fn), 10000 resamples, seed 42",
+   "n_prs": 16,
+   "resamples": 10000,
+   "seed": 42,
+   "opus_baseline_micro_f1": {
+    "mean": 0.5778,
+    "ci95": [
+     0.4713,
+     0.678
+    ],
+    "observed": 0.5761
+   },
+   "paired_diff_haiku_v4_minus_opus_baseline": {
+    "mean": -0.0084,
+    "ci95": [
+     -0.0586,
+     0.0509
+    ],
+    "observed": -0.0086,
+    "includes_zero": true
+   },
+   "paired_diff_haiku_v4_minus_haiku_baseline": {
+    "mean": 0.0331,
+    "ci95": [
+     -0.0354,
+     0.116
+    ],
+    "observed": 0.0334,
+    "includes_zero": true
+   },
+   "note": "Full-16 opus set: 8 original valid + dify#11 diagnostic + 7 retry (CLAUDE_CODE_MAX_OUTPUT_TOKENS=16000). All 16 schema-valid. Do not declare a winner if CI includes zero."
+  },
+  "per_step": [
+   {
+    "step": "retry smoke firefox-ios#12",
+    "usage_monthly_after": 3.652419282
+   },
+   {
+    "step": "retry remaining 6 PRs run",
+    "usage_monthly_after": 5.488529282
+   },
+   {
+    "step": "scoring full16 + retry (LLM judge)",
+    "usage_monthly_after": 5.492239796
+   },
+   {
+    "step": "final reading",
+    "usage_monthly_after": 5.493348639
+   }
+  ],
+  "spend_check": 2.054774
+ }
+}

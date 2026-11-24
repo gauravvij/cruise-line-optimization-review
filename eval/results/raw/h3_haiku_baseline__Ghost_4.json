@@ -1,0 +1,379 @@
+{
+ "id": "Ghost#4",
+ "repo": "Ghost",
+ "num": 4,
+ "harness_version": "0abca51995d3f7cf",
+ "tag": "h3_haiku_baseline",
+ "model": "anthropic/claude-haiku-5.5",
+ "openrouter_model": "anthropic/claude-haiku-5.5",
+ "effort": "medium",
+ "maxTurns": 60,
+ "prompt_file": "eval/prompts/baseline_original.txt",
+ "promptVariant": "baseline_original.txt",
+ "prompt_sha256": "735dd8152a41cf235e62736f86f6d32f55cdc21839edd2bdefaa43b624e93e16",
+ "cruise_line_git_head": "d98cfa767551da72c23d52fb6d5cecd78901a0d9",
+ "pr_list": [
+  "Ghost#1",
+  "Ghost#2",
+  "Ghost#3",
+  "Ghost#4",
+  "Ghost#11",
+  "Ghost#12",
+  "aspnetcore#1",
+  "aspnetcore#5",
+  "aspnetcore#6",
+  "aspnetcore#7",
+  "aspnetcore#8",
+  "aspnetcore#10",
+  "cal.com#1",
+  "cal.com#2",
+  "cal.com#3",
+  "cal.com#4",
+  "cal.com#7",
+  "cal.com#9",
+  "dify#1",
+  "dify#2",
+  "dify#4",
+  "dify#8",
+  "dify#12",
+  "dify#13",
+  "firefox-ios#4",
+  "firefox-ios#5",
+  "firefox-ios#6",
+  "firefox-ios#7",
+  "firefox-ios#9",
+  "firefox-ios#10",
+  "prefect#1",
+  "prefect#2",
+  "prefect#3",
+  "prefect#7",
+  "prefect#9",
+  "prefect#12",
+  "redis#1",
+  "redis#3",
+  "redis#4",
+  "redis#7",
+  "redis#8",
+  "redis#9",
+  "tauri#2",
+  "tauri#5",
+  "tauri#6",
+  "tauri#7",
+  "tauri#8",
+  "tauri#11"
+ ],
+ "run_started_at": "2026-11-18T15:53:52.974Z",
+ "num_of_issues": 6,
+ "issues": [
+  {
+   "title": "Missing semicolons in variable declarations",
+   "description": "The rule requires all JavaScript and TypeScript statements to end with explicit semicolons, but lines 88-90 rely on automatic semicolon insertion (ASI) instead",
+   "file_path": "apps/posts/src/views/comments/components/comments-list.tsx",
+   "start_line": 88,
+   "end_line": 90,
+   "problematic_code_snippet": "function CommentContent({item}: {item: Comment}) {\n    const contentRef = useRef<HTMLDivElement>(null)\n    const [isClamped, setIsClamped] = useState(false)\n    const [isExpanded, setIsExpanded] = useState(false)\n\n    useEffect(() => {",
+   "rule_name": "Code Must Always Use Semicolons"
+  },
+  {
+   "title": "Missing dependency in useEffect causes stale clamp detection",
+   "description": "The CommentContent component's useEffect hook has an empty dependency array, but it uses item.html to determine if content should be clamped. When a comment's HTML content changes (e.g., after an edit or when new data is loaded), the clamp detection won't re-run. This means the 'Show more' button may appear when it shouldn't or disappear when it should still be visible, creating a poor user experience. The dependency array should include item.html to ensure the clamp detection re-runs whenever the content changes.",
+   "file_path": "apps/posts/src/views/comments/components/comments-list.tsx",
+   "start_line": 92,
+   "end_line": 104,
+   "problematic_code_snippet": "    useEffect(() => {\n        const checkIfClamped = () => {\n            if (contentRef.current) {\n                // Check if the content is clamped by comparing scrollHeight with clientHeight\n                setIsClamped(contentRef.current.scrollHeight > contentRef.current.clientHeight);\n            }\n        };\n\n        checkIfClamped();\n        // Recheck on window resize\n        window.addEventListener('resize', checkIfClamped);\n        return () => window.removeEventListener('resize', checkIfClamped);\n    }, []);"
+  },
+  {
+   "title": "Filter button becomes non-functional when onAddFilter is undefined",
+   "description": "The conditional check for rendering the post title button was changed from `item.post?.id && item.post?.title && onAddFilter` to `item.post?.id && item.post?.title`, removing the onAddFilter null check. However, the button's onClick handler still calls onAddFilter('post', item.post!.id). Since onAddFilter is now a required prop in the TypeScript signature but the runtime check was removed, if onAddFilter is ever undefined or null at runtime, clicking the post title button will throw an error and crash the component. The original three-part condition was protecting against this scenario.",
+   "file_path": "apps/posts/src/views/comments/components/comments-list.tsx",
+   "start_line": 236,
+   "end_line": 248,
+   "problematic_code_snippet": "                                                {item.post?.id && item.post?.title ? (\n                                                    <Button\n                                                        className=\"block h-auto truncate p-0 font-medium  text-primary hover:opacity-70\"\n                                                        variant=\"link\"\n                                                        onClick={() => onAddFilter('post', item.post!.id)}\n                                                    >\n                                                        {item.post.title}\n                                                    </Button>\n                                                ) : (\n                                                    <span className=\"text-muted-foreground\">\n                                                    Unknown post\n                                                    </span>\n                                                )}"
+  },
+  {
+   "title": "Inconsistent conditional rendering pattern for feature image",
+   "description": "The feature image rendering logic was changed from a ternary expression with explicit null return (`condition ? <img /> : null`) to a logical AND operator (`condition && <img />`). While functionally similar in most cases, this creates an inconsistency: when item.post?.feature_image is falsy (like an empty string ''), the logical AND will render the falsy value (empty string) instead of rendering nothing. This could lead to unexpected DOM nodes or React warnings. The original ternary with explicit null was more defensive and clearer about the intent to render nothing when the condition is false.",
+   "file_path": "apps/posts/src/views/comments/components/comments-list.tsx",
+   "start_line": 350,
+   "end_line": 358,
+   "problematic_code_snippet": "                                <TableCell className=\"col-start-2 col-end-2 row-start-2 row-end-3 p-0 text-right align-top md:col-start-3 md:col-end-3 lg:table-cell lg:p-4\">\n                                    {item.post?.feature_image && (\n                                        <img\n                                            alt={item.post.title || 'Post feature image'}\n                                            className=\"hidden aspect-video w-32 rounded object-cover lg:block\"\n                                            src={item.post.feature_image}\n                                        />\n                                    )}\n                                </TableCell>"
+  },
+  {
+   "title": "Delete comment functionality completely removed from UI",
+   "description": "The PR removes the dropdown menu item that allowed users to delete comments, making the delete functionality completely inaccessible through the UI. While all the backend infrastructure remains intact (AlertDialog component, confirmDelete function, deleteComment mutation, commentToDelete state), there is no button or menu item that calls setCommentToDelete to trigger the deletion flow. This is a critical functional regression that removes an essential moderation capability for administrators. Users can no longer delete comments through the interface, even though the API endpoint and confirmation dialog are still present in the code.",
+   "file_path": null,
+   "start_line": null,
+   "end_line": null,
+   "problematic_code_snippet": "<DropdownMenu>\n    <DropdownMenuTrigger asChild>\n        <Button className=\"relative z-10 ml-1\" size=\"sm\" variant=\"ghost\">\n            <LucideIcon.Ellipsis />\n        </Button>\n    </DropdownMenuTrigger>\n    <DropdownMenuContent align=\"start\">\n        {item.post?.url && (\n            <DropdownMenuItem asChild>\n                <a href={item.post.url} rel=\"noopener noreferrer\" target=\"_blank\">\n                    <LucideIcon.ExternalLink className=\"mr-2 size-4\" />\n                    View post\n                </a>\n            </DropdownMenuItem>\n        )}\n        {item.member?.id && (\n            <DropdownMenuItem asChild>\n                <a href={`#/members/${item.member.id}`}>\n                    <LucideIcon.User className=\"mr-2 size-4\" />\n                    View member\n                </a>\n            </DropdownMenuItem>\n        )}\n    </DropdownMenuContent>\n</DropdownMenu>"
+  },
+  {
+   "title": "Missing semicolons in CommentContent hook declarations",
+   "description": "The added variable/state declarations rely on automatic semicolon insertion (ASI). The codebase rule requires explicit semicolons at the end of all statements.",
+   "file_path": "apps/posts/src/views/comments/components/comments-list.tsx",
+   "start_line": 84,
+   "end_line": 88,
+   "problematic_code_snippet": "function CommentContent({item}: {item: Comment}) {\n    const contentRef = useRef<HTMLDivElement>(null)\n    const [isClamped, setIsClamped] = useState(false)\n    const [isExpanded, setIsExpanded] = useState(false)\n",
+   "rule_name": "Code Must Always Use Semicolons"
+  }
+ ],
+ "repo_dir": "/home/azureuser/optimize-cruiseline/eval/data/repos/Ghost",
+ "head_sha": "5a73fdce3bf061b434c46c6852648befc6f990d0",
+ "diff_chars": 35925,
+ "diff_lines": 620,
+ "user_prompt_chars": 36812,
+ "exit_code": 0,
+ "spawn_error": null,
+ "timed_out": false,
+ "latency_ms": 60604,
+ "wall_ms": 62752,
+ "tool_calls": [
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "Bash",
+   "detail": ""
+  },
+  {
+   "name": "StructuredOutput",
+   "detail": ""
+  }
+ ],
+ "n_tool_calls": 5,
+ "stderr_tail": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors\n",
+ "num_turns_counted": 4,
+ "turn_trace": {
+  "assistant_lines": 13,
+  "unique_message_ids": 4,
+  "lines_without_id": 0,
+  "tool_use_blocks": 5
+ },
+ "turn_cap_hit": false,
+ "turn_cap_reason": null,
+ "turn_check_ok": true,
+ "spend_pre_usd": 5.551969691,
+ "spend_post_usd": 5.557874196,
+ "cost_settled": true,
+ "cost_wait_ms": 346,
+ "cost_usd": 0.005904505000000171,
+ "cost_flag": null,
+ "subtype": "success",
+ "is_error": false,
+ "num_turns": 6,
+ "stop_reason": "tool_use",
+ "cli_cost_usd": 0.010571705,
+ "usage": {
+  "input_tokens": 8,
+  "cache_creation_input_tokens": 24075,
+  "cache_read_input_tokens": 132153,
+  "output_tokens": 12480,
+  "output_tokens_details": {
+   "thinking_tokens": 5071
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 0,
+   "ephemeral_5m_input_tokens": 24075
+  },
+  "inference_geo": "global",
+  "iterations": [],
+  "speed": "standard",
+  "fallback_credit": null
+ },
+ "model_usage": {
+  "anthropic/claude-haiku-5.5": {
+   "inputTokens": 8,
+   "outputTokens": 12480,
+   "cacheReadInputTokens": 132153,
+   "cacheCreationInputTokens": 24075,
+   "webSearchRequests": 0,
+   "costUSD": 0.010571705,
+   "contextWindow": 1000000,
+   "maxOutputTokens": 128000,
+   "thinkingTokens": 5071,
+   "cacheCreationEphemeral5mInputTokens": 24075,
+   "cacheCreationEphemeral1hInputTokens": 0,
+   "canonicalModel": "claude-haiku-5-5",
+   "provider": "firstParty",
+   "costBasis": "list"
+  }
+ },
+ "structured_output": {
+  "pr": {
+   "repo": "agentic-review-benchmarks/Ghost",
+   "number": 4,
+   "title": "Code Review Bench PR #25745 - Redesigned comment moderation list layout",
+   "author": "",
+   "baseSha": "8281bbf2b93e5150658ab534de1eaaa00443d80e",
+   "headSha": "5a73fdce3bf061b434c46c6852648befc6f990d0"
+  },
+  "summary": "This PR replaces the comment moderation table in the Posts app with a stacked, comment-like row layout. Each row now shows the author (with a filter button), a relative timestamp with a tooltip, the post title (as a filter button), a clamped body with a Show more/less toggle, Hide/Show buttons, reply/like/report counts, and an overflow menu. A post feature image is added to the right column. The API surface is extended to return `post.feature_image` through the comments output mapper, the admin-x-framework `Comment` type is updated, and the e2e snapshots are adjusted to match.\n\nThe layout work is reasonable and the data-plumbing side is consistent. However, the rewrite silently drops the \"Delete comment\" action. The row's dropdown menu no longer contains it, and the confirmation `AlertDialog` is left in the file with no code path that opens it, so moderators can no longer delete comments from this screen. Separately, the row loses its link to the post editor, and the expand/collapse control can get stuck in the expanded state after a window resize. I would not merge until the delete regression is fixed.",
+  "verdict": "request_changes",
+  "verdictRationale": "The removal of the delete action is a functional regression in a moderation tool, and nothing in the repo tests it. The dead AlertDialog wiring suggests it was an accident rather than a decision. The remaining issues (lost editor navigation, the resize bug, accessibility gaps) are real but less severe and can be fixed in the same pass.",
+  "architecture": {
+   "overview": "Before this PR, the Posts app's comments screen (`comments.tsx`) rendered `CommentsList` as a virtualized table with Comment, Author, Post, Date, and Actions columns. Each row's actions were a Hide/Show button plus a dropdown that included View post, Filter by post, Filter by author, and Delete comment. Delete opened an AlertDialog, and the dialog's confirm called `useDeleteComment`. Data comes from the Ghost core comments API, where `serializers/output/mappers/comments.js` controls which post fields are returned, and the client type lives in `admin-x-framework/api/comments.ts`.\n\nThe PR changes the presentation layer only, plus one added field. `CommentsList` now renders each row as a stacked card: a header line (author, timestamp, post), a clamped body via the new `CommentContent` component, an action row with Hide/Show, count badges, and an overflow menu, and a right-hand feature-image cell. The mapper and type gain `feature_image` on the post. The delete dialog and its state are still present, but the only entry point that set `commentToDelete` has been removed.",
+   "steps": [
+    "Entry point: `comments.tsx` fetches comments and passes `items`, pagination props, and `onAddFilter` into `CommentsList`. `onAddFilter` is now required, which lets the old `&&` guards be removed.",
+    "Data boundary: `ghost/core` output mapper `comments.js` adds `feature_image` to the serialized `post` object, and `admin-x-framework`'s `Comment` type declares it as optional. The snapshot diffs are the observable effect of this change.",
+    "Row structure in `comments-list.tsx`: each `TableRow` is a CSS grid with a `TableCell` for the main content and a second `TableCell` for the feature image. The main cell holds a header line, the new `CommentContent` body, and an action row.",
+    "Body clamping: `CommentContent` clamps HTML to two lines with `line-clamp-2`, measures `scrollHeight` against `clientHeight` on mount and resize, and shows an `ExpandButton` only when clamped.",
+    "Actions: Hide/Show stay inline. The overflow menu now holds only View post and View member. Delete is no longer reachable, though its dialog and state are still in the file."
+   ],
+   "diagrams": [
+    {
+     "title": "Comments screen data flow and row composition",
+     "kind": "flowchart",
+     "description": "Shows how comment data reaches the redesigned row and which parts of the row are new in this PR.",
+     "mermaid": "flowchart LR\n  M[ghost/core output mapper comments.js] -->|post.feature_image added| API[Comments API response]\n  API --> T[admin-x-framework Comment type]\n  T --> C[comments.tsx]\n  C -->|items, onAddFilter| L[CommentsList]\n  L --> R[TableRow per comment]\n  R --> H[Header: author, timestamp, post]\n  R --> B[CommentContent clamp and expand]\n  R --> A[Actions: Hide/Show, counts, overflow menu]\n  R --> I[Feature image cell]\n  A -.->|Delete removed from menu| D[AlertDialog and confirmDelete still present]"
+    }
+   ]
+  },
+  "findings": [
+   {
+    "title": "Delete comment action removed; confirmation dialog is now unreachable",
+    "severity": "critical",
+    "category": "correctness",
+    "body": "The old overflow menu had a \"Delete comment\" item (`handleDeleteClick` → `setCommentToDelete`). The new dropdown only contains **View post** and **View member**, so nothing calls `setCommentToDelete` anymore. The `AlertDialog` is still rendered and `confirmDelete` / `useDeleteComment` are still wired, but `commentToDelete` can never become non-null. Moderators lose the ability to delete comments from this screen. Nothing in the repo tests this path, so the regression would not be caught.\n\n::code{file=\"apps/posts/src/views/comments/components/comments-list.tsx\" lines=\"326-357\"}\n\n::callout{type=\"warning\"}\nThe dialog at lines 366-384 still reads `commentToDelete`, and that state is never set. Either the action was dropped by accident during the rewrite or the feature was meant to move somewhere else. If it moved, nothing in the PR shows where.\n\n::callout{type=\"info\"}\nThe diff's own removal of `handleDeleteClick` confirms it was intentionally removed from the menu, but no replacement was added.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ],
+    "fixPrompt": "In `apps/posts/src/views/comments/components/comments-list.tsx`, restore a delete entry point for comments. The dropdown menu inside each row (around lines 326-357) has lost its \"Delete comment\" item, but the `AlertDialog` (around lines 366-384), `confirmDelete`, and `commentToDelete` state are still in the file. Add back a `handleDeleteClick`-style handler that calls `setCommentToDelete(item)`, and render a destructive `DropdownMenuItem` for it when `item.status !== 'deleted'`, separated by a `DropdownMenuSeparator`. Restore the `DropdownMenuSeparator` import too. Follow the original implementation in the base commit (`git show 8281bbf2:apps/posts/src/views/comments/components/comments-list.tsx`).",
+    "commentAnchor": {
+     "file": "apps/posts/src/views/comments/components/comments-list.tsx",
+     "lineStart": 326,
+     "lineEnd": 357
+    }
+   },
+   {
+    "title": "Post title no longer links to the post editor",
+    "severity": "high",
+    "category": "correctness",
+    "body": "Before this PR, the post title in each row linked to `#/editor/post/{id}`, and the member name linked to `#/members/{id}`. Now the post title is a button that applies a `post` filter, and the only path to the editor is gone. The member profile link is available only through the overflow menu. Moderators who want to see the post they're moderating now have to use View post, which opens the public URL, not the editor.\n\n::code{file=\"apps/posts/src/views/comments/components/comments-list.tsx\" lines=\"236-246\"}\n\nFiltering by post is still useful, but it should not replace navigation to the editor. The current design drops a navigation affordance without adding a replacement.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ],
+    "fixPrompt": "In `apps/posts/src/views/comments/components/comments-list.tsx`, the post title in each comment row (around lines 236-246) is now a filter button only. Restore a link to the post editor (`#/editor/post/${item.post.id}`) in the row or the overflow menu, as the base commit did. Keep the post-filter action as well if the design needs it. Add an \"Edit post\" item to the existing `DropdownMenuContent` (around lines 329-357), or use a secondary link next to the title, and match the link styling used elsewhere in the file.",
+    "commentAnchor": {
+     "file": "apps/posts/src/views/comments/components/comments-list.tsx",
+     "lineStart": 236,
+     "lineEnd": 246
+    }
+   },
+   {
+    "title": "Show less control disappears after resizing while expanded",
+    "severity": "medium",
+    "category": "correctness",
+    "body": "`isClamped` is only recomputed on mount and on window resize. When a comment is expanded, the `line-clamp-2` class is removed and the element grows to its full height, so `scrollHeight === clientHeight`. If the window is resized while expanded, the resize handler sets `isClamped` to `false`, and `ExpandButton` unmounts. The user is then stuck in the expanded state with no way to collapse it.\n\n::code{file=\"apps/posts/src/views/comments/components/comments-list.tsx\" lines=\"87-120\"}\n\nThe effect also has an empty dependency array, so it does not re-measure when `item.html` changes for a reused row.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ],
+    "fixPrompt": "In `CommentContent` in `apps/posts/src/views/comments/components/comments-list.tsx` (around lines 87-120), the clamp detection drops the Show-less button after a resize while expanded. Fix it so the `ExpandButton` stays visible whenever `isExpanded` is true. For example, only update `isClamped` when `!isExpanded`, or keep `isClamped` true while expanded. Also re-run the measurement when `item.html` changes by adding it to the `useEffect` dependency array. Keep the existing resize listener and its cleanup.",
+    "commentAnchor": {
+     "file": "apps/posts/src/views/comments/components/comments-list.tsx",
+     "lineStart": 87,
+     "lineEnd": 120
+    }
+   },
+   {
+    "title": "No tests cover the redesigned comment list",
+    "severity": "medium",
+    "category": "maintainability",
+    "body": "The only test changes are snapshot updates for the API output (`comments.test.js.snap`, `activity-feed.test.js.snap`). A grep for `comment-list-row`, `comments-list`, and \"Delete comment\" across `apps/posts` finds only the component itself. The following paths have no coverage:\n\n- The delete flow, which is the regression above. A test would have caught it.\n- The clamp/expand toggle, including the resize edge case above.\n- The conditional rendering of Hide vs Show based on `item.status`.\n- The fallbacks for a missing member, a missing post, and a missing `feature_image`.\n\nSnapshot changes also confirm the API shape but nothing about the UI.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ],
+    "fixPrompt": "Add component tests for `CommentsList` in `apps/posts` (for example under `apps/posts/test`, following the existing test setup in that app). Cover: (1) the overflow menu offers Delete and confirming it calls `useDeleteComment` with the right id; (2) Hide/Show render based on `item.status`; (3) the Show more/less control appears only when the content overflows, and stays available after a resize while expanded; (4) member and post fallbacks render when those fields are missing. Mock the admin-x-framework comment hooks rather than the component under test.",
+    "commentAnchor": {
+     "file": "apps/posts/src/views/comments/components/comments-list.tsx",
+     "lineStart": 149,
+     "lineEnd": 160
+    }
+   },
+   {
+    "title": "Icon-only overflow button has no accessible name",
+    "severity": "low",
+    "category": "style",
+    "body": "The new ellipsis trigger renders only `<LucideIcon.Ellipsis />` with no `aria-label` or visually hidden text, so screen readers announce it as an unnamed button. The old button had a `MoreVertical` icon with the same problem, but the PR is a good place to fix it since it changes the trigger.\n\n::code{file=\"apps/posts/src/views/comments/components/comments-list.tsx\" lines=\"320-327\"}",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ],
+    "fixPrompt": "In `apps/posts/src/views/comments/components/comments-list.tsx`, the overflow `Button` wrapping `<LucideIcon.Ellipsis />` (around lines 320-327) has no accessible name. Add `aria-label=\"More actions\"` (or an equivalent visually hidden label) to the button.",
+    "commentAnchor": {
+     "file": "apps/posts/src/views/comments/components/comments-list.tsx",
+     "lineStart": 320,
+     "lineEnd": 327
+    }
+   },
+   {
+    "title": "Falsy template-literal values leak into class names",
+    "severity": "low",
+    "category": "style",
+    "body": "Several new class strings use `${item.status === 'hidden' && '...'}`. When the condition is false, the template renders the literal string `false` into the `className`. It's harmless at runtime, but it is misleading and easy to copy into the wrong place. The new `CommentContent` and the member button both have this pattern. Use a ternary or a `cn()` helper, which the shade package already exports.\n\n::code{file=\"apps/posts/src/views/comments/components/comments-list.tsx\" lines=\"112-112\"}\n\n::code{file=\"apps/posts/src/views/comments/components/comments-list.tsx\" lines=\"194-194\"}",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ],
+    "fixPrompt": "In `apps/posts/src/views/comments/components/comments-list.tsx`, replace the `${item.status === 'hidden' && 'text-muted-foreground'}` fragments in the `CommentContent` body class (around line 112) and the member button class (around line 194) with a ternary (`? 'text-muted-foreground' : ''`) or with `cn(...)` from `@tryghost/shade`, so the literal string `false` never reaches the DOM.",
+    "commentAnchor": {
+     "file": "apps/posts/src/views/comments/components/comments-list.tsx",
+     "lineStart": 194,
+     "lineEnd": 194
+    }
+   },
+   {
+    "title": "Overflow menu rows now link to the member profile only through the menu",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Moving member and post navigation into the overflow menu, and turning the inline member and post text into filter buttons, is a visible behavior change. Reviewers should confirm that filtering is the intended primary action for those two items. The point above about the post editor is the one that needs a decision.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ]
+   },
+   {
+    "title": "Required onAddFilter removes dead guards",
+    "severity": "info",
+    "category": "maintainability",
+    "body": "Making `onAddFilter` required is a good cleanup. The old `onAddFilter && ...` guards were dead code because `comments.tsx` always passes `handleAddFilter`, and the type now says so. The same applies to the `item.post?.id && onAddFilter` menu items that were removed.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx",
+     "apps/posts/src/views/comments/comments.tsx"
+    ]
+   },
+   {
+    "title": "API and type change is minimal and consistent",
+    "severity": "info",
+    "category": "correctness",
+    "body": "Adding `feature_image` in both places is consistent. The mapper's `postFields` list controls the output, and the TypeScript type is optional, which matches what the API returns when a post has no image. The snapshot `content-length` values move by the byte count you would expect from one extra key, which makes it likely that the snapshots were regenerated from a real run rather than hand-edited. The image is also public post data, so exposing it to the admin API does not add a new privacy surface.",
+    "files": [
+     "ghost/core/core/server/api/endpoints/utils/serializers/output/mappers/comments.js",
+     "apps/admin-x-framework/src/api/comments.ts"
+    ]
+   },
+   {
+    "title": "Counts and hidden state are conveyed visually and through tooltips",
+    "severity": "info",
+    "category": "style",
+    "body": "Replies, likes, and reports each get a labeled tooltip, and hidden comments get a text label (\"Hidden from members\") instead of an icon-only treatment. Both are clearer than the old table, and the reports count is highlighted when non-zero. Consider making the tooltip text visible to assistive tech via `aria-label` on the counts, since the numbers alone are ambiguous to screen readers.",
+    "files": [
+     "apps/posts/src/views/comments/components/comments-list.tsx"
+    ]
+   }
+  ]
+ },
+ "result_text_head": "{\"pr\":{\"repo\":\"agentic-review-benchmarks/Ghost\",\"number\":4,\"title\":\"Code Review Bench PR #25745 - Redesigned comment moderation list layout\",\"author\":\"\",\"baseSha\":\"8281bbf2b93e5150658ab534de1eaaa00443d80e\",\"headSha\":\"5a73fdce3bf061b434c46c6852648befc6f990d0\"},\"summary\":\"This PR replaces the comment moderation table in the Posts app with a stacked, comment-like row layout. Each row now shows the author (with a filter button), a relative timestamp with a tooltip, the post title (as a filter button",
+ "schema_valid": true,
+ "schema_errors": [],
+ "n_findings": 10
+}
